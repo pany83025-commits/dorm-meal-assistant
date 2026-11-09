@@ -1,0 +1,2688 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="寝室餐食">
+<meta name="theme-color" content="#FBFAF7">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>寝室餐食助手</title>
+<style>
+:root{--bg:#FBFAF7;--card:#fff;--line:#E8E5DC;--ink:#2C2C2A;--ink2:#5F5E5A;--ink3:#928F86;
+--sat:0px;--sab:0px;--g:#3B6D11;--gl:#EAF3DE;--gm:#C0DD97;--a:#854F0B;--al:#FAEEDA;--r:#A32D2D;--rl:#FCEBEB;--b:#185FA5;--bl:#E6F1FB}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--ink);font:15px/1.6 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;padding-bottom:86px}
+.wrap{max-width:520px;margin:0 auto;padding:0 16px}
+header{padding:calc(14px + var(--sat)) 0 8px;position:sticky;top:0;background:var(--bg);z-index:9}
+h1{font-size:19px;font-weight:600;letter-spacing:-.3px}
+.sub{font-size:12px;color:var(--ink3);margin-top:2px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.sub .w{background:var(--bl);color:var(--b);padding:1px 7px;border-radius:5px;font-size:11px}
+.sub .w.off{background:#F1EFE8;color:var(--ink3)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:12px}
+.card h2{font-size:14px;font-weight:600;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+.card h2 span{font-size:12px;font-weight:400;color:var(--ink3)}
+.bars{display:flex;flex-direction:column;gap:11px}
+.bar-row{display:flex;align-items:center;gap:10px;font-size:12px}
+.bar-row .lb{width:38px;color:var(--ink3);flex:none;font-size:11.5px;white-space:nowrap}
+.bar-row .tr{flex:1;height:8px;background:#F1EFE8;border-radius:4px;overflow:hidden}
+.bar-row .fl{height:100%;border-radius:4px;transition:width .4s}
+.bar-row .vl{width:92px;text-align:right;flex:none;color:var(--ink2);font-variant-numeric:tabular-nums}
+.tip{background:var(--al);border:1px solid #F0DFC4;border-radius:12px;padding:11px 14px;font-size:13px;color:#5A3806;margin-bottom:12px;line-height:1.55}
+.tip.ok{background:var(--gl);border-color:#D6E8BD;color:#2C5310}
+.tip b{font-weight:600}
+.rec{border:1px solid var(--line);border-radius:13px;padding:12px 14px;background:var(--card);cursor:pointer;margin-bottom:9px}
+.rec:active{background:#FAF9F5}
+.rec .t{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px;gap:8px}
+.rec .t b{font-size:14.5px;font-weight:600}
+.rec .t em{font-size:11.5px;color:var(--ink3);font-style:normal;flex:none}
+.rec .d{font-size:12.5px;color:var(--ink2);line-height:1.5}
+.rec .mac{font-size:11.5px;color:var(--ink3);margin-top:5px;font-variant-numeric:tabular-nums}
+.badges{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.badge{font-size:11px;padding:1.5px 7px;border-radius:5px;background:var(--gl);color:var(--g)}
+.badge.warn{background:var(--rl);color:var(--r)}
+.badge.info{background:var(--bl);color:var(--b)}
+.badge.mut{background:#F1EFE8;color:var(--ink2)}
+.chips{display:flex;gap:7px;overflow-x:auto;padding:2px 0 12px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;font-size:13px;padding:5px 12px;border-radius:16px;background:#fff;border:1px solid var(--line);color:var(--ink2);cursor:pointer;white-space:nowrap}
+.chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+input[type=search],input[type=number],select{width:100%;padding:10px 13px;border:1px solid var(--line);border-radius:10px;font:15px inherit;background:#fff;color:var(--ink);outline:none;font-family:inherit}
+input[type=search]:focus,input[type=number]:focus,select:focus{border-color:var(--gm)}
+textarea{width:100%;padding:10px 13px;border:1px solid var(--line);border-radius:10px;font:15px/1.6 inherit;font-family:inherit;min-height:76px;resize:vertical;outline:none;background:#fff;color:var(--ink)}
+textarea:focus{border-color:var(--gm)}
+.food{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #F4F2EC}
+.food:last-child{border-bottom:none}
+.food .info{flex:1;min-width:0}
+.food .nm{font-size:14.5px;font-weight:500;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.food .mt{font-size:11.5px;color:var(--ink3);margin-top:1px;line-height:1.45}
+.add{border:1px solid var(--line);background:#fff;border-radius:9px;padding:6px 11px;font-size:12.5px;color:var(--g);cursor:pointer;flex:none;font-family:inherit;font-weight:500}
+.add:active{background:var(--gl)}
+nav{position:fixed;bottom:0;left:0;right:0;background:rgba(251,250,247,.95);backdrop-filter:blur(12px);border-top:1px solid var(--line);padding:8px 0 max(8px,env(safe-area-inset-bottom));z-index:20}
+nav .in{max-width:520px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr)}
+nav button{background:none;border:none;font-family:inherit;font-size:11.5px;color:var(--ink3);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 0}
+nav button .ic{width:22px;height:22px;display:block;opacity:.5;transition:opacity .15s}
+nav button .ic svg{display:block;width:22px;height:22px}
+nav button.on{color:var(--ink)}
+nav button.on .ic{opacity:1}
+.sheet{position:fixed;inset:0;background:rgba(0,0,0,.32);z-index:40;display:none;align-items:flex-end;justify-content:center;padding-bottom:var(--kb,0px)}
+.sheet.on{display:flex;animation:maskIn .28s ease both}
+.sheet.closing{animation:maskOut .26s ease both}
+.sheet .box{background:var(--bg);width:100%;max-width:520px;border-radius:18px 18px 0 0;padding:16px 16px max(20px,env(safe-area-inset-bottom));max-height:calc(90vh - var(--kb,0px));overflow-y:auto;transition:transform .2s ease;transform-origin:50% 100%}
+.sheet.on .box{animation:sheetUp .46s both}
+.sheet.closing .box{animation:sheetDown .30s cubic-bezier(.42,0,.86,.5) both}
+@keyframes maskIn{from{background:rgba(0,0,0,0)}to{background:rgba(0,0,0,.32)}}
+@keyframes maskOut{from{background:rgba(0,0,0,.32)}to{background:rgba(0,0,0,0)}}
+@keyframes sheetUp{
+  0%{transform:translateY(76px) scale(.962);opacity:0;animation-timing-function:cubic-bezier(.14,.86,.26,1)}
+  62%{transform:translateY(-6px) scale(1.004);opacity:1;animation-timing-function:cubic-bezier(.3,.6,.45,1)}
+  82%{transform:translateY(2px) scale(1);animation-timing-function:ease-out}
+  100%{transform:translateY(0) scale(1);opacity:1}}
+@keyframes sheetDown{from{transform:none;opacity:1}to{transform:translateY(80px) scale(.985);opacity:0}}
+@keyframes up{from{transform:translateY(24px);opacity:.6}to{transform:none;opacity:1}}
+.sheet h3{font-size:16.5px;font-weight:600;margin-bottom:3px;padding-right:30px}
+.sheet .sm{font-size:12.5px;color:var(--ink3);margin-bottom:12px;line-height:1.5}
+.x{position:absolute;right:16px;top:16px;width:28px;height:28px;border-radius:50%;border:none;background:#F1EFE8;font-size:16px;color:var(--ink2);cursor:pointer;line-height:1}
+.opt{display:flex;align-items:center;gap:9px;padding:9px 11px;border:1px solid var(--line);border-radius:10px;background:#fff;margin-bottom:7px;cursor:pointer}
+.opt.on{border-color:var(--g);background:var(--gl)}
+.opt .on1{flex:1;font-size:14px}
+.opt input{width:62px;padding:4px 6px;font-size:13px;text-align:right;border:1px solid var(--line);border-radius:6px;font-family:inherit}
+.preview{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:12px 0;font-size:13px}
+.preview .l{display:flex;justify-content:space-between;padding:2px 0}
+.btn{width:100%;padding:13px;border-radius:11px;border:none;background:var(--g);color:#fff;font-size:15px;font-weight:500;font-family:inherit;cursor:pointer}
+.btn.ghost{background:#fff;color:var(--ink2);border:1px solid var(--line)}
+.btns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:12px}
+.setrow{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid #F4F2EC;cursor:pointer}
+.setrow:last-child{border-bottom:none}
+.setrow:active{background:#FAF9F5}
+.setrow .t{flex:1;min-width:0}
+.setrow .t b{display:block;font-size:14.5px;font-weight:500}
+.setrow .t em{display:block;font-size:11.5px;color:var(--ink3);font-style:normal;margin-top:2px;line-height:1.4}
+.setrow .ar{color:#C8C5BC;font-size:17px;flex:none}
+/* ===== 动效 ===== */
+@keyframes fadeUp{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
+#view.anim{animation:fadeUp .26s cubic-bezier(.22,.9,.3,1) both}
+.btn,.rec,.add,.chip,.setrow,.opt,.x,.backb,.food[onclick],.stat .s[onclick],nav button{transition:transform .12s ease,background-color .12s ease,border-color .12s ease,opacity .12s ease,color .12s ease}
+/* 按压：颜色稍变深 —— 全站统一手感 */
+.btn:active{transform:scale(.975);background:#31590E}
+.btn.ghost:active{background:#F0EDE3;border-color:#DAD5C8;color:var(--ink)}
+.rec:active{transform:scale(.988);background:#F5F2E9;border-color:#DFDACD}
+.add:active{transform:scale(.94);background:var(--gl);border-color:var(--gm)}
+.chip:active{transform:scale(.94);background:#F1EEE3;border-color:#DBD6C8}
+.chip.on:active{background:#414140;border-color:#414140}
+.setrow:active{background:#F1EEE4}
+.setrow:active .ar{color:var(--ink2);transform:translateX(2px)}
+.opt:active{background:#F6F3EA;border-color:#DFDACD}
+.opt.on:active{background:#DFEBCE}
+.x:active{background:#E6E2D7;transform:scale(.94)}
+.backb:active{color:#2C5310;opacity:.72}
+.food[onclick]{cursor:pointer;padding-left:8px;padding-right:8px;margin-left:-8px;margin-right:-8px;border-radius:9px}
+.food[onclick]:active{background:#F4F1E4}
+.stat .s[onclick]{cursor:pointer}
+.stat .s[onclick]:active{background:#F3F0E5;border-color:#DAD5C8;transform:scale(.985)}
+nav button:active{color:var(--ink2)}
+nav button:active .ic{opacity:.78}
+.ar{transition:transform .12s ease,color .12s ease}
+@keyframes pop{0%{transform:scale(1)}42%{transform:scale(1.18)}100%{transform:scale(1)}}
+nav button.on .ic{animation:pop .34s cubic-bezier(.34,1.56,.64,1)}
+@keyframes breathe{0%,100%{opacity:.5}50%{opacity:1}}
+.empty.loading{animation:breathe 1.5s ease-in-out infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes grow{from{width:0}}
+.bar-row .fl{animation:grow .62s cubic-bezier(.22,.9,.3,1) both}
+header{transition:box-shadow .22s ease}
+header.scrolled{box-shadow:0 1px 0 var(--line),0 6px 16px -12px rgba(0,0,0,.28)}
+.spinner{display:inline-block;width:15px;height:15px;border:2px solid #DDD9CE;border-top-color:#3B6D11;border-radius:50%;animation:spin .8s linear infinite;vertical-align:-3px;margin-right:7px}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms !important;transition-duration:.01ms !important}}
+.sethead{display:flex;align-items:center;gap:10px;padding:6px 0 12px}
+.sethead h1{font-size:19px;font-weight:600;margin:0}
+.backb{border:none;background:none;font-family:inherit;font-size:14px;color:var(--g);padding:4px 2px;cursor:pointer}
+.stat .s{background:#fff;border:1px solid var(--line);border-radius:11px;padding:10px 12px}
+.stat .s .k{font-size:11.5px;color:var(--ink3)}
+.stat .s .v{font-size:17px;font-weight:600;letter-spacing:-.3px}
+.empty{text-align:center;color:var(--ink3);font-size:13px;padding:24px 0;line-height:1.6}
+.logitem{display:flex;justify-content:space-between;font-size:13.5px;padding:9px 0;border-bottom:1px solid #F4F2EC;gap:8px}
+.logitem:last-child{border-bottom:none}
+.logitem .r{color:var(--ink3);font-size:11.5px;flex:none;text-align:right;line-height:1.45}
+.steps{counter-reset:s;list-style:none;margin:8px 0}
+.steps li{counter-increment:s;position:relative;padding-left:24px;margin-bottom:7px;font-size:13.5px;line-height:1.55}
+.steps li::before{content:counter(s);position:absolute;left:0;top:2px;width:17px;height:17px;border-radius:50%;background:var(--gl);color:var(--g);font-size:10.5px;font-weight:600;display:flex;align-items:center;justify-content:center}
+label.fl{display:block;font-size:12.5px;color:var(--ink3);margin:12px 0 5px}
+.row3{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sec{font-size:12px;color:var(--ink3);margin:14px 0 8px;display:flex;align-items:center;gap:6px}
+.sec b{font-weight:600;color:var(--ink2)}
+.sec span{margin-left:auto;font-size:11.5px;color:#B4B2A9}
+.ing{display:flex;justify-content:space-between;font-size:13.5px;padding:6px 0;border-bottom:1px dashed #F0EEE7}
+.ing:last-child{border-bottom:none}
+.ing .q{color:var(--ink3);font-size:12.5px;flex:none;margin-left:10px}
+#splash{position:fixed;left:0;top:0;right:0;bottom:0;padding-top:var(--sat);background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:9999;transition:opacity .42s ease}
+#splash.out{opacity:0;pointer-events:none}
+#splash .sp-in{display:flex;align-items:center;justify-content:center}
+#splash .bowl{animation:bowlIn .5s cubic-bezier(.22,.9,.3,1) both}
+#splash .steam path{stroke-dasharray:26 60;stroke-dashoffset:26;opacity:0;animation:steamDraw .62s ease forwards}
+#splash .steam path:nth-child(1){animation-delay:.60s}
+#splash .steam path:nth-child(2){animation-delay:.72s}
+#splash .steam path:nth-child(3){animation-delay:.84s}
+#splash .soup{opacity:0;animation:soupIn .5s .34s ease forwards}
+@keyframes bowlIn{0%{opacity:0;transform:translateY(11px) scale(.86)}70%{opacity:1;transform:translateY(0) scale(1.015)}100%{opacity:1;transform:none}}
+@keyframes steamDraw{0%{stroke-dashoffset:26;opacity:0}35%{opacity:1}100%{stroke-dashoffset:0;opacity:1}}
+@keyframes soupIn{to{opacity:1}}
+</style>
+</head>
+<body>
+<div id="splash"><div class="sp-in">
+<svg class="bowl" viewBox="8 8 104 104" width="206" height="206" aria-hidden="true">
+<g class="steam" stroke="#3B6D11" stroke-width="2.8" stroke-linecap="round" fill="none">
+<path d="M43 54 V31"/><path d="M60 49 V22"/><path d="M77 54 V31"/>
+</g>
+<path d="M33 61 C33 101 87 101 87 61" fill="none" stroke="#3B6D11" stroke-width="3.0" stroke-linecap="round"/>
+<ellipse cx="60" cy="61" rx="27" ry="7.6" fill="none" stroke="#3B6D11" stroke-width="3.0"/>
+<ellipse class="soup" cx="60" cy="61.5" rx="21.5" ry="5.9" fill="#EAF3DE" stroke="#97C459" stroke-width="1.3"/>
+</svg>
+</div></div>
+<div class="wrap">
+<header id="hd"><div style="display:flex;align-items:center;gap:6px"><button id="backbtn" class="backb" style="display:none" onclick="setTab('log')">‹</button><h1 id="h1t">寝室餐食助手</h1></div><div class="sub" id="sub"></div></header>
+<main id="view"></main>
+</div>
+<nav><div class="in">
+<button data-tab="today" class="on"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.6" fill="currentColor" stroke="none"/></svg></span>今天</button>
+<button data-tab="rcp"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7.2v11.6"/><path d="M12 7.2C10.4 6 8.3 5.4 6 5.4v11.6c2.3 0 4.4.6 6 1.8"/><path d="M12 7.2c1.6-1.2 3.7-1.8 6-1.8v11.6c-2.3 0-4.4.6-6 1.8"/></svg></span>食谱</button>
+<button data-tab="food"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5.2 18.8c-.6-7 4.2-12.4 13.6-13.4 1 9.4-4.4 14.2-11.4 14.2H5.2z"/><path d="M5.6 18.4c2.8-2.8 5.8-4.8 8.6-5.8"/></svg></span>食材</button>
+<button data-tab="log"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5.5 19v-6.5"/><path d="M12 19V5.5"/><path d="M18.5 19v-9.5"/></svg></span>记录</button>
+</div></nav>
+<div class="sheet" id="sheet"><div class="box" id="sheetBox" style="position:relative"></div></div>
+<script>
+const RAW=[
+["鸡蛋", "protein", 139.0, 13.1, 8.6, 2.4, 0, "个", 43, 87.0, 7, 14, "净重", "鸡蛋（代表值）", "", 131.5, 56.0, 1.6, 0, 648.0],
+["鸭蛋", "protein", 180.0, 12.6, 13.0, 3.1, 0, "个", 56, 87.0, 7, 14, "净重", "鸭蛋", "", 106.0, 62.0, 2.9, 0, 565.0],
+["鹌鹑蛋", "protein", 160.0, 12.8, 11.1, 2.1, 0, "个", 9, 86.0, 5, 10, "净重", "鹌鹑蛋", "", 106.6, 47.0, 3.2, 0, 515.0],
+["鸡胸肉", "protein", 118.0, 24.6, 1.9, 0.6, 0, "块", 120, 100.0, 0, 0, "净重", "鸡胸脯肉", "冷水下锅，水开关火焖13分钟最嫩", 44.8, 1.0, 1.0, 0, 65.0],
+["鸡腿肉", "protein", 146.0, 20.2, 7.2, 0, 0, "个", 75, 74.0, 0, 0, "净重", "鸡腿", "去皮更瘦", 73.6, 0, 1.8, 0, 99.0],
+["猪里脊", "protein", 150.0, 19.6, 7.9, 0, 0, "份", 100, 100.0, 0, 0, "净重", "猪肉（里脊）", "", 43.2, 6.0, 1.5, 0, 55.0],
+["牛里脊", "protein", 107.0, 22.2, 0.9, 2.4, 0, "份", 100, 100.0, 0, 0, "净重", "牛肉（里脊肉）［牛柳］", "切薄片涮30秒", 75.1, 3.0, 4.4, 0, 63.0],
+["牛腱", "protein", 122.0, 23.0, 3.3, 0, 0, "份", 100, 100.0, 0, 0, "净重", "牛肉（小腿肉）［牛展、牛腱子］", "", 83.1, 5.0, 0.3, 0, 61.0],
+["羊肉片", "protein", 139.0, 18.5, 6.5, 1.6, 0, "份", 100, 100.0, 0, 0, "净重", "羊肉（代表值，fat7g）", "", 89.9, 16.0, 3.9, 0, 82.0],
+["虾仁", "protein", 93.0, 18.6, 0.8, 2.8, 0, "份", 100, 61.0, 0, 0, "净重", "对虾", "成分表虾仁条目含裹粉制品，此处按鲜虾估算", 165.2, 62.0, 1.5, 0, 193.0],
+["基围虾", "protein", 101.0, 18.2, 1.4, 3.9, 0, "只", 9, 60.0, 0, 0, "毛重15g·可食60%", "基围虾", "", 172.0, 83.0, 2.0, 0, 181.0],
+["鳕鱼", "protein", 88.0, 20.4, 0.5, 0.5, 0, "块", 120, 45.0, 0, 0, "净重", "鳕鱼［鳕狭、明太鱼］", "", 130.3, 42.0, 0.5, 0, 114.0],
+["三文鱼", "protein", 139.0, 17.2, 7.8, 0, 0, "份", 100, 72.0, 0, 0, "净重", "鲑鱼［大马哈鱼、三文鱼］", "成分表为野生大马哈鱼（偏瘦）。市售多为养殖挪威鲑，约 180–200 kcal/100g", 63.3, 13.0, 0.3, 0, 68.0],
+["带鱼", "protein", 108.0, 17.6, 4.2, 0, 0, "段", 70, 70.0, 0, 0, "净重", "带鱼（切段）", "", 246.4, 431.0, 1.1, 0, 52.0],
+["鲈鱼", "protein", 105.0, 18.6, 3.4, 0, 0, "条", 200, 58.0, 0, 0, "净重", "鲈鱼［鲈花］", "", 144.1, 138.0, 2.0, 0, 86.0],
+["草鱼", "protein", 113.0, 16.6, 5.2, 0, 0, "份", 100, 58.0, 0, 0, "净重", "草鱼", "", 46.0, 38.0, 0.8, 0, 86.0],
+["内酯豆腐", "protein", 50.0, 5.0, 1.9, 3.3, 0.4, "盒", 200, 100.0, 60, 180, "净重", "豆腐（内酯）", "未开封常温可存，开封当天吃完", 6.4, 17.0, 0.8, 0, 0],
+["北豆腐", "protein", 116.0, 9.2, 8.1, 3.0, 0, "块", 200, 100.0, 0, 1, "净重", "豆腐（北豆腐）", "", 7.3, 105.0, 1.5, 0, 0],
+["豆腐干", "protein", 197.0, 14.9, 11.3, 9.6, 0, "块", 80, 100.0, 3, 7, "净重", "豆腐干（代表值）", "", 329.0, 447.0, 7.1, 0, 0],
+["豆浆", "protein", 31.0, 3.0, 1.6, 1.2, 0, "盒", 250, 100.0, 1, 3, "净重", "豆浆", "选无糖款", 3.7, 5.0, 0.4, 0, 0],
+["腐竹", "protein", 461.0, 44.6, 21.7, 22.3, 1.0, "份", 30, 100.0, 90, 180, "干重", "腐竹", "泡发后约6倍重", 26.5, 77.0, 16.5, 0, 0],
+["毛豆", "protein", 131.0, 13.1, 5.0, 10.5, 4.0, "份", 53, 53.0, 1, 3, "净重", "毛豆（鲜）［青豆，菜用大豆］", "", 3.9, 135.0, 3.5, 27.0, 0],
+["牛奶", "protein", 66.0, 3.6, 3.7, 4.6, 0, "盒", 250, 100.0, 30, 90, "净重", "鲜牛奶（全脂，完达山鲜牛乳）", "UHT灭菌装可常温存放", 192.4, 136.0, 0.9, 0, 29.0],
+["酸奶", "protein", 86.0, 2.8, 2.6, 12.9, 0, "杯", 100, 100.0, 0, 1, "净重", "酸奶（代表值，全脂）", "此处为全脂含糖款。无糖希腊酸奶约 60 kcal、蛋白 10g", 37.7, 128.0, 0.3, 1.3, 8.0],
+["大米", "carb", 346.0, 7.9, 0.9, 77.2, 0.6, "杯", 150, 100.0, 180, 365, "生重", "稻米（代表值）", "", 1.8, 8.0, 1.1, 0, 0],
+["米饭", "carb", 116.0, 2.6, 0.3, 25.9, 0.3, "碗", 150, 100.0, 0, 1, "熟重", "米饭（蒸，代表值）", "食堂一碗约150g", 2.5, 7.0, 1.3, 0, 0],
+["糙米", "carb", 348.0, 7.7, 2.7, 75.0, 3.4, "杯", 150, 100.0, 180, 365, "生重", "糙米", "提前泡30分钟，煮35分钟", 5.4, 10.0, 1.8, 0, 0],
+["小米", "carb", 361.0, 9.0, 3.1, 75.1, 1.6, "份", 50, 100.0, 180, 365, "生重", "小米", "", 4.3, 41.0, 5.1, 0, 0],
+["玉米", "carb", 112.0, 4.0, 1.2, 22.8, 2.9, "根", 46, 46.0, 1, 2, "可食部", "玉米（鲜）", "带皮蒸15分钟", 1.1, 0, 1.1, 16.0, 0],
+["燕麦", "carb", 338.0, 10.1, 0.2, 77.4, 6.0, "份", 40, 100.0, 90, 365, "生重", "燕麦", "即食燕麦热水冲泡即可", 2.1, 58.0, 2.9, 0, 0],
+["荞麦", "carb", 337.0, 9.3, 2.3, 73.0, 6.5, "份", 60, 100.0, 180, 365, "生重", "荞麦", "", 4.7, 47.0, 6.2, 0, 0],
+["面粉", "carb", 359.0, 12.4, 1.7, 74.1, 0.8, "份", 50, 100.0, 180, 365, "生重", "小麦粉（代表值）", "", 14.1, 28.0, 1.4, 0, 0],
+["馒头", "carb", 223.0, 7.0, 1.1, 47.0, 1.3, "个", 100, 100.0, 1, 2, "熟重", "馒头（代表值）", "", 165.1, 38.0, 1.8, 0, 0],
+["红薯", "carb", 61.0, 0.7, 0.2, 15.3, 0, "个", 135, 90.0, 14, 30, "净重", "甘薯（红心）［山芋、红薯］", "蒸20分钟，筷子能穿透即可", 70.9, 18.0, 0.2, 4.0, 0],
+["土豆", "carb", 81.0, 2.6, 0.2, 17.8, 1.1, "个", 141, 94.0, 14, 30, "净重", "马铃薯［土豆、洋芋］", "", 5.9, 7.0, 0.4, 14.0, 0],
+["山药", "carb", 57.0, 1.9, 0.2, 12.4, 0.8, "段", 125, 83.0, 14, 30, "净重", "山药（鲜）［薯蓣，大薯］", "", 18.6, 16.0, 0.3, 5.0, 0],
+["南瓜", "carb", 23.0, 0.7, 0.1, 5.3, 0.8, "块", 170, 85.0, 14, 30, "净重", "南瓜（鲜）［倭瓜，番瓜］", "", 0.8, 16.0, 0.4, 8.0, 0],
+["粉丝", "carb", 338.0, 0.8, 0.2, 83.7, 1.1, "把", 30, 100.0, 180, 365, "干重", "粉丝", "", 9.3, 31.0, 6.4, 0, 0],
+["米粉", "carb", 349.0, 0.4, 0.8, 85.8, 0, "份", 60, 100.0, 180, 365, "干重", "米粉", "", 52.2, 11.0, 2.4, 0, 0],
+["西兰花", "veg", 27.0, 3.5, 0.6, 3.7, 0, "颗", 250, 83.0, 1, 3, "净重", "西兰花［绿菜花］", "水开下锅焯3分钟", 46.7, 50.0, 0.9, 56.0, 0],
+["菠菜", "veg", 28.0, 2.6, 0.3, 4.5, 1.7, "把", 89, 89.0, 1, 2, "净重", "菠菜（鲜）［赤根菜］", "焯30秒去草酸", 85.2, 66.0, 2.9, 32.0, 0],
+["生菜", "veg", 12.0, 1.6, 0.4, 1.1, 0, "颗", 188, 94.0, 1, 2, "净重", "生菜［叶用莴苣］", "", 16.1, 14.0, 0.2, 0, 0],
+["油麦菜", "veg", 12.0, 1.1, 0.4, 2.1, 0, "把", 121, 81.0, 1, 2, "净重", "油麦菜", "", 32.0, 60.0, 0.5, 2.0, 0],
+["小白菜", "veg", 14.0, 1.4, 0.3, 2.4, 0, "把", 141, 94.0, 1, 2, "净重", "小白菜［青菜］", "", 132.2, 117.0, 1.3, 64.0, 0],
+["大白菜", "veg", 20.0, 1.6, 0.2, 3.4, 0.9, "颗", 220, 89.0, 3, 7, "净重", "大白菜（代表值）", "", 68.9, 57.0, 0.8, 37.5, 0],
+["番茄", "veg", 15.0, 0.9, 0.2, 3.3, 0, "个", 145, 97.0, 3, 5, "净重", "番茄［西红柿］", "", 9.7, 4.0, 0.2, 14.0, 0],
+["圣女果", "veg", 25.0, 1.0, 0.2, 5.8, 0, "份", 98, 98.0, 2, 5, "净重", "樱桃番茄［小西红柿］", "", 10.0, 6.0, 0.3, 33.0, 0],
+["黄瓜", "veg", 16.0, 0.8, 0.2, 2.9, 0.5, "根", 184, 92.0, 3, 5, "净重", "黄瓜（鲜）［胡瓜］", "", 4.9, 24.0, 0.5, 9.0, 0],
+["白萝卜", "veg", 16.0, 0.7, 0.2, 3.6, 1.0, "段", 141, 94.0, 7, 14, "净重", "白萝卜（圆）", "", 117.5, 25.0, 0.3, 16.0, 0],
+["胡萝卜", "veg", 32.0, 1.0, 0.2, 8.1, 0, "根", 97, 97.0, 14, 30, "净重", "胡萝卜", "", 120.7, 27.0, 0.3, 9.0, 0],
+["洋葱", "veg", 40.0, 1.1, 0.2, 9.0, 0.9, "个", 90, 90.0, 14, 30, "净重", "洋葱（鲜）［葱头］", "", 4.4, 24.0, 0.6, 8.0, 0],
+["金针菇", "veg", 32.0, 2.4, 0.4, 6.0, 2.7, "把", 100, 100.0, 1, 3, "净重", "金针菇（鲜）［智力菇］", "去根，煮2分钟", 4.3, 0, 1.4, 2.0, 0],
+["香菇", "veg", 26.0, 2.2, 0.3, 5.2, 3.3, "份", 100, 100.0, 1, 3, "净重", "香菇（鲜）［香蕈，冬菇］", "", 1.4, 2.0, 0.3, 1.0, 0],
+["平菇", "veg", 24.0, 1.9, 0.3, 4.6, 2.3, "份", 93, 93.0, 1, 3, "净重", "平菇［糙皮侧耳，青蘑］", "", 3.8, 5.0, 1.0, 4.0, 0],
+["杏鲍菇", "veg", 35.0, 1.3, 0.1, 8.3, 2.1, "根", 100, 100.0, 3, 7, "净重", "杏鲍菇", "", 3.5, 13.0, 0.5, 0, 0],
+["木耳", "veg", 27.0, 1.5, 0.2, 6.0, 2.6, "份", 50, 100.0, 180, 365, "泡发后", "木耳（水发）［黑木耳，云耳］", "干的约6g泡出50g", 8.5, 34.0, 5.5, 1.0, 0],
+["紫菜", "veg", 250.0, 26.7, 1.1, 44.1, 21.6, "张", 3, 100.0, 180, 365, "干重", "紫菜（干）", "", 710.5, 264.0, 54.9, 2.0, 0],
+["海带", "veg", 13.0, 1.2, 0.1, 2.1, 0.5, "份", 100, 100.0, 1, 3, "净重", "海带（鲜）［江白菜］", "鲜海带。干海带约 77 kcal/100g，泡发后按鲜重算", 8.6, 46.0, 0.9, 0, 0],
+["茄子", "veg", 23.0, 1.1, 0.2, 4.9, 1.3, "个", 186, 93.0, 3, 5, "净重", "茄子（代表值）", "", 5.4, 24.0, 0.5, 5.0, 0],
+["青椒", "veg", 22.0, 0.8, 0.3, 5.2, 0, "个", 73, 91.0, 3, 7, "净重", "辣椒（青、尖）", "", 7.0, 11.0, 0.3, 59.0, 0],
+["冬瓜", "veg", 10.0, 0.3, 0.2, 2.4, 0, "段", 160, 80.0, 7, 14, "净重", "冬瓜", "", 2.8, 12.0, 0.1, 16.0, 0],
+["苦瓜", "veg", 22.0, 1.0, 0.1, 4.9, 1.4, "根", 121, 81.0, 3, 5, "净重", "苦瓜（鲜）［凉瓜，癞瓜］", "", 2.5, 14.0, 0.7, 56.0, 0],
+["豆芽", "veg", 47.0, 4.5, 1.6, 4.5, 1.5, "份", 100, 100.0, 1, 2, "净重", "黄豆芽", "", 7.2, 21.0, 0.9, 8.0, 0],
+["芹菜", "veg", 22.0, 1.2, 0.2, 4.5, 1.2, "把", 100, 67.0, 3, 7, "净重", "芹菜茎", "", 159.0, 80.0, 1.2, 8.0, 0],
+["包菜", "veg", 17.0, 0.9, 0.2, 4.0, 0, "颗", 258, 86.0, 7, 14, "净重", "结球甘蓝（绿）［圆白菜］", "", 42.1, 28.0, 0.2, 16.0, 0],
+["秋葵", "veg", 25.0, 1.8, 0.2, 6.2, 1.8, "份", 98, 98.0, 1, 3, "净重", "秋葵［黄秋葵、羊角豆］", "整根焯2分钟，别切开", 8.7, 101.0, 0.2, 7.2, 0],
+["荷兰豆", "veg", 30.0, 2.5, 0.3, 4.9, 1.4, "份", 88, 88.0, 1, 3, "净重", "荷兰豆", "", 8.8, 51.0, 0.9, 16.0, 0],
+["西葫芦", "veg", 19.0, 0.8, 0.2, 3.8, 0.6, "个", 146, 73.0, 5, 10, "净重", "西葫芦", "", 5.0, 15.0, 0.3, 6.0, 0],
+["苹果", "fruit", 53.0, 0.4, 0.2, 13.7, 1.7, "个", 153, 85.0, 7, 20, "净重", "苹果（代表值）", "", 1.3, 4.0, 0.3, 3.0, 0],
+["橙子", "fruit", 48.0, 0.8, 0.2, 11.1, 0.6, "个", 111, 74.0, 7, 14, "净重", "橙", "", 1.2, 20.0, 0.4, 33.0, 0],
+["香蕉", "fruit", 93.0, 1.4, 0.2, 22.0, 1.2, "根", 71, 59.0, 3, 5, "净重", "香蕉［甘蕉］", "", 0.8, 7.0, 0.4, 8.0, 0],
+["猕猴桃", "fruit", 61.0, 0.8, 0.6, 14.5, 2.6, "个", 66, 83.0, 5, 14, "净重", "中华猕猴桃［毛叶猕猴桃］", "", 10.0, 27.0, 1.2, 62.0, 0],
+["梨", "fruit", 51.0, 0.3, 0.1, 13.1, 2.6, "个", 164, 82.0, 7, 20, "净重", "梨（代表值）", "", 1.7, 7.0, 0.4, 5.0, 0],
+["葡萄", "fruit", 45.0, 0.4, 0.3, 10.3, 1.0, "份", 86, 86.0, 1, 2, "净重", "葡萄（代表值）", "", 1.9, 9.0, 0.4, 4.0, 0],
+["西瓜", "fruit", 31.0, 0.5, 0.3, 6.8, 0.2, "份", 118, 59.0, 0, 1, "净重", "西瓜（代表值）", "", 3.3, 7.0, 0.4, 5.7, 0],
+["核桃", "fat", 646.0, 14.9, 58.8, 19.1, 9.5, "个", 8, 43.0, 60, 180, "净重", "核桃（干）［胡桃］", "", 6.4, 56.0, 2.7, 1.0, 0],
+["花生", "fat", 574.0, 24.8, 44.3, 21.7, 5.5, "份", 15, 100.0, 30, 90, "净重", "花生仁（生）", "", 3.6, 39.0, 2.1, 2.0, 0],
+["杏仁", "fat", 578.0, 22.5, 45.4, 23.9, 8.0, "份", 15, 100.0, 60, 180, "净重", "杏仁", "", 8.3, 97.0, 2.2, 26.0, 0],
+["牛油果", "fat", 171.0, 2.0, 15.3, 7.4, 2.1, "个", 120, 100.0, 2, 4, "净重", "鳄梨", "", 10.0, 11.0, 1.0, 8.0, 0],
+["大蒜", "other", 128.0, 4.5, 0.2, 27.6, 1.1, "瓣", 5, 85.0, 30, 90, "净重", "大蒜（白皮，鲜）［蒜头］", "", 19.6, 39.0, 1.2, 7.0, 0],
+["姜", "other", 46.0, 1.3, 0.6, 10.3, 2.7, "片", 5, 95.0, 30, 90, "净重", "姜（鲜）［黄姜］", "", 14.9, 27.0, 1.4, 4.0, 0],
+["鸡翅", "protein", 202.0, 19.0, 11.5, 5.5, 0, "个", 60, 69.0, 0, 0, "净重", "鸡翅", "约2个翅中", 50.8, 8.0, 0.9, 0, 81.0],
+["鸡爪", "protein", 254.0, 23.9, 16.4, 2.7, 0, "个", 25, 60.0, 0, 0, "净重", "鸡爪", "", 169.0, 36.0, 1.4, 0, 103.0],
+["鲫鱼", "protein", 108.0, 17.1, 2.7, 3.8, 0, "条", 200, 54.0, 0, 0, "净重", "鲫鱼［喜头鱼、海附鱼］", "", 41.2, 79.0, 1.3, 0, 130.0],
+["虾皮", "protein", 153.0, 30.7, 2.2, 2.5, 0, "份", 5, 100.0, 180, 365, "干重", "虾皮", "提鲜，注意钠高", 5057.7, 991.0, 6.7, 0, 428.0],
+["鸡蛋白", "protein", 60.0, 11.6, 0.1, 3.1, 0, "个", 33, 100.0, 0, 1, "净重", "鸡蛋白", "1个蛋的蛋白部分", 79.4, 9.0, 1.6, 0, 0],
+["鸡蛋黄", "protein", 328.0, 15.2, 28.2, 3.4, 0, "个", 15, 100.0, 0, 1, "净重", "鸡蛋黄", "", 54.9, 112.0, 6.5, 0, 1510.0],
+["豆腐皮", "protein", 447.0, 51.6, 23.0, 12.5, 0, "张", 50, 100.0, 3, 7, "干重", "豆腐皮", "千张", 7.4, 239.0, 11.7, 0, 0],
+["猪肉（瘦）", "protein", 143.0, 20.3, 6.2, 1.5, 0, "份", 100, 100.0, 0, 0, "净重", "猪肉（瘦）", "", 57.5, 6.0, 3.0, 0, 81.0],
+["绿豆芽", "veg", 16.0, 1.7, 0.1, 2.6, 1.2, "份", 100, 100.0, 1, 2, "净重", "绿豆芽", "", 25.8, 14.0, 0.3, 4.0, 0],
+["韭菜", "veg", 25.0, 2.4, 0.4, 4.5, 0, "把", 100, 90.0, 1, 2, "净重", "韭菜", "", 5.8, 44.0, 0.7, 2.0, 0],
+["莴笋", "veg", 15.0, 1.0, 0.1, 2.8, 0.6, "根", 150, 62.0, 7, 14, "净重", "莴笋（鲜）［莴苣］", "", 36.5, 23.0, 0.9, 4.0, 0],
+["菜花", "veg", 20.0, 1.7, 0.2, 4.2, 2.1, "颗", 250, 82.0, 3, 7, "净重", "菜花（白色）［花椰菜］", "", 39.2, 31.0, 0.4, 32.0, 0],
+["豇豆", "veg", 32.0, 2.2, 0.3, 7.3, 0, "把", 150, 97.0, 1, 3, "净重", "豇豆", "", 9.5, 62.0, 0.8, 13.0, 0],
+["四季豆", "veg", 31.0, 2.0, 0.4, 5.7, 1.5, "份", 150, 96.0, 1, 3, "净重", "四季豆（菜豆）", "必须彻底煮熟", 8.6, 42.0, 1.5, 6.0, 0],
+["芥蓝", "veg", 24.0, 3.1, 0.3, 4.1, 0, "把", 150, 98.0, 1, 2, "净重", "芥蓝［甘蓝菜、盖蓝菜］", "", 40.2, 121.0, 1.0, 37.0, 0],
+["荠菜", "veg", 31.0, 2.9, 0.4, 4.7, 1.7, "把", 100, 88.0, 1, 2, "净重", "荠菜（鲜）［蓟菜，菱角菜］", "", 31.6, 294.0, 5.4, 43.0, 0],
+["茼蒿", "veg", 24.0, 1.9, 0.3, 3.9, 1.2, "把", 150, 82.0, 1, 2, "净重", "茼蒿（鲜）［蓬蒿菜，艾菜］", "", 161.3, 73.0, 2.5, 18.0, 0],
+["丝瓜", "veg", 20.0, 1.3, 0.2, 4.0, 0, "根", 200, 83.0, 3, 5, "净重", "丝瓜", "", 3.7, 37.0, 0.3, 4.0, 0],
+["佛手瓜", "veg", 18.0, 1.2, 0.1, 3.8, 1.2, "个", 200, 100.0, 7, 14, "净重", "佛手瓜［棒瓜，菜肴梨］", "", 1.0, 17.0, 0.1, 8.0, 0],
+["草莓", "fruit", 32.0, 1.0, 0.2, 7.1, 1.1, "份", 150, 97.0, 1, 2, "净重", "草莓［洋莓，凤阳草莓］", "", 4.2, 18.0, 1.8, 47.0, 0],
+["桃", "fruit", 42.0, 0.6, 0.1, 10.1, 1.0, "个", 150, 89.0, 3, 5, "净重", "桃（代表值）", "", 1.7, 6.0, 0.3, 10.0, 0],
+["芒果", "fruit", 35.0, 0.6, 0.2, 8.3, 1.3, "个", 150, 60.0, 3, 5, "净重", "芒果［抹猛果，望果］", "", 2.8, 0, 0.2, 23.0, 0],
+["柚", "fruit", 42.0, 0.8, 0.2, 9.5, 0.4, "个", 300, 69.0, 7, 20, "净重", "柚［文旦］", "", 3.0, 4.0, 0.3, 23.0, 0],
+["腰果", "fat", 615.0, 24.0, 50.9, 20.4, 10.4, "份", 15, 100.0, 60, 180, "净重", "腰果（熟）", "", 35.7, 19.0, 7.4, 0, 0],
+["开心果", "fat", 631.0, 20.6, 53.0, 21.9, 8.2, "份", 15, 82.0, 60, 180, "净重", "开心果（熟）", "", 756.4, 108.0, 4.4, 0, 0],
+["芝麻油", "fat", 898.0, 0, 99.7, 0.2, 0, "勺", 5, 100.0, 365, 730, "净重", "芝麻油［香油］", "", 1.1, 9.0, 2.2, 0, 0],
+["糯米", "carb", 350.0, 7.3, 1.0, 78.3, 0.8, "杯", 150, 100.0, 180, 365, "生重", "糯米［江米］", "", 1.5, 26.0, 1.4, 0, 0],
+["黑米", "carb", 341.0, 9.4, 2.5, 72.2, 3.9, "杯", 150, 100.0, 180, 365, "生重", "黑米", "", 7.1, 12.0, 1.6, 0, 0],
+["小米面", "carb", 357.0, 7.2, 2.1, 77.7, 0.7, "份", 50, 100.0, 180, 365, "生重", "小米面", "", 6.2, 40.0, 6.1, 0, 0],
+["猪肉", "protein", 331.0, 15.1, 30.1, 0, 0, "份", 100, 91.0, 0, 0, "净重", "猪肉（代表值，fat30g）", "", 56.8, 6.0, 1.3, 0, 86.0],
+["猪大排", "protein", 264.0, 18.3, 20.4, 1.7, 0, "份", 100, 68.0, 0, 0, "净重", "猪大排", "", 44.5, 8.0, 0.8, 0, 165.0],
+["猪肘棒", "protein", 248.0, 16.5, 16.0, 9.4, 0, "份", 100, 67.0, 0, 0, "净重", "猪肘棒", "", 80.0, 19.0, 1.5, 0, 65.0],
+["猪小排", "protein", 295.0, 16.8, 25.3, 0, 0, "份", 100, 70.0, 0, 0, "净重", "猪小排（杜长大猪）", "", 62.6, 14.0, 1.1, 0, 120.0],
+["猪腿肉", "protein", 268.0, 17.5, 19.2, 6.3, 0, "份", 100, 100.0, 0, 0, "净重", "猪腿肉（藏香猪）", "", 45.8, 15.0, 2.0, 0, 61.0],
+["鲤鱼", "protein", 109.0, 17.6, 4.1, 0.5, 0, "份", 100, 54.0, 0, 0, "净重", "鲤鱼［鲤拐子］", "", 53.7, 50.0, 1.0, 0, 84.0],
+["鲢鱼", "protein", 104.0, 17.8, 3.6, 0, 0, "份", 100, 61.0, 0, 0, "净重", "鲢鱼［白鲢、胖子、连子鱼］", "", 57.5, 53.0, 1.4, 0, 99.0],
+["海鲫鱼", "protein", 206.0, 17.0, 13.7, 3.6, 0, "份", 100, 60.0, 0, 0, "净重", "海鲫鱼［九九鱼］", "", 15.8, 69.0, 1.9, 0, 70.0],
+["鲳鱼", "protein", 140.0, 18.5, 7.3, 0, 0, "份", 100, 70.0, 0, 0, "净重", "鲳鱼（银鲳鱼）［平鱼］", "", 62.5, 46.0, 1.1, 0, 77.0],
+["扇贝", "protein", 60.0, 11.1, 0.6, 2.6, 0, "份", 100, 35.0, 0, 0, "净重", "扇贝（鲜）", "", 339.0, 142.0, 7.2, 0, 140.0],
+["蛤蜊", "protein", 62.0, 10.1, 1.1, 2.8, 0, "份", 100, 39.0, 0, 0, "净重", "蛤蜊（代表值）", "", 425.7, 133.0, 10.9, 0, 156.0],
+["黄豆", "protein", 390.0, 35.0, 16.0, 34.2, 15.5, "份", 100, 100.0, 0, 0, "净重", "黄豆［大豆］", "", 2.2, 191.0, 8.2, 0, 0],
+["豌豆", "protein", 111.0, 7.4, 0.3, 21.2, 3.0, "份", 100, 42.0, 0, 0, "净重", "豌豆（带荚，鲜）［回回豆］", "鲜豌豆。干豌豆约 334 kcal/100g，别混用", 1.2, 21.0, 1.7, 14.0, 0],
+["小麦", "carb", 338.0, 11.9, 1.3, 75.2, 10.8, "份", 100, 100.0, 180, 365, "生重", "小麦", "", 6.8, 34.0, 5.1, 0, 0],
+["挂面", "carb", 353.0, 11.4, 0.9, 75.1, 0.9, "份", 100, 100.0, 180, 365, "生重", "挂面（代表值）", "", 184.5, 20.0, 2.3, 0, 0],
+["面条", "carb", 301.0, 8.9, 0.6, 65.6, 0.8, "份", 100, 100.0, 180, 365, "生重", "面条（生，代表值）", "", 21.4, 12.0, 4.3, 0, 0],
+["花卷", "carb", 214.0, 6.4, 1.0, 45.6, 1.5, "份", 100, 100.0, 180, 365, "生重", "花卷", "", 95.0, 19.0, 0.4, 0, 0],
+["玉米面", "carb", 352.0, 8.0, 4.5, 73.1, 6.2, "份", 100, 100.0, 180, 365, "生重", "玉米面（白）", "", 0.5, 12.0, 1.3, 0, 0],
+["玉米糁", "carb", 326.0, 7.4, 1.2, 78.7, 0, "份", 100, 100.0, 180, 365, "生重", "玉米糁（黄）", "", 1.7, 49.0, 0.2, 0, 0],
+["薏米", "carb", 361.0, 12.8, 3.3, 71.1, 2.0, "份", 100, 100.0, 180, 365, "生重", "薏米［薏仁米，苡米］", "", 3.6, 42.0, 3.6, 0, 0],
+["白菜", "veg", 20.0, 1.6, 0.2, 3.4, 0.9, "份", 100, 89, 1, 2, "净重", "大白菜（代表值）", "", 68.9, 57.0, 0.8, 37.5, 0],
+["奶白菜", "veg", 21.0, 2.7, 0.2, 3.3, 1.5, "份", 100, 100.0, 1, 2, "净重", "奶白菜", "", 170.2, 66.0, 1.0, 37.4, 0],
+["油菜心", "veg", 15.0, 1.3, 0.4, 2.7, 0, "份", 100, 100.0, 1, 2, "净重", "油菜心", "", 33.4, 74.0, 0.6, 0, 0],
+["芥菜", "veg", 27.0, 2.0, 0.4, 4.7, 1.6, "份", 100, 94.0, 1, 2, "净重", "芥菜（鲜）［雪里红，雪菜］", "", 30.5, 230.0, 3.2, 31.0, 0],
+["结球甘蓝", "veg", 25.0, 1.2, 0.2, 6.2, 0, "份", 100, 86.0, 1, 2, "净重", "结球甘蓝（紫）［圆白菜］", "", 27.0, 65.0, 0.4, 26.0, 0],
+["抱子甘蓝", "veg", 36.0, 3.5, 0.2, 8.8, 0, "份", 100, 87.0, 1, 2, "净重", "抱子甘蓝［小圆白菜］", "", 35.5, 59.0, 0.6, 38.0, 0],
+["羽衣甘蓝", "veg", 69.0, 5.0, 0.4, 5.7, 3.2, "份", 100, 100.0, 1, 2, "净重", "羽衣甘蓝", "", 66.8, 66.0, 1.6, 63.0, 0],
+["香菜", "veg", 33.0, 1.8, 0.4, 6.2, 1.2, "份", 100, 81.0, 1, 2, "净重", "香菜（鲜）［芫荽］", "", 48.5, 101.0, 2.9, 48.0, 0],
+["苋菜", "veg", 30.0, 2.8, 0.3, 5.0, 2.2, "份", 100, 74.0, 1, 2, "净重", "苋菜（绿，鲜）", "", 32.4, 187.0, 5.4, 47.0, 0],
+["茴香", "veg", 27.0, 2.5, 0.4, 4.2, 1.6, "份", 100, 86.0, 1, 2, "净重", "茴香（鲜）［小茴香］", "", 186.3, 154.0, 1.2, 26.0, 0],
+["竹笋", "veg", 23.0, 2.6, 0.2, 3.6, 1.8, "份", 100, 63.0, 1, 2, "净重", "竹笋（鲜）", "", 0.4, 9.0, 0.5, 5.0, 0],
+["春笋", "veg", 25.0, 2.4, 0.1, 5.1, 2.8, "份", 100, 66.0, 1, 2, "净重", "春笋（鲜）", "", 6.0, 8.0, 2.4, 5.0, 0],
+["冬笋", "veg", 42.0, 4.1, 0.1, 6.5, 0.8, "份", 100, 39.0, 1, 2, "净重", "冬笋（鲜）", "", 0, 22.0, 0.1, 1.0, 0],
+["毛笋", "veg", 23.0, 2.2, 0.2, 3.8, 1.3, "份", 100, 67.0, 1, 2, "净重", "毛笋（鲜）［毛竹笋］", "", 5.2, 16.0, 0.9, 9.0, 0],
+["百合", "veg", 166.0, 3.2, 0.1, 38.8, 1.7, "份", 100, 82.0, 1, 2, "净重", "百合（鲜）", "", 6.7, 11.0, 1.0, 18.0, 0],
+["芦笋", "veg", 19.0, 2.6, 0.1, 3.3, 0, "份", 100, 90.0, 1, 2, "净重", "芦笋（绿）［石刁柏、龙须菜］", "", 12.4, 9.0, 1.4, 7.0, 0],
+["红萝卜", "veg", 22.0, 1.0, 0.1, 4.6, 0.8, "份", 100, 97.0, 7, 14, "净重", "红萝卜［卞萝卜］", "", 62.7, 11.0, 2.8, 3.0, 0],
+["红心萝卜", "veg", 41.0, 1.2, 0, 9.8, 1.4, "份", 100, 94.0, 7, 14, "净重", "红心萝卜［心里美］", "", 49.1, 86.0, 0.9, 20.0, 0],
+["青萝卜", "veg", 29.0, 1.2, 0.2, 6.9, 0, "份", 100, 95.0, 7, 14, "净重", "青萝卜", "", 56.0, 47.0, 0.3, 7.0, 0],
+["樱桃萝卜", "veg", 12.0, 0.9, 0.1, 3.0, 0, "份", 100, 46.0, 7, 14, "净重", "樱桃萝卜", "", 82.6, 18.0, 0.4, 14.0, 0],
+["辣椒", "veg", 38.0, 1.3, 0.4, 8.9, 3.2, "份", 100, 80.0, 3, 5, "净重", "辣椒（红，小）", "", 2.6, 37.0, 1.4, 144.0, 0],
+["甜椒", "veg", 18.0, 1.0, 0.2, 3.8, 0, "份", 100, 82, 3, 5, "净重", "甜椒［灯笼椒、柿子椒］", "", 0, 0, 0, 130.0, 0],
+["菜瓜", "veg", 19.0, 0.6, 0.2, 3.9, 0.4, "份", 100, 88.0, 3, 5, "净重", "菜瓜［生瓜，白瓜］", "", 1.6, 20.0, 0.5, 12.0, 0],
+["节瓜", "veg", 14.0, 0.6, 0.1, 3.4, 1.2, "份", 100, 92.0, 3, 5, "净重", "节瓜［毛瓜］", "", 0.2, 4.0, 0.1, 39.0, 0],
+["蛇瓜", "veg", 18.0, 1.5, 0.1, 3.9, 2.0, "份", 100, 89.0, 3, 5, "净重", "蛇瓜［蛇豆，大豆角］", "", 2.2, 191.0, 1.2, 4.0, 0],
+["笋瓜", "veg", 13.0, 0.5, 0, 3.1, 0.7, "份", 100, 91.0, 3, 5, "净重", "笋瓜［生瓜］", "", 0, 14.0, 0.6, 5.0, 0],
+["扁豆", "veg", 41.0, 2.7, 0.2, 8.2, 2.1, "份", 100, 91.0, 1, 3, "净重", "扁豆［月亮菜］", "", 3.8, 38.0, 1.9, 13.0, 0],
+["蚕豆", "veg", 111.0, 8.8, 0.4, 19.5, 3.1, "份", 100, 31.0, 1, 3, "净重", "蚕豆（鲜）", "", 4.0, 16.0, 3.5, 16.0, 0],
+["刀豆", "veg", 40.0, 3.1, 0.3, 7.0, 1.8, "份", 100, 92.0, 1, 3, "净重", "刀豆（鲜）", "", 8.5, 49.0, 4.6, 15.0, 0],
+["豆角", "veg", 34.0, 2.5, 0.2, 6.7, 2.1, "份", 100, 96.0, 1, 3, "净重", "豆角", "", 3.4, 29.0, 1.5, 18.0, 0],
+["豌豆尖", "veg", 32.0, 4.8, 0.8, 2.6, 0, "份", 100, 100, 1, 2, "净重", "豌豆苗", "", 20.9, 15.0, 0.5, 8.0, 0],
+["油豆角", "veg", 25.0, 2.4, 0.3, 3.9, 1.6, "份", 100, 99.0, 1, 3, "净重", "油豆角（鲜）［多花菜豆］", "", 3.3, 69.0, 1.9, 11.0, 0],
+["甜脆荷兰豆", "veg", 32.0, 3.0, 0.3, 8.1, 6.8, "份", 100, 100.0, 1, 3, "净重", "甜脆荷兰豆［甜豆］", "", 4.4, 65.0, 0.7, 24.0, 0],
+["豌豆苗", "veg", 32.0, 4.8, 0.8, 2.6, 0, "份", 100, 100.0, 1, 3, "净重", "豌豆苗", "", 20.9, 15.0, 0.5, 8.0, 0],
+["芋头", "veg", 56.0, 1.3, 0.2, 12.7, 1.0, "份", 100, 88.0, 7, 14, "净重", "芋头［芋艿、毛芋］", "", 5.5, 11.0, 0.3, 1.5, 0],
+["慈姑", "veg", 97.0, 4.6, 0.2, 19.9, 1.4, "份", 100, 89.0, 3, 7, "净重", "慈姑（鲜）［乌芋，白地果］", "", 39.1, 14.0, 2.2, 4.0, 0],
+["茭白", "veg", 26.0, 1.2, 0.2, 5.9, 1.9, "份", 100, 74.0, 3, 7, "净重", "茭白（鲜）［茭笋，茭粑］", "", 5.8, 4.0, 0.4, 5.0, 0],
+["荸荠", "veg", 61.0, 1.2, 0.2, 14.2, 1.1, "份", 100, 78.0, 3, 7, "净重", "荸荠（鲜）［马蹄，地栗］", "", 15.7, 4.0, 0.6, 7.0, 0],
+["口蘑", "veg", 29.0, 3.5, 0.4, 3.8, 0, "份", 100, 100, 1, 3, "净重", "白蘑菇［双孢蘑菇、洋蘑菇］", "", 57.0, 6.0, 1.0, 0.1, 0],
+["海带菜", "veg", 13.0, 1.2, 0.1, 2.1, 0.5, "份", 100, 100, 1, 3, "净重", "海带（鲜）［江白菜］", "", 8.6, 46.0, 0.9, 0, 0],
+["柠檬", "fruit", 37.0, 1.1, 1.2, 6.2, 1.3, "份", 100, 66.0, 3, 7, "净重", "柠檬", "", 1.1, 101.0, 0.8, 22.0, 0],
+["李子", "fruit", 38.0, 0.7, 0.2, 8.7, 0.9, "份", 100, 91.0, 3, 7, "净重", "李子", "", 3.8, 8.0, 0.6, 5.0, 0],
+["西梅", "fruit", 42.0, 0.7, 0.1, 10.3, 0.7, "份", 100, 76.0, 3, 7, "净重", "西梅", "鲜西梅。西梅干约 240 kcal/100g，热量差 5 倍，别按同一个记", 3.2, 11.0, 0.1, 1.4, 0],
+["冬枣", "fruit", 113.0, 1.8, 0.2, 27.8, 2.2, "份", 100, 93.0, 3, 7, "净重", "冬枣", "", 33.0, 16.0, 0.2, 243.0, 0],
+["樱桃", "fruit", 46.0, 1.1, 0.2, 10.2, 0.3, "份", 100, 80.0, 3, 7, "净重", "樱桃", "", 8.0, 11.0, 0.4, 10.0, 0],
+["石榴", "fruit", 72.0, 1.3, 0.2, 18.5, 4.9, "份", 100, 57.0, 1, 2, "净重", "石榴（代表值）", "", 0.7, 6.0, 0.2, 8.0, 0],
+["菠萝", "fruit", 44.0, 0.5, 0.1, 10.8, 1.3, "份", 100, 68.0, 3, 7, "净重", "菠萝［凤梨，地菠萝］", "", 0.8, 12.0, 0.6, 18.0, 0],
+["火龙果", "fruit", 55.0, 1.1, 0.2, 13.3, 1.6, "份", 100, 69.0, 3, 7, "净重", "火龙果［仙蜜果、红龙果］", "", 2.7, 7.0, 0.3, 3.0, 0],
+["哈密瓜", "fruit", 34.0, 0.5, 0.1, 7.9, 0.2, "份", 100, 71.0, 3, 7, "净重", "哈密瓜", "", 26.7, 4.0, 0, 12.0, 0],
+["甜瓜", "fruit", 26.0, 0.4, 0.1, 6.2, 0.4, "份", 100, 78.0, 3, 7, "净重", "甜瓜［香瓜］", "", 8.8, 14.0, 0.7, 15.0, 0],
+["栗子", "fat", 188.0, 4.2, 0.7, 42.2, 1.7, "份", 100, 80.0, 60, 180, "净重", "栗子（鲜）［板栗］", "", 13.9, 17.0, 1.1, 24.0, 0],
+["榛子", "fat", 611.0, 30.5, 50.3, 13.1, 8.2, "份", 100, 21.0, 60, 180, "净重", "榛子（炒）", "", 153.0, 815.0, 5.1, 0, 0],
+["葵花子", "fat", 609.0, 23.9, 49.9, 19.1, 6.1, "份", 100, 50.0, 60, 180, "净重", "葵花子（生）", "", 5.5, 72.0, 5.7, 0, 0],
+["南瓜子", "fat", 582.0, 36.0, 46.1, 7.9, 4.1, "份", 100, 68.0, 60, 180, "净重", "南瓜子（炒）［白瓜子］", "", 15.8, 37.0, 6.5, 0, 0],
+["芝麻子", "fat", 536.0, 18.4, 39.6, 31.5, 9.8, "份", 100, 100.0, 60, 180, "净重", "芝麻子（白）", "", 32.2, 620.0, 14.1, 0, 0],
+["娃娃菜", "veg", 13.0, 1.9, 0.2, 2.4, 0, "颗", 250, 97.0, 3, 7, "净重", "娃娃菜", "", 19.3, 78.0, 0.4, 12.0, 0],
+["莲藕", "veg", 47.0, 1.2, 0.2, 11.5, 2.2, "段", 150, 88.0, 7, 14, "净重", "藕［莲藕］", "", 34.3, 18.0, 0.3, 19.0, 0],
+["银耳", "veg", 261.0, 10.0, 1.4, 67.3, 30.4, "份", 10, 96.0, 180, 365, "干重", "银耳（干）［白木耳］", "泡发后约8倍重", 82.1, 36.0, 4.1, 0, 0],
+["裙带菜", "veg", 219.0, 25.0, 1.7, 41.5, 31.1, "份", 5, 100.0, 180, 365, "干重", "裙带菜（干）［海芥菜，海木耳］", "泡发后约8倍重", 4411.6, 947.0, 16.4, 0, 0],
+["大葱", "veg", 28.0, 1.6, 0.3, 5.8, 2.2, "根", 30, 82.0, 7, 14, "净重", "大葱", "", 8.9, 63.0, 0.6, 3.0, 0],
+["紫甘蓝", "veg", 25.0, 1.2, 0.2, 6.2, 0, "颗", 250, 86.0, 7, 14, "净重", "结球甘蓝（紫）［圆白菜］", "", 27.0, 65.0, 0.4, 26.0, 0],
+["黑豆", "carb", 401.0, 36.0, 15.9, 33.6, 10.2, "份", 50, 100.0, 180, 365, "干重", "黑豆（干）［黑大豆］", "", 3.0, 224.0, 7.0, 0, 0],
+["松子", "fat", 665.0, 12.6, 62.6, 19.0, 12.4, "份", 15, 32.0, 60, 180, "净重", "松子（生）", "", 0, 3.0, 5.9, 0, 0],
+["山楂", "fruit", 102.0, 0.5, 0.6, 25.1, 3.1, "个", 10, 76.0, 7, 14, "净重", "红果［山里红，大山楂］", "", 5.4, 52.0, 0.9, 53.0, 0],
+["柿子", "fruit", 74.0, 0.4, 0.1, 18.5, 1.4, "个", 150, 87.0, 5, 10, "净重", "柿", "", 0.8, 9.0, 0.2, 30.0, 0],
+["橄榄油", "fat", 899.0, 0, 99.9, 0, 0, "勺", 10, 100.0, 365, 730, "净重", "橄榄油", "", 0, 0, 0.4, 0, 0],
+["螃蟹", "protein", 95.0, 13.8, 2.3, 4.7, 0, "只", 100, 55.0, 0, 0, "净重", "海蟹", "可食部约45%，按净肉算", 260.0, 208.0, 1.6, 0, 125.0],
+["鱿鱼", "protein", 84.0, 17.4, 1.6, 0, 0, "份", 100, 97.0, 0, 0, "净重", "鱿鱼（鲜，中国枪乌贼）［枪乌贼］", "", 110.0, 44.0, 0.9, 0, 268.0],
+["紫薯", "carb", 82, 1.5, 0.2, 18.9, 3.0, "个", 135, 90, 14, 30, "净重", "常见值（成分表未收录）", "成分表只有红心/白心甘薯，无紫薯单列；此为多库均值，实际 82–106 区间", 20, 23, 0.5, 2.4, 0],
+["红豆", "carb", 324, 20.2, 0.6, 63.4, 7.7, "份", 50, 100, 180, 365, "生重", "常见值（成分表未收录）", "干豆，需提前泡 4 小时", 2, 74, 7.4, 0, 0],
+["蓝莓", "fruit", 57, 0.7, 0.3, 14.5, 2.4, "盒", 100, 100, 1, 2, "净重", "常见值（成分表未收录）", "", 1, 6, 0.28, 9.7, 0],
+["全麦面包", "carb", 246, 8.5, 3.3, 45.0, 6.0, "片", 35, 100, 2, 3, "净重", "常见值（成分表未收录）", "按市售全麦吐司常见值", 400, 107, 2.5, 0, 0],
+["金枪鱼罐头", "protein", 116, 25.5, 1.0, 0.0, 0.0, "罐", 80, 100, 180, 365, "净重", "常见值（成分表未收录）", "水浸款、沥水后重量", 247, 11, 1.0, 0, 30],
+["牛腩", "protein", 123, 17.1, 5.4, 0.0, 0.0, "份", 100, 100, 0, 0, "净重", "常见值（成分表未收录）", "肥瘦相间，热量随脂肪比例波动大", 60, 10, 2.5, 0, 80],
+["藜麦", "carb", 368, 14.1, 6.1, 64.2, 7.0, "份", 50, 100, 180, 365, "生重", "常见值（成分表未收录）", "", 5, 47, 4.6, 0, 0],
+["年糕", "carb", 154, 3.3, 0.6, 34.7, 0.0, "份", 100, 100, 1, 3, "净重", "常见值（成分表未收录）", "", 30, 10, 0.3, 0, 0],
+["生抽", "other", 63, 5.6, 0.1, 10.1, 0.0, "勺", 15, 100, 365, 730, "净重", "常见值（成分表未收录）", "即酱油；钠含量高，一份菜约 10–20g", 5757, 66, 8.6, 0, 0],
+["老抽", "other", 70, 5.0, 0.1, 12.0, 0.0, "勺", 10, 100, 365, 730, "净重", "常见值（成分表未收录）", "上色用，用量少", 6000, 60, 5.0, 0, 0],
+["醋", "other", 31, 2.1, 0.3, 4.9, 0.0, "勺", 15, 100, 365, 730, "净重", "常见值（成分表未收录）", "", 262, 17, 6.0, 0, 0],
+["蚝油", "other", 114, 2.0, 0.2, 25.0, 0.0, "勺", 10, 100, 180, 365, "净重", "常见值（成分表未收录）", "含糖含盐", 4000, 30, 2.0, 0, 0],
+["白糖", "other", 400, 0.0, 0.0, 99.9, 0.0, "勺", 10, 100, 365, 730, "净重", "常见值（成分表未收录）", "一勺约 10g，约 40 kcal", 1, 1, 0.2, 0, 0],
+["蜂蜜", "other", 321, 0.4, 1.9, 75.6, 0.0, "勺", 15, 100, 365, 730, "净重", "常见值（成分表未收录）", "", 4, 6, 0.42, 0.5, 0],
+["淀粉", "other", 346, 1.2, 0.1, 85.0, 0.0, "勺", 8, 100, 365, 730, "净重", "常见值（成分表未收录）", "勾芡用", 4, 8, 0.5, 0, 0],
+["乳清蛋白粉", "protein", 400.0, 80.0, 5.0, 8.0, 0.0, "勺", 30, 100, 180, 365, "净重", "常见值（成分表未收录）", "一平勺约 30g，含蛋白约 24g；选分离乳清脂肪更低，冲时水温别超 50℃", 200, 500, 1.0, 0, 15],
+["鸡腿肉（去皮）", "protein", 121.0, 19.7, 4.1, 0.0, 0.0, "个", 130, 100, 0, 0, "净重", "USDA SR Legacy：Chicken, thigh, meat only, raw", "去皮净肉。比带皮鸡腿低约 25 kcal/100g；中国鸡种更瘦，实际可能再低 5–10%", 60, 10, 1.0, 0, 90],
+["鸭腿肉（去皮）", "protein", 135.0, 18.3, 6.0, 0.0, 0.0, "个", 130, 100, 0, 0, "净重", "USDA SR Legacy：Duck, meat only, raw", "去皮净肉。鸭肉不分部位的通用值，鸭腿脂肪通常略高于鸭胸", 70, 10, 2.3, 0, 80],
+["鸭腿肉（带皮）", "protein", 233.0, 16.5, 18.5, 0.0, 0.0, "个", 135, 100, 0, 0, "净重", "常见值（成分表未收录）", "带皮鸭腿，卤鸭腿/烤鸭腿常见。比去皮高约 100 kcal，鸭皮脂肪占大头", 70, 12, 2.4, 0, 95],
+["荞麦面", "carb", 358.5, 12.2, 1.5, 72.8, 2.0, "份", 60, 100, 180, 365, "干重", "包装营养成分表", "每份 60g：900kJ / 蛋白 7.3g / 脂肪 0.9g / 碳水 43.7g / 钠 35mg。非油炸方便面", 58.0, 30.0, 2.0, 0, 0],
+["芝麻酱", "other", 618.0, 19.2, 52.7, 16.8, 5.9, "勺", 15, 100, 180, 365, "净重", "常见值（成分表未收录）", "一勺 15g 约 93 kcal，脂肪高，减脂期按勺算别按倒", 10, 1170, 50.3, 0, 0],
+["辣椒油", "other", 900.0, 0.0, 100.0, 0.0, 0.0, "勺", 10, 100, 365, 730, "净重", "辣椒油", "几乎纯油，一勺 10g 就是 90 kcal。食堂的辣多半是这种", 0, 0, 0, 0, 0],
+["豆瓣酱", "other", 178.0, 13.6, 6.8, 17.1, 1.5, "勺", 15, 100, 90, 180, "净重", "常见值（成分表未收录）", "极咸，钠很高。炒菜放一勺就要少放盐和生抽", 6012, 53, 16.4, 0, 0],
+["番茄酱", "other", 81.0, 4.9, 0.2, 16.9, 2.0, "勺", 15, 100, 90, 180, "净重", "常见值（成分表未收录）", "注意是番茄沙司（含糖），不是纯番茄膏。开封后尽快用完", 1100, 28, 1.1, 0, 0],
+["料酒", "other", 60.0, 0.2, 0.0, 5.0, 0.0, "勺", 10, 100, 180, 365, "净重", "常见值（成分表未收录）", "热量主要来自酒精，加热后大部分挥发，实际摄入远低于标注", 1000, 10, 0.3, 0, 0],
+["鸡精", "other", 195.0, 10.0, 0.5, 36.0, 0.0, "小勺", 5, 100, 365, 730, "净重", "常见值（成分表未收录）", "含盐约 40%，用了它盐要减半", 20000, 30, 1.0, 0, 0],
+["味精", "other", 268.0, 40.1, 0.2, 26.5, 0.0, "小勺", 4, 100, 365, 730, "净重", "常见值（成分表未收录）", "钠约为盐的三分之一，出锅前放，久煮失鲜", 8160, 20, 1.2, 0, 0],
+["花椒", "other", 258.0, 6.7, 8.9, 66.5, 28.7, "小勺", 3, 100, 365, 730, "净重", "常见值（成分表未收录）", "整粒炝锅或磨粉，热油泼香更出味", 47, 639, 8.4, 0, 0],
+["辣椒粉", "other", 282.0, 15.4, 12.0, 57.4, 41.7, "小勺", 3, 100, 365, 730, "净重", "常见值（成分表未收录）", "一勺 3g 只有 8 kcal，提味几乎不加热量", 30, 148, 10.0, 0, 0],
+["孜然粉", "other", 375.0, 17.8, 22.3, 44.2, 10.5, "小勺", 3, 100, 365, 730, "净重", "常见值（成分表未收录）", "配牛肉、羊肉最搭，干锅类必备", 168, 931, 36.8, 0, 0],
+["五香粉", "other", 348.0, 12.0, 8.0, 68.0, 20.0, "小勺", 3, 100, 365, 730, "净重", "常见值（成分表未收录）", "卤味、红烧一勺就够，放多会苦", 60, 300, 10.0, 0, 0],
+["咖喱粉", "other", 325.0, 12.7, 13.8, 55.8, 33.0, "小勺", 5, 100, 365, 730, "净重", "常见值（成分表未收录）", "纯咖喱粉几乎无油糖；市售咖喱块脂肪很高，别混用", 50, 525, 19.1, 0, 0],
+["黑胡椒", "other", 251.0, 10.4, 3.3, 63.9, 25.3, "小勺", 2, 100, 365, 730, "净重", "常见值（成分表未收录）", "现磨更香，煎鸡胸、蒸蛋都合适", 44, 443, 9.7, 0, 0],
+["白胡椒", "other", 357.0, 9.6, 2.2, 74.6, 26.2, "小勺", 2, 100, 365, 730, "净重", "常见值（成分表未收录）", "汤类去腥提鲜，比黑胡椒更温和", 10, 30, 1.3, 0, 0],
+["姜粉", "other", 273.0, 8.6, 5.6, 64.0, 13.0, "小勺", 2, 100, 365, 730, "净重", "常见值（成分表未收录）", "没鲜姜时的替代，去腥够用", 60, 120, 8.0, 0, 0],
+["辣椒面", "other", 269.6, 14.1, 3.3, 45.1, 12.0, "勺", 3, 100, 365, 730, "净重", "包装营养成分表", "麻辣蘸水料。每100g含钠 13795mg——一勺3g就有 410mg 钠，比半勺生抽还咸，用了它别的盐要全省", 13795, 180, 5.0, 0, 0]
+];
+const RCP=[
+{"n": "水煮蛋配蒸红薯", "c": "早", "t": 20, "d": "一锅两层，蛋和主食同时出", "m": ["鸡蛋", "红薯"], "o": [], "s": ["红薯刷洗干净，不去皮，切成 2cm 厚片，太厚中心难熟", "锅加 600ml 冷水，鸡蛋直接放进去，不必等水开", "蒸格架在鸡蛋上方，铺上红薯片，盖盖", "最大档烧开，水开后开始计时", "中档煮 10 分钟，中途别开盖跑汽", "第 10 分钟用筷子戳红薯最厚处检验", "鸡蛋捞出立刻放进冷水泡 1 分钟", "红薯取出稍晾 2 分钟再吃"], "chk": "筷子能轻松穿透红薯最厚处、无硬芯；鸡蛋过冷水后一敲壳整片脱落", "bad": "红薯切太厚会外烂内生；鸡蛋不过冷水，壳会粘住蛋白剥不干净", "k": 0, "tip": "红薯切2cm块熟得更快，筷子能穿透即可"},
+{"n": "蒸蛋羹", "c": "早", "t": 15, "d": "蛋液兑1.5倍温水，滑嫩不起蜂窝", "m": ["鸡蛋"], "o": ["虾皮"], "s": ["2 个鸡蛋打入碗中，打到看不见蛋筋为止", "加 1.5 倍温水（约 130ml），水温摸起来不烫手", "顺着一个方向搅匀，别用力打出一堆泡", "用勺子把表面浮沫撇干净，这步决定表面平不平", "蛋液过一遍筛更细腻，没有筛可跳过", "碗上倒扣一个盘子，防止水汽滴落打出蜂窝", "水开后放进锅里，中档蒸 10 分钟", "关火后焖 2 分钟再开盖，避免骤冷回缩", "淋几滴生抽，撒一点虾皮提鲜"], "chk": "表面平整无蜂窝，勺子轻压中间有弹性、不渗水", "bad": "用冷水或水加太少，蛋羹会老且硬；火太大或不盖盘子必起蜂窝", "k": 0, "tip": "盖盘子比保鲜膜省事，也不会滴水"},
+{"n": "燕麦豆浆杯", "c": "早", "t": 6, "d": "不用开火，热水一冲就行", "m": ["燕麦", "豆浆"], "o": ["核桃"], "s": ["燕麦 40g 倒进碗里", "烧 200ml 沸水，冲入燕麦，水量要完全没过", "盖个盘子焖 3 分钟，让燕麦充分吸水", "掀开搅一下，看是否已经糊化发稠", "倒入豆浆 250ml，搅拌均匀", "豆浆是凉的，会把整碗带温，想热喝多一步", "连碗放回锅里隔水焐 2 分钟即可回温", "撒核桃碎，掰小块口感更好"], "chk": "燕麦吸饱水、舀起来挂勺不稀汤", "bad": "直接拿凉豆浆泡不软，必须先用水焖；水太少会干硬结块", "k": 0, "tip": "先用水焖软，再加豆浆口感更顺"},
+{"n": "酸奶燕麦杯", "c": "免", "t": 3, "d": "完全免煮，前一晚也能做", "m": ["燕麦", "酸奶"], "o": ["苹果", "核桃"], "s": ["燕麦 40g 倒进碗里", "先加 2 勺酸奶拌一下，让每片燕麦都沾到", "把剩下的酸奶全部倒入", "拌匀后静置 3 分钟，让燕麦吸水变软", "苹果洗净带皮切 1cm 小丁，别切太大", "苹果丁铺在表面，吃前再拌避免出水", "撒核桃碎增加口感", "想更饱腹可冷藏 10 分钟再吃"], "chk": "燕麦吸酸奶后变软、不硌牙，碗底无多余渗水", "bad": "只有即食燕麦适合免煮；生燕麦片泡不软，会硌牙且难消化", "k": 1, "tip": "选无糖酸奶，风味款通常多30kcal以上"},
+{"n": "小米粥", "c": "早", "t": 25, "d": "养胃，配个蛋就是完整早餐", "m": ["小米"], "o": [], "s": ["小米 50g 用清水轻轻淘一遍，别反复搓洗", "淘完沥干水分，不要泡", "锅加 500ml 冷水，直接下小米", "最大档烧开，这期间锅盖别盖严，很容易溢", "水开后转最小档，锅盖留一条缝", "煮 20 分钟，中途搅 2 次防止粘底", "看到米粒开花、汤色发黄变稠就好", "关火再焖 3 分钟，口感更糯"], "chk": "米粒开花、汤体浓稠，勺子背能挂住一层米汤", "bad": "全程大火会溢锅糊底；水开前盖严必溢；淘洗过度会损失香味", "k": 0, "tip": "水开后可开盖留条缝，防止溢锅"},
+{"n": "玉米配水煮蛋", "c": "早", "t": 18, "d": "最省心的组合，几乎不用管", "m": ["玉米", "鸡蛋"], "o": [], "s": ["玉米剥掉外层老皮，保留最里面一层薄皮", "切成 2-3 段，段越短熟得越快", "冷水下锅，水量与玉米齐平", "鸡蛋一起放进去，冷水下锅不易裂壳", "最大档烧开，水开后开始计时", "中档煮 10 分钟", "关火焖 2 分钟让玉米更入味", "玉米捞出，鸡蛋立刻过冷水"], "chk": "玉米粒饱满发亮、指甲掐有汁；蛋黄完全凝固不流心", "bad": "水开后才下蛋容易裂壳流白；玉米煮过头会失去甜味变韧", "k": 0, "tip": "玉米带一层内皮一起煮更甜"},
+{"n": "牛奶燕麦粥", "c": "早", "t": 8, "d": "奶香版燕麦，比水冲的扛饿", "m": ["燕麦", "牛奶"], "o": ["香蕉"], "s": ["燕麦 40g 加 100ml 水入锅", "最大档烧开，让燕麦先吸水", "转最小档煮 2 分钟", "倒入牛奶 250ml，边倒边搅", "保持最小档，看到锅边冒小泡就准备关火", "不要等大滚，牛奶一沸就溢", "关火盖盖焖 1 分钟", "香蕉切片铺在表面"], "chk": "粥体顺滑挂勺、奶香明显，锅底无焦糊", "bad": "牛奶大火煮沸会溢锅、糊底发苦；煮太久奶会分层出水", "k": 0, "tip": "牛奶别大火久煮，容易糊底和溢锅"},
+{"n": "番茄鸡蛋面", "c": "早", "t": 18, "d": "番茄先出汤，面才有味", "m": ["番茄", "鸡蛋", "米粉"], "o": ["小白菜"], "s": ["番茄顶部划十字，用开水烫 30 秒后撕掉皮", "去皮后切小块，去皮和不去皮口感差别很大", "冷水下番茄，最大档烧开", "转小档煮 5 分钟，煮到番茄软烂出红汤", "用勺子背面压一压番茄块，帮助出汁", "下米粉煮 3 分钟", "蛋液绕圈慢慢淋入，静置 10 秒再轻推", "下小白菜烫 30 秒，加盐关火"], "chk": "汤色橙红不发白、蛋花成片不浑汤，米粉能夹起不断", "bad": "番茄没煮透汤会寡淡发白；蛋液一下锅就搅会碎成渣；面条久煮会糊", "k": 0, "tip": "番茄煮到软烂出红汤，不用加番茄酱"},
+{"n": "白灼虾仁", "c": "主", "t": 8, "d": "90秒就熟，煮久必老", "m": ["虾仁"], "o": ["姜"], "s": ["冷冻虾仁提前用冷水泡 10 分钟解冻，别用热水", "用牙签从背部第二节挑出黑色虾线", "冲洗干净，用厨房纸吸干水分", "锅加 500ml 水，放 2 片姜，最大档烧到完全沸腾", "虾仁分散下锅，别堆成一团", "约 90 秒，看虾身变粉红、卷成 C 形", "立刻捞出，别在热水里泡着", "生抽加几滴醋调蘸汁"], "chk": "虾身卷成 C 形、通体粉红不透白，咬开有汁", "bad": "卷成 O 形就是煮老了；冷水下锅会又老又柴；不挑虾线会有沙感", "k": 0, "tip": "虾仁变弯成C形刚好，卷成O形就老了"},
+{"n": "水煎鸡胸", "c": "主", "t": 18, "d": "锅底一层水，盖盖焖，不柴不糊", "m": ["鸡胸肉"], "o": [], "s": ["鸡胸横着片成 1cm 厚，厚度均匀才熟得一致", "用刀背轻拍几下，把纤维拍松", "撒盐和黑胡椒，抹匀腌 5 分钟", "锅底加 1 汤匙水（约 15ml），不用放油", "下鸡胸，盖盖，开最小档", "焖 6 分钟，中途不要开盖", "翻面再焖 4 分钟", "关火后利用余温再焖 2 分钟", "切开看中心，不见粉色即可"], "chk": "中心切开呈白色、有清亮汁水，按压能回弹", "bad": "火大或水烧干会糊底发焦；煮过头纤维紧缩，越嚼越干", "k": 0, "tip": "关火后再焖2分钟，中心更嫩"},
+{"n": "番茄虾仁豆腐煲", "c": "主", "t": 18, "d": "一锅到底，汤汁能泡饭", "m": ["虾仁", "番茄", "内酯豆腐"], "o": ["金针菇"], "s": ["番茄划十字烫 30 秒去皮，切小块", "内酯豆腐撕开一角，倒扣滑出，切 2cm 方块", "冷水下番茄，最大档烧开", "转小档煮 5 分钟，压出红汤", "下金针菇煮 2 分钟去土腥味", "轻轻推入豆腐块，不要搅动", "小档煮 3 分钟，让豆腐吸味", "最后下虾仁煮 90 秒", "盐和白胡椒调味，关火"], "chk": "豆腐完整不碎、汤汁橙红，虾仁卷曲透红", "bad": "豆腐下锅就搅会碎成渣；虾仁和豆腐同下，虾老豆腐碎", "k": 0, "tip": "豆腐最后放，久煮会碎"},
+{"n": "蒜香西兰花", "c": "主", "t": 8, "d": "焯后拌蒜，比水煮好吃太多", "m": ["西兰花"], "o": ["大蒜"], "s": ["西兰花掰成小朵，粗茎削皮切片，别扔掉", "用淡盐水泡 5 分钟，冲净缝隙里的杂质", "锅加 600ml 水，滴几滴油", "最大档烧到滚开，水要够滚", "下西兰花，保持大火", "焯 3 分钟，颜色变深绿就捞", "立刻捞出沥干，别留在热水里", "蒜末加生抽，浇上拌匀"], "chk": "颜色翠绿发亮、茎部能用指甲掐动但掐不断", "bad": "焯过头会发黄出水、闻着有股菜青味；不沥干会稀释调味", "k": 0, "tip": "水里加几滴油，颜色更绿"},
+{"n": "菌菇豆腐汤", "c": "汤", "t": 15, "d": "菌菇提鲜，几乎不用调味", "m": ["内酯豆腐", "金针菇"], "o": ["香菇", "小白菜"], "s": ["金针菇切掉根部 1cm，撕散洗净", "香菇切片，小白菜洗净备用", "冷水下菌菇，最大档烧开", "转小档煮 3 分钟，让菌菇出鲜味", "内酯豆腐切块，轻轻推入锅中", "小档煮 3 分钟", "下小白菜烫 1 分钟", "盐、白胡椒，滴几滴香油"], "chk": "汤色清亮带明显菌菇鲜味，金针菇完全软塌", "bad": "金针菇没煮透会有土腥味，还可能引起肠胃不适；豆腐久煮会碎", "k": 0, "tip": "金针菇一定要煮透，别图脆"},
+{"n": "涮牛肉片", "c": "主", "t": 12, "d": "薄片30秒，嫩且不柴", "m": ["牛里脊"], "o": ["菠菜", "姜"], "s": ["牛里脊逆着纹理切 2mm 薄片，逆纹是关键", "切好的肉片摊开放，别叠在一起粘连", "锅加 600ml 水，放姜片，最大档烧到滚开", "先下菠菜烫 1 分钟，捞出垫在碗底", "保持水滚，肉片一片片下，不要一次倒", "30 秒，肉片一变色立刻捞出", "铺在菠菜上", "淋生抽，按口味加醋或辣椒"], "chk": "肉片刚变灰褐色、边缘微卷，咬开无血水", "bad": "一次下太多，水温骤降，肉会又老又腥；顺纹切怎么煮都嚼不动", "k": 0, "tip": "一次别下太多，水温掉了就老"},
+{"n": "白灼菠菜", "c": "主", "t": 6, "d": "30秒出锅，去草酸又保脆", "m": ["菠菜"], "o": ["大蒜"], "s": ["菠菜洗净，根部泥沙要重点冲", "切成两段，茎和叶分开放", "锅加 600ml 水，滴几滴油", "最大档烧到滚开", "先下茎部烫 15 秒", "再下叶子，总共不超过 30 秒", "立刻捞出，过一遍凉开水", "挤干水分，蒜末生抽拌匀"], "chk": "颜色深绿发亮、茎部脆而不软，无涩口", "bad": "煮久会发黄发涩；不过凉水，余温会继续加热把它焖软", "k": 0, "tip": "菠菜别久煮，30秒足够去涩"},
+{"n": "鸡胸番茄汤", "c": "汤", "t": 18, "d": "低脂高蛋白，汤也有味道", "m": ["鸡胸肉", "番茄"], "o": ["金针菇"], "s": ["番茄烫皮切块，鸡胸逆纹切薄片", "冷水下番茄，最大档烧开", "小档煮 5 分钟，压出红汤", "下金针菇煮 2 分钟", "转最大档，让汤重新滚起来", "鸡胸片一片片下锅", "煮 1-2 分钟，变色即关火", "盐和黑胡椒调味"], "chk": "鸡片发白不透明、咬开有汁不柴", "bad": "鸡胸久煮纤维收缩会柴；汤不滚时下肉容易腥且脱浆", "k": 0, "tip": "鸡胸切薄一点，1分钟就熟"},
+{"n": "清蒸鳕鱼", "c": "主", "t": 15, "d": "不用油也好吃，肉一瓣一瓣", "m": ["鳕鱼"], "o": ["姜"], "s": ["冷冻鳕鱼提前放冷藏或冷水解冻，别用热水冲", "用厨房纸把表面水分彻底吸干", "两面抹一层薄盐，铺上姜片", "锅加 500ml 水，放蒸格，最大档烧到上汽", "放入鱼，盖盖，中档蒸 8 分钟", "取出后倒掉盘中蒸出的水，这步是去腥关键", "重新铺一点葱丝", "淋一勺生抽即可"], "chk": "鱼肉能用筷子一片片分开、呈蒜瓣状，中心不透明", "bad": "蒸出的水不倒会腥；蒸太久肉会散、发柴，一夹就碎", "k": 0, "tip": "蒸出来的水要倒掉，不然腥"},
+{"n": "番茄鸡蛋汤", "c": "汤", "t": 12, "d": "最经典的一碗，十分钟搞定", "m": ["番茄", "鸡蛋"], "o": ["小白菜"], "s": ["番茄烫皮切小块，鸡蛋打散备用", "蛋液多打几下，让蛋清蛋黄完全混匀", "冷水下番茄，最大档烧开", "小档煮 5 分钟，压出红汤", "下小白菜煮 1 分钟", "转中档，蛋液绕圈慢慢淋入", "静置 10 秒，再用勺背轻推一下", "加盐、几滴香油，关火"], "chk": "蛋花成片漂浮、汤色橙红清亮", "bad": "淋完立刻搅会变成蛋渣；汤不够热时淋蛋不成形，会沉底", "k": 0, "tip": "淋蛋液后别马上搅，蛋花才成片"},
+{"n": "鲫鱼豆腐汤", "c": "汤", "t": 25, "d": "汤色奶白，蛋白和钙都够", "m": ["鲫鱼", "内酯豆腐"], "o": ["姜"], "s": ["鲫鱼去鳞去内脏，腹腔里的黑膜要刮干净", "用厨房纸吸干鱼身水分", "两面各划两刀，深至骨，方便出味", "锅加 700ml 冷水，放姜片，直接下鱼", "最大档烧开，撇净浮沫", "转小档煮 10 分钟，汤色转白", "轻轻推入豆腐块，再煮 8 分钟", "加盐，撒葱花"], "chk": "汤色奶白浓稠、鱼肉能整块脱骨", "bad": "热水下锅汤不白；不撇浮沫汤会腥且浑；翻动太勤鱼会散", "k": 0, "tip": "一定要冷水下锅，汤才会白"},
+{"n": "白灼鸡腿", "c": "主", "t": 20, "d": "整只煮再撕，比切块嫩", "m": ["鸡腿肉"], "o": ["姜", "大蒜"], "s": ["鸡腿冲洗干净，表面划两刀便于入味和熟透", "冷水下锅，水量要完全没过鸡腿", "放姜片，最大档烧开", "撇净浮沫", "转小档煮 12 分钟", "关火，盖盖焖 5 分钟，这步决定嫩不嫩", "捞出过凉开水，肉质更紧实", "撕成条，淋生抽蒜末"], "chk": "筷子扎最厚处无血水渗出、肉能轻松撕开", "bad": "不焖直接捞中心会带血；煮过头肉纤维会散成丝", "k": 0, "tip": "焖这一步别省，中心才熟透不柴"},
+{"n": "秋葵蒸蛋", "c": "主", "t": 15, "d": "秋葵切片铺面，好看也好吃", "m": ["秋葵", "鸡蛋"], "o": [], "s": ["秋葵洗净，切掉蒂部硬边", "斜切成 3mm 薄片，太厚会沉底", "鸡蛋打散，加 1.5 倍温水搅匀", "撇去表面浮沫", "蛋液过筛倒入碗中", "秋葵片轻轻铺在表面，别用力压", "盖上盘子，水开后中火蒸 10 分钟", "关火焖 2 分钟，淋生抽"], "chk": "蛋面平整、秋葵片嵌在表面不下沉", "bad": "秋葵切太厚会沉底；蒸前先焯水会失去特有的黏滑口感", "k": 0, "tip": "秋葵别提前焯，蒸的时候刚熟最好"},
+{"n": "蒜蓉油麦菜", "c": "主", "t": 6, "d": "水焯加蒜，三十秒的一道菜", "m": ["油麦菜"], "o": ["大蒜"], "s": ["油麦菜掰开洗净，沥干水分", "切成 5cm 段，茎叶分开", "锅加 600ml 水，滴几滴油", "最大档烧滚", "先下茎部烫 15 秒", "再下叶子，总共 30 秒", "立刻捞出，摊开散热", "蒜末生抽拌上"], "chk": "颜色翠绿、茎部脆嫩能轻松折断", "bad": "焯久会发黄出水；捞出堆着不摊开，余温会把它焖软", "k": 0, "tip": "焯水时间长了会发黄出水"},
+{"n": "荞麦面拌黄瓜", "c": "主", "t": 15, "d": "面菜一锅，凉了更好吃", "m": ["荞麦面", "黄瓜"], "o": ["大蒜"], "s": ["锅加 700ml 水，最大档烧开", "下荞麦面，用筷子拨散防粘", "煮 5 分钟，中途加一次冷水", "挑起一根咬断，中心无白芯即熟", "捞出立刻过凉开水，多过两遍", "同锅水焯点青菜，捞出", "黄瓜拍碎切段，加蒜末", "生抽、醋、几滴香油拌匀"], "chk": "面条爽滑有弹性、咬断无白芯，不粘成团", "bad": "不过凉水会粘成一坨；煮过头会断、汤变糊", "k": 0, "tip": "荞麦面煮好过凉水更弹"},
+{"n": "糙米饭", "c": "主", "t": 35, "d": "提前泡，口感才不硬", "m": ["糙米"], "o": [], "s": ["糙米 150g 淘洗一遍", "加冷水没过，浸泡 30 分钟，这步不能省", "泡好后倒掉泡米水，重新加 1.5 倍清水", "最大档烧开", "转最小档，盖盖留一条缝", "煮 20 分钟", "关火焖 10 分钟，中途别开盖", "用勺子翻松再盛"], "chk": "米粒饱满开花、咬开无硬芯、有嚼劲", "bad": "不泡直接煮会很硬；中途开盖会夹生；水量不足会糊底", "k": 0, "tip": "不泡直接煮会很硬，泡是必须的"},
+{"n": "红薯糙米粥", "c": "早", "t": 30, "d": "自带甜味，不用加糖", "m": ["红薯", "糙米"], "o": [], "s": ["糙米提前泡 30 分钟", "红薯去皮切 1.5cm 小丁", "倒掉泡米水，糙米下锅", "加 600ml 冷水，最大档烧开", "转小档煮 15 分钟", "下红薯丁，再煮 10 分钟", "搅匀，看到红薯化开起沙", "关火焖 5 分钟"], "chk": "米粒开花、红薯软烂起沙、粥体浓稠挂勺", "bad": "红薯和米同时下会烂成泥；水太少容易糊底发苦", "k": 0, "tip": "红薯切小丁更容易煮化"},
+{"n": "蒸南瓜", "c": "早", "t": 20, "d": "最省事的主食替代", "m": ["南瓜"], "o": [], "s": ["南瓜去皮，切成 2cm 厚片", "挖掉瓤和籽", "皮面朝下摆进蒸格，受热更均匀", "锅加 500ml 水，最大档烧到上汽", "放入南瓜，盖盖", "中档蒸 15 分钟", "用筷子戳最厚处检验", "能轻松穿透即取出"], "chk": "筷子轻松穿透、边缘微微起沙、闻着有甜香", "bad": "切片太薄会蒸烂成泥；蒸太久会出水变淡", "k": 0, "tip": "南瓜水分大，饱腹感强热量低"},
+{"n": "粉丝菌菇煲", "c": "汤", "t": 18, "d": "粉丝吸汤，很有满足感", "m": ["粉丝", "金针菇"], "o": ["小白菜", "内酯豆腐"], "s": ["粉丝用温水泡 10 分钟至软", "金针菇去根撕散，青菜洗净", "冷水下菌菇，最大档烧开", "小档煮 3 分钟出鲜味", "下豆腐块煮 2 分钟", "下粉丝，煮 3 分钟", "下青菜烫 30 秒", "盐、白胡椒调味"], "chk": "粉丝透明柔软、吸饱汤汁又不粘连", "bad": "粉丝煮久会糊成一团；冷水直接煮粉丝容易断", "k": 0, "tip": "粉丝最后放，煮久会糊成一团"},
+{"n": "米粉汤", "c": "主", "t": 15, "d": "一锅出，菜和主食都有", "m": ["米粉", "油麦菜"], "o": ["鸡蛋"], "s": ["干米粉用温水泡 10 分钟", "锅加 600ml 水，最大档烧开", "下米粉煮 3 分钟", "打入鸡蛋，先别搅，让它定型", "煮 2 分钟至蛋熟", "下油麦菜烫 30 秒", "加盐、生抽调味", "关火盛出"], "chk": "米粉软而不烂、能夹起不断，鸡蛋完整", "bad": "不泡直接煮外烂内生；鸡蛋一入锅就搅会散成蛋花", "k": 0, "tip": "干米粉先泡10分钟更好煮"},
+{"n": "番茄豆腐烩饭", "c": "主", "t": 20, "d": "剩饭的最好归宿", "m": ["米饭", "番茄", "内酯豆腐"], "o": ["鸡蛋"], "s": ["番茄烫皮切块，豆腐切 2cm 方块", "冷水下番茄，最大档烧开", "小档煮 5 分钟出红汤", "推入豆腐煮 3 分钟", "倒入米饭，先用勺背把结块压散", "小档煮 2 分钟，让米饭吸汤", "搅匀收汁", "加盐调味"], "chk": "米粒吸饱汤汁但仍成粒、不糊成粥状", "bad": "米饭久煮会成粥；冷饭结块不先压散会外烂内硬", "k": 0, "tip": "米饭别煮太久，不然成粥"},
+{"n": "蒸山药", "c": "早", "t": 20, "d": "绵密饱腹，替代一半主食", "m": ["山药"], "o": [], "s": ["戴手套给山药削皮，黏液会让手发痒", "冲净，切 5cm 长段", "粗的纵切两半，让厚度一致", "摆进蒸格", "锅加 500ml 水，最大档烧到上汽", "盖盖，中档蒸 15 分钟", "用筷子戳最粗的一段", "能穿透即好，取出稍晾"], "chk": "筷子轻松插入、断面绵密不脆、入口不麻", "bad": "徒手削皮会手痒；蒸不透会有麻嘴的生涩感", "k": 0, "tip": "去皮时戴手套，黏液会让手发痒"},
+{"n": "玉米鸡蛋羹", "c": "早", "t": 18, "d": "玉米粒铺面，甜咸都行", "m": ["玉米", "鸡蛋"], "o": [], "s": ["玉米粒剥下来，或用刀贴着芯削", "玉米粒先焯 1 分钟断生", "鸡蛋打散，加 1.5 倍温水", "撇去表面浮沫", "拌入玉米粒", "盖上盘子", "水开后中火蒸 10 分钟", "关火焖 2 分钟"], "chk": "蛋面平滑、玉米粒均匀分布不下沉", "bad": "生玉米粒直接蒸会硬；火太大或没盖盘子会起蜂窝", "k": 0, "tip": "玉米粒先焯1分钟更容易熟"},
+{"n": "番茄清汤锅", "c": "汤", "t": 25, "d": "什么都能下，最适合清库存", "m": ["番茄", "内酯豆腐"], "o": ["金针菇", "小白菜", "粉丝", "虾仁"], "s": ["番茄烫皮切块，作为汤底", "粉丝提前泡软，菌菇去根，青菜洗净", "冷水下番茄，最大档烧开", "小档煮 6 分钟，压出浓汤", "下金针菇煮 3 分钟", "下粉丝煮 2 分钟", "推入豆腐煮 3 分钟", "下虾仁煮 90 秒，最后 30 秒下青菜", "盐调味，关火"], "chk": "汤色橙红、各料分明，青菜翠绿不烂", "bad": "一股脑全倒进去，绿叶菜会烂、虾仁会老、豆腐会碎", "k": 0, "tip": "按耐煮程度分批下，别一股脑倒进去"},
+{"n": "菌菇蔬菜锅", "c": "汤", "t": 20, "d": "鲜味全靠菌菇，不用高汤", "m": ["香菇", "小白菜"], "o": ["金针菇", "内酯豆腐", "平菇"], "s": ["香菇去蒂切片，平菇撕条", "金针菇去根撕散", "全部冷水下锅，这是出鲜味的关键", "最大档烧开", "转小档煮 5 分钟", "推入豆腐煮 3 分钟", "下小白菜烫 1 分钟", "盐、白胡椒调味"], "chk": "汤清而有明显菌菇鲜味、菌菇完全软塌", "bad": "菌菇热水下锅鲜味出不来；小白菜久煮会发黄", "k": 0, "tip": "菌菇冷水下锅，鲜味才出得来"},
+{"n": "豆腐蔬菜煲", "c": "汤", "t": 16, "d": "北豆腐吸味，越煮越香", "m": ["北豆腐", "小白菜"], "o": ["番茄", "香菇"], "s": ["北豆腐切 2cm 方块", "另烧一锅水，豆腐焯 1 分钟去豆腥", "捞出沥干", "锅加 600ml 冷水，下豆腐", "最大档烧开转小档", "煮 5 分钟让豆腐入味", "下小白菜煮 1 分钟", "加盐、几滴香油"], "chk": "豆腐内部出现小孔、吸饱汤汁，夹起不散", "bad": "北豆腐不焯会有豆腥味；翻动太勤会碎", "k": 0, "tip": "北豆腐先焯水去豆腥更好吃"},
+{"n": "海带豆腐汤", "c": "汤", "t": 15, "d": "清口、低热量，适合晚上", "m": ["海带", "内酯豆腐"], "o": ["虾皮"], "s": ["干海带提前泡 30 分钟，中途换一次水", "洗净后切细条", "冷水下海带，最大档烧开", "转小档煮 5 分钟", "推入豆腐块", "煮 3 分钟", "加虾皮和盐，再煮 1 分钟", "关火"], "chk": "海带软而不烂、汤带海味，豆腐完整", "bad": "干海带不泡直接煮会硬；虾皮本身有盐，先尝再放盐", "k": 0, "tip": "加一小撮虾皮，鲜味翻倍还补钙"},
+{"n": "番茄牛腱煲", "c": "汤", "t": 50, "d": "时间长但不用管，适合周末", "m": ["牛腱", "番茄"], "o": ["洋葱", "胡萝卜"], "s": ["牛腱切 3cm 块", "冷水下锅焯，水开后撇净浮沫", "捞出用温水冲净，别用冷水，肉会紧缩", "番茄烫皮切块，洋葱切块", "牛腱、番茄、洋葱一起下锅", "加水没过所有食材", "最大档烧开，转最小档", "盖盖煮 40 分钟，中途别加冷水", "加盐调味"], "chk": "筷子能轻松插入牛腱、筋膜软糯不塞牙", "bad": "中途加冷水肉会紧缩变柴；盐放太早肉不易炖烂", "k": 0, "tip": "牛腱要久煮才软，别中途加冷水"},
+{"n": "冬瓜虾皮汤", "c": "汤", "t": 15, "d": "热量极低，晚上喝很舒服", "m": ["冬瓜", "虾皮"], "o": ["姜"], "s": ["冬瓜去皮去瓤，切 3mm 薄片", "锅加 600ml 冷水，放姜片", "最大档烧开", "下冬瓜片", "煮 5 分钟至半透明", "加虾皮", "再煮 1 分钟", "尝味后再决定是否加盐"], "chk": "冬瓜片呈半透明、边缘微卷，筷子能夹断", "bad": "切太厚难熟且不入味；虾皮有盐，先尝再调", "k": 0, "tip": "虾皮本身有盐，先尝再放盐"},
+{"n": "豆腐干拌黄瓜", "c": "免", "t": 5, "d": "完全不用开火，五分钟凉菜", "m": ["豆腐干", "黄瓜"], "o": ["大蒜"], "s": ["豆腐干切 3mm 薄片，再切成条", "黄瓜洗净拍裂，切成段", "拍比切更容易入味", "黄瓜加少许盐腌 3 分钟", "倒掉腌出来的水", "豆腐干、黄瓜放一起", "加蒜末、生抽、醋", "淋几滴香油拌匀"], "chk": "黄瓜脆、豆腐干有嚼劲，盘底不出水", "bad": "黄瓜不腌直接拌会出水，把味道冲淡", "k": 1, "tip": "黄瓜拍比切更入味"},
+{"n": "酸奶水果杯", "c": "免", "t": 3, "d": "加餐首选，甜味来自水果", "m": ["酸奶", "苹果"], "o": ["猕猴桃"], "s": ["苹果洗净，带皮切 1cm 小丁", "切好立刻拌入酸奶，防止氧化发黄", "猕猴桃去皮切丁", "一起放入碗中", "倒入无糖酸奶", "轻轻拌匀，别把水果压烂", "可撒一点坚果碎", "想更凉可冷藏 10 分钟"], "chk": "水果丁裹满酸奶、苹果不变褐，碗底不稀", "bad": "切好久放会氧化发黑；用风味酸奶糖分明显偏高", "k": 1, "tip": "水果本身够甜，不用再加蜂蜜"},
+{"n": "核桃配牛奶", "c": "免", "t": 2, "d": "最省事的加餐组合", "m": ["核桃", "牛奶"], "o": [], "s": ["核桃 2 个，用核桃夹或刀背轻敲", "剥出核桃仁，撕掉中间那层苦涩薄皮", "掰成小块", "牛奶倒入杯中", "核桃碎撒入", "慢慢喝，充分咀嚼", "饱腹感比一口气喝完强得多", "坚果按个吃，别一把抓着吃"], "chk": "—（这道不用判断火候）", "bad": "坚果一次吃太多，一小把就超过 200 kcal，很容易失控", "k": 1, "tip": "坚果按个吃，一把容易超量"},
+{"n": "圣女果酸奶", "c": "免", "t": 3, "d": "酸甜解馋，热量很低", "m": ["圣女果", "酸奶"], "o": [], "s": ["圣女果洗净，摘掉蒂", "对半切开，切开的更易入味", "放入碗中", "倒入无糖酸奶", "轻轻拌匀", "静置 2 分钟让味道融合", "可撒坚果碎增加口感", "吃前再拌一次"], "chk": "酸奶微酸、番茄清甜，盘底不出水", "bad": "用含糖酸奶会让这道变成甜品，热量翻倍", "k": 1, "tip": "选无糖酸奶，风味款糖多"},
+{"n": "凉拌黄瓜", "c": "免", "t": 5, "d": "最基础的一道凉菜", "m": ["黄瓜", "大蒜"], "o": [], "s": ["黄瓜洗净，用刀面拍裂", "切成 3cm 段", "撒盐腌 5 分钟", "倒掉渗出的水，这步决定脆不脆", "大蒜拍碎切末", "加醋、几滴香油", "拌匀即可", "想更入味可再放 5 分钟"], "chk": "黄瓜脆爽、盘底无积水", "bad": "不腌出水会软塌，味道也被稀释得寡淡", "k": 1, "tip": "腌出的水倒掉，口感才脆"},
+{"n": "牛油果鸡蛋沙拉", "c": "免", "t": 10, "d": "好脂肪加优质蛋白", "m": ["牛油果", "鸡蛋"], "o": ["圣女果"], "s": ["鸡蛋冷水下锅，水开后煮 8 分钟", "捞出立刻过冷水，剥壳更容易", "牛油果纵向划一圈，双手反向扭开去核", "用勺子挖出果肉，切块", "鸡蛋切块", "一起放碗里", "撒盐和黑胡椒", "轻拌，别压成泥"], "chk": "牛油果软糯不涩、蛋块完整不散", "bad": "牛油果没熟会硬涩；熟过头内部发黑、有苦味", "k": 0, "tip": "牛油果选按压略软的，硬的放两天"},
+{"n": "猪里脊蔬菜汤", "c": "汤", "t": 20, "d": "肉片滑嫩，汤清爽", "m": ["猪里脊", "小白菜"], "o": ["姜"], "s": ["里脊逆纹切 2mm 薄片", "用少许生抽抓匀腌 5 分钟", "锅加 600ml 水，放姜片，最大档烧到滚开", "肉片一片片下锅，别搅动", "等肉片定型再轻推", "煮 1 分钟至变色", "下小白菜烫 30 秒", "盐调味，关火"], "chk": "肉片发白卷曲、咬开无血色，口感滑嫩", "bad": "下锅就搅会脱浆变柴；水不滚时下肉容易腥", "k": 0, "tip": "肉片下锅别搅，等定型再动"},
+{"n": "鸡翅煮土豆", "c": "汤", "t": 30, "d": "一锅出，主食和肉都有", "m": ["鸡翅", "土豆"], "o": ["洋葱", "胡萝卜"], "s": ["鸡翅两面各划两刀", "冷水下锅焯 2 分钟，撇去浮沫", "捞出冲净", "土豆去皮切 3cm 块，太小会煮化", "鸡翅、土豆、洋葱一起下锅", "加水没过食材", "最大档烧开，转小档", "煮 20 分钟", "加盐调味"], "chk": "鸡翅能轻松脱骨、土豆粉糯一戳就透", "bad": "土豆切太小会煮成泥；鸡翅不划刀里面不入味", "k": 0, "tip": "鸡翅划两刀更入味"},
+{"n": "苦瓜蛋汤", "c": "汤", "t": 15, "d": "清苦回甘，夏天喝着舒服", "m": ["苦瓜", "鸡蛋"], "o": [], "s": ["苦瓜纵切两半，用勺子刮净白瓤", "白瓤是苦味主要来源，刮干净能减一半苦", "切 2mm 薄片", "怕苦可用盐腌 5 分钟后挤水", "冷水下锅，最大档烧开", "煮 3 分钟", "蛋液绕圈淋入，静置 10 秒", "加盐，关火"], "chk": "苦瓜片变软呈半透明、汤清不浑", "bad": "白瓤没刮净会很苦；蛋液下锅就搅会散成渣", "k": 0, "tip": "怕苦可先用盐腌5分钟挤水"},
+{"n": "丝瓜蛋汤", "c": "汤", "t": 15, "d": "清甜，几乎不用调味", "m": ["丝瓜", "鸡蛋"], "o": ["虾皮"], "s": ["丝瓜刮掉外层硬皮，保留一点绿", "切滚刀块", "冷水下锅，最大档烧开", "煮 3 分钟至丝瓜变软", "蛋液绕圈淋入", "静置 10 秒再轻推", "加虾皮、盐", "关火"], "chk": "丝瓜软嫩不塌、汤色清亮微绿", "bad": "煮太久丝瓜会塌成泥；皮削太深丝瓜容易散", "k": 0, "tip": "丝瓜别久煮，软塌了就不好吃"},
+{"n": "白萝卜虾皮汤", "c": "汤", "t": 20, "d": "清淡解腻，热量很低", "m": ["白萝卜", "虾皮"], "o": ["姜"], "s": ["白萝卜去皮，切 2mm 细丝", "切细才熟得快，也更容易入味", "锅加 600ml 冷水，放姜片", "下萝卜丝，最大档烧开", "转小档煮 10 分钟", "至萝卜丝变透明、筷子能夹断", "加虾皮再煮 1 分钟", "尝味后决定是否加盐"], "chk": "萝卜丝半透明、软而不断，汤清甜", "bad": "切太粗会久煮不烂；虾皮有盐，别急着加盐", "k": 0, "tip": "萝卜切细丝熟得快，也更容易入味"}
+];
+let F=[],BY={};
+function rebuildFoods(){
+  F=RAW.map(function(r,i){
+    return {id:i,n:r[0],cat:r[1],kcal:r[2],p:r[3],f:r[4],c:r[5],fib:r[6],un:r[7],ug:r[8],e:r[9],
+      kw:r[10],kc:r[11],label:r[12],src:r[13],note:r[14],na:r[15],ca:r[16],fe:r[17],vc:r[18],chol:r[19]};
+  });
+  ((typeof S!=="undefined"&&S&&S.myFood)||[]).forEach(function(x,k){
+    F.push({id:1000+k,n:x.n,cat:x.cat||"protein",kcal:+x.kcal||0,p:+x.p||0,f:+x.f||0,c:+x.c||0,fib:+x.fib||0,
+      un:x.un||"份",ug:+x.ug||100,e:100,kw:365,kc:365,label:"净重",src:"自建食材（非成分表）",
+      note:x.note||"",na:+x.na||0,ca:0,fe:0,vc:0,chol:0,my:true});
+  });
+  BY={};
+  F.forEach(function(f){BY[f.n]=f});
+}
+function ALL(){
+  const base=RCP.concat(S.myRcp||[]);
+  (S.myDish||[]).forEach(function(d,k){
+    base.push({n:d.n,c:"主",t:20,d:d.note||"",
+      m:(d.i||[]).map(function(x){return x[0]}),o:[],s:d.s||[],
+      chk:"",bad:"",tip:"",myDishIdx:k});
+  });
+  return base;
+}
+const ALIAS={"柚子":"柚","蒜":"大蒜","蒜头":"大蒜","芝麻":"芝麻子","藕":"莲藕","西红柿":"番茄","洋芋":"土豆","地瓜":"红薯","山芋":"红薯","圆白菜":"包菜","卷心菜":"包菜","洋白菜":"包菜","青菜":"小白菜","面条":"挂面","鸡胸":"鸡胸肉","柿子椒":"甜椒","西柚":"葡萄柚","薯仔":"土豆","白薯":"红薯","花菜":"菜花","白菜":"大白菜","豌豆尖":"豌豆苗","海带菜":"海带","酱油":"生抽","老醋":"醋","米醋":"醋","淀粉":"淀粉","生粉":"淀粉","荞麦面条":"荞麦面","荞面条":"荞麦面","荞麦冷面":"荞麦面","荞面":"荞麦面",
+  "麻酱":"芝麻酱","红油":"辣椒油","辣油":"辣椒油","郫县豆瓣":"豆瓣酱","番茄沙司":"番茄酱",
+  "番茄膏":"番茄酱","黄酒":"料酒","料理酒":"料酒","花椒粉":"花椒","孜然":"孜然粉","咖喱":"咖喱粉",
+  "黑胡椒粉":"黑胡椒","白胡椒粉":"白胡椒","胡椒粉":"白胡椒","生姜粉":"姜粉","辣椒面":"辣椒面","蘸水":"辣椒面","蘸料":"辣椒面","麻辣蘸料":"辣椒面","干碟":"辣椒面","荞麦方便面":"荞麦面","荞麦拌面":"荞麦面","乳清蛋白":"乳清蛋白粉","蛋白粉":"乳清蛋白粉","whey":"乳清蛋白粉","青椒":"青椒","红椒":"甜椒","豆芽":"豆芽"};
+function nameHit(f,kw){
+  if(!kw)return true;
+  if(f.n.indexOf(kw)>-1||f.src.indexOf(kw)>-1)return true;
+  const t=ALIAS[kw];
+  return !!(t&&f.n.indexOf(t)>-1);
+}
+const DISH=[
+{"n": "酱油鸡", "i": [["鸡腿肉", 150], ["生抽", 15], ["橄榄油", 8]], "note": "食堂常见，带骨约 200g"},
+{"n": "白切鸡", "i": [["鸡腿肉", 150], ["姜", 5]], "note": ""},
+{"n": "红烧肉", "i": [["猪肉", 120], ["生抽", 15], ["白糖", 5], ["橄榄油", 10]], "note": "五花肉，脂肪高，热量随肥瘦比例波动大"},
+{"n": "糖醋排骨", "i": [["猪小排", 180], ["生抽", 10], ["白糖", 10], ["橄榄油", 10]], "note": "糖醋汁含糖，按偏多估"},
+{"n": "红烧排骨", "i": [["猪小排", 180], ["生抽", 15], ["橄榄油", 10]], "note": ""},
+{"n": "宫保鸡丁", "i": [["鸡胸肉", 120], ["花生", 15], ["辣椒", 10], ["橄榄油", 10]], "note": ""},
+{"n": "辣子鸡", "i": [["鸡腿肉", 150], ["辣椒", 10], ["橄榄油", 15]], "note": "过油做法"},
+{"n": "黄焖鸡", "i": [["鸡腿肉", 150], ["香菇", 50], ["青椒", 50], ["生抽", 15]], "note": ""},
+{"n": "可乐鸡翅", "i": [["鸡翅", 120], ["生抽", 10], ["白糖", 8]], "note": ""},
+{"n": "红烧鸡腿", "i": [["鸡腿肉", 180], ["生抽", 15], ["橄榄油", 8]], "note": ""},
+{"n": "咖喱鸡", "i": [["鸡腿肉", 150], ["土豆", 100], ["胡萝卜", 50]], "note": "咖喱块本身含油糖，此处只计食材"},
+{"n": "大盘鸡", "i": [["鸡腿肉", 150], ["土豆", 120], ["青椒", 50], ["橄榄油", 12]], "note": ""},
+{"n": "香菇滑鸡", "i": [["鸡腿肉", 150], ["香菇", 60], ["生抽", 10]], "note": ""},
+{"n": "鱼香肉丝", "i": [["猪里脊", 120], ["胡萝卜", 50], ["青椒", 50], ["橄榄油", 12], ["白糖", 5]], "note": ""},
+{"n": "回锅肉", "i": [["猪肉", 120], ["青椒", 50], ["橄榄油", 12]], "note": ""},
+{"n": "青椒肉丝", "i": [["猪里脊", 120], ["青椒", 80], ["橄榄油", 10]], "note": ""},
+{"n": "洋葱炒肉", "i": [["猪里脊", 120], ["洋葱", 80], ["橄榄油", 10]], "note": ""},
+{"n": "木须肉", "i": [["猪里脊", 100], ["鸡蛋", 50], ["木耳", 30], ["橄榄油", 10]], "note": ""},
+{"n": "京酱肉丝", "i": [["猪里脊", 120], ["大葱", 40], ["生抽", 15]], "note": ""},
+{"n": "糖醋里脊", "i": [["猪里脊", 120], ["面粉", 20], ["橄榄油", 15], ["白糖", 8]], "note": "挂糊油炸"},
+{"n": "土豆烧牛肉", "i": [["牛腩", 150], ["土豆", 120], ["生抽", 15]], "note": ""},
+{"n": "番茄牛腩", "i": [["牛腩", 150], ["番茄", 150]], "note": ""},
+{"n": "黑椒牛柳", "i": [["牛里脊", 150], ["洋葱", 80], ["橄榄油", 10]], "note": ""},
+{"n": "孜然羊肉", "i": [["羊肉片", 150], ["洋葱", 60], ["橄榄油", 12]], "note": ""},
+{"n": "红烧带鱼", "i": [["带鱼", 150], ["生抽", 15], ["橄榄油", 12]], "note": ""},
+{"n": "清蒸鲈鱼", "i": [["鲈鱼", 200], ["姜", 5], ["生抽", 10]], "note": ""},
+{"n": "酸菜鱼", "i": [["草鱼", 150], ["辣椒", 10], ["橄榄油", 10]], "note": "汤底油多，只计鱼肉"},
+{"n": "水煮鱼", "i": [["草鱼", 150], ["辣椒", 15], ["橄榄油", 15]], "note": "油层厚，实际更高"},
+{"n": "鸭腿饭", "i": [["鸭腿肉（带皮）", 120], ["米饭", 200]], "note": "带皮鸭腿；去皮换成「鸭腿肉（去皮）」，同份量省约 120 kcal"},
+{"n": "梅菜扣肉", "i": [["猪肉", 120], ["生抽", 10]], "note": "五花肉，脂肪高"},
+{"n": "苦瓜炒肉", "i": [["苦瓜", 150], ["猪里脊", 100], ["橄榄油", 10]], "note": ""},
+{"n": "豇豆炒肉", "i": [["豇豆", 150], ["猪里脊", 100], ["橄榄油", 10]], "note": ""},
+{"n": "番茄炒蛋", "i": [["番茄", 150], ["鸡蛋", 100], ["橄榄油", 12]], "note": "食堂版油多，按偏多算"},
+{"n": "韭菜炒蛋", "i": [["韭菜", 100], ["鸡蛋", 100], ["橄榄油", 12]], "note": ""},
+{"n": "蒸蛋", "i": [["鸡蛋", 100], ["生抽", 5]], "note": ""},
+{"n": "炒青菜", "i": [["小白菜", 200], ["橄榄油", 10]], "note": ""},
+{"n": "蒜蓉油麦菜", "i": [["油麦菜", 200], ["大蒜", 5], ["橄榄油", 10]], "note": ""},
+{"n": "手撕包菜", "i": [["包菜", 200], ["橄榄油", 12]], "note": ""},
+{"n": "醋溜土豆丝", "i": [["土豆", 150], ["青椒", 30], ["醋", 10], ["橄榄油", 10]], "note": ""},
+{"n": "地三鲜", "i": [["茄子", 150], ["土豆", 100], ["青椒", 50], ["橄榄油", 15]], "note": "过油"},
+{"n": "干煸豆角", "i": [["豆角", 180], ["橄榄油", 12]], "note": ""},
+{"n": "红烧茄子", "i": [["茄子", 200], ["生抽", 10], ["橄榄油", 15]], "note": "茄子吸油"},
+{"n": "麻婆豆腐", "i": [["北豆腐", 200], ["猪肉", 30], ["橄榄油", 10]], "note": ""},
+{"n": "家常豆腐", "i": [["北豆腐", 200], ["生抽", 10], ["橄榄油", 10]], "note": ""},
+{"n": "清炒西兰花", "i": [["西兰花", 200], ["橄榄油", 8]], "note": ""},
+{"n": "上汤娃娃菜", "i": [["娃娃菜", 250], ["大蒜", 5], ["橄榄油", 8]], "note": ""},
+{"n": "清炒莴笋", "i": [["莴笋", 150], ["橄榄油", 8]], "note": ""},
+{"n": "醋溜白菜", "i": [["大白菜", 200], ["醋", 10], ["橄榄油", 10]], "note": ""},
+{"n": "凉拌黄瓜", "i": [["黄瓜", 150], ["大蒜", 3], ["芝麻油", 3]], "note": ""},
+{"n": "凉拌木耳", "i": [["木耳", 80], ["大蒜", 3], ["芝麻油", 3]], "note": ""},
+{"n": "炒豆芽", "i": [["绿豆芽", 200], ["橄榄油", 8]], "note": ""},
+{"n": "蒜蓉菠菜", "i": [["菠菜", 150], ["大蒜", 5], ["橄榄油", 8]], "note": ""},
+{"n": "米饭", "i": [["米饭", 200]], "note": "食堂一碗约 200g"},
+{"n": "馒头", "i": [["馒头", 100]], "note": ""},
+{"n": "花卷", "i": [["花卷", 100]], "note": ""},
+{"n": "白粥", "i": [["大米", 40]], "note": "稀饭，水不计"},
+{"n": "小米粥", "i": [["小米", 40]], "note": ""},
+{"n": "面条", "i": [["挂面", 100], ["生抽", 5]], "note": "素面"},
+{"n": "蛋炒饭", "i": [["米饭", 200], ["鸡蛋", 50], ["橄榄油", 10]], "note": ""},
+{"n": "炒面", "i": [["挂面", 120], ["包菜", 80], ["橄榄油", 10]], "note": ""},
+{"n": "包子", "i": [["面粉", 80], ["猪肉", 30]], "note": "一个约 110g"},
+{"n": "饺子", "i": [["面粉", 80], ["猪肉", 40], ["韭菜", 30]], "note": "约 8 个"},
+{"n": "烤红薯", "i": [["红薯", 200]], "note": ""},
+{"n": "蒸玉米", "i": [["玉米", 150]], "note": ""},
+{"n": "油条", "i": [["面粉", 60], ["橄榄油", 10]], "note": "一根"},
+{"n": "煎饼果子", "i": [["面粉", 60], ["鸡蛋", 50], ["橄榄油", 8]], "note": ""},
+{"n": "肉夹馍", "i": [["面粉", 80], ["猪肉", 50]], "note": ""},
+{"n": "紫菜蛋花汤", "i": [["紫菜", 3], ["鸡蛋", 50]], "note": ""},
+{"n": "番茄蛋汤", "i": [["番茄", 100], ["鸡蛋", 50]], "note": ""},
+{"n": "冬瓜排骨汤", "i": [["冬瓜", 150], ["猪小排", 80]], "note": "只计食材，汤水不计"},
+{"n": "玉米排骨汤", "i": [["玉米", 100], ["猪小排", 80]], "note": ""},
+{"n": "酸辣汤", "i": [["北豆腐", 60], ["鸡蛋", 30], ["木耳", 20], ["醋", 10]], "note": ""},
+{"n": "菌菇汤", "i": [["香菇", 50], ["金针菇", 50]], "note": ""},
+{"n": "海带豆腐汤", "i": [["海带", 60], ["北豆腐", 100]], "note": ""},
+{"n": "丝瓜蛋汤", "i": [["丝瓜", 150], ["鸡蛋", 50]], "note": ""},
+{"n": "豆浆", "i": [["豆浆", 250]], "note": "无糖"},
+{"n": "牛奶", "i": [["牛奶", 250]], "note": ""},
+{"n": "酸奶", "i": [["酸奶", 150]], "note": "含糖款"},
+{"n": "水煮蛋", "i": [["鸡蛋", 50]], "note": "一个"},
+{"n": "水果", "i": [["苹果", 150]], "note": ""},
+{"n": "燕麦粥", "i": [["燕麦", 40], ["牛奶", 200]], "note": ""}
+];
+const CAT={protein:"蛋白",carb:"主食",veg:"蔬菜",fruit:"水果",fat:"油脂",other:"调味"};
+const K='dorm-eat-v2';
+let S=load();
+S.myFood=S.myFood||[];
+rebuildFoods();
+function load(){
+  try{const r=JSON.parse(localStorage.getItem(K));if(r&&r.inv)return r}catch(e){}
+  return {inv:[],logs:[],waste:[],myRcp:[],myDish:[],ai:{},set:{sex:"女",height:165,age:22,weight:60,act:1.375,kcal:1470,protein:96,fat:48,carb:163,na:2000,locked:false,city:"",lat:null,lon:null,offset:3},w:{t:null,avg3:null,src:"init",at:0}};
+}
+function save(){try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}}
+function dstr(d){const x=new Date(d);return x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")+"-"+String(x.getDate()).padStart(2,"0")}
+function today(){return dstr(new Date())}
+function daysAgo(s){const a=new Date(s+"T00:00:00"),b=new Date(today()+"T00:00:00");return Math.round((b-a)/864e5)}
+function calcTargets(){
+  const s=S.set;if(s.locked)return;
+  const bmr=10*s.weight+6.25*s.height-5*s.age+(s.sex==="男"?5:-161);
+  const tdee=bmr*s.act;
+  s.kcal=Math.max(1200,Math.round(tdee-400));
+  s.protein=Math.round(s.weight*1.6);
+  s.fat=Math.round(s.weight*0.8);
+  s.carb=Math.max(0,Math.round((s.kcal-4*s.protein-9*s.fat)/4));
+}
+function roomT(){return S.w.t==null?null:S.w.t+(+S.set.offset||3)}
+function keepDays(f){
+  const rt=roomT();
+  if(rt==null){const m=new Date().getMonth()+1;return (m>=6&&m<=9)?f.kw:f.kc}
+  let b;
+  if(rt<=10)b=Math.floor(f.kc*1.2);else if(rt<=20)b=f.kc;else if(rt<=26)b=Math.floor((f.kc+f.kw)/2);
+  else if(rt<=32)b=f.kw;else b=Math.floor(f.kw*0.8);
+  return Math.max(0,b);
+}
+function remDays(it){return keepDays(BY[it.n||F[it.id].n])-daysAgo(it.d)}
+function invItem(id){return S.inv.filter(x=>x.id===id).reduce((a,b)=>a+b.g,0)}
+function invByCat(cat){const m={};S.inv.forEach(x=>{if(F[x.id].cat===cat)m[x.id]=(m[x.id]||0)+x.g});
+  return Object.keys(m).map(id=>({id:+id,g:m[id]}))}
+function invNames(){const s=new Set();S.inv.forEach(x=>s.add(F[x.id].n));return s}
+function expireList(){return S.inv.map(x=>({...x,rem:remDays(x)})).filter(x=>x.rem<=0).sort((a,b)=>a.rem-b.rem)}
+function eatenToday(){
+  const t=today();
+  return S.logs.filter(l=>l.d===t).reduce((a,l)=>({kcal:a.kcal+(l.kcal||0),p:a.p+(l.p||0),f:a.f+(l.f||0),c:a.c+(l.c||0),na:a.na+(l.na||0),veg:a.veg+(l.veg||0)}),{kcal:0,p:0,f:0,c:0,na:0,veg:0});
+}
+function rcpMacro(r){
+  let k=0,p=0,f=0,c=0,na=0;
+  r.m.forEach(n=>{const x=BY[n];if(!x)return;const g=x.ug;k+=x.kcal*g/100;p+=x.p*g/100;f+=x.f*g/100;c+=x.c*g/100;na+=(x.na||0)*g/100});
+  return {kcal:Math.round(k),p:Math.round(p),f:Math.round(f),c:Math.round(c),na:Math.round(na)};
+}
+function macOfRcp(r){
+  if(r.myDishIdx==null)return rcpMacro(r);
+  const d=(S.myDish||[])[r.myDishIdx];
+  if(!d)return rcpMacro(r);
+  let k=0,p=0,f=0,c=0,g=0,na=0;
+  (d.i||[]).forEach(function(it){
+    const x=BY[it[0]];if(!x)return;
+    k+=x.kcal*it[1]/100;p+=x.p*it[1]/100;f+=x.f*it[1]/100;c+=x.c*it[1]/100;g+=it[1];na+=(x.na||0)*it[1]/100;
+  });
+  return {kcal:Math.round(k),p:Math.round(p),f:Math.round(f),c:Math.round(c),g:Math.round(g),na:Math.round(na)};
+}
+function recommend(kw){
+  const k=String(kw||"").trim();
+  const names=invNames(),exp=expireList().map(x=>F[x.id].n);
+  const recent={};S.logs.filter(l=>daysAgo(l.d)<=2).forEach(l=>{const n=l.name.split("（")[0];recent[n]=(recent[n]||0)+1});
+  const now=[],near=[];
+  ALL().forEach((r,i)=>{
+    if(k){
+      const hay=[r.n].concat(r.m||[]).concat(r.o||[]).join("|");
+      if(hay.indexOf(k)<0)return;
+    }
+    const miss=r.m.filter(n=>!names.has(n));
+    let sc=r.m.length*2+(r.o||[]).filter(n=>names.has(n)).length;
+    miss.forEach(n=>{if(exp.indexOf(n)>-1)sc+=3});
+    r.m.forEach(n=>{if(exp.indexOf(n)>-1)sc+=6});
+    const mac=macOfRcp(r);
+    sc+=mac.p/8;
+    if(recent[r.n])sc-=recent[r.n]*4;
+    if(r.t>25)sc-=1;
+    const item={i,sc,mac,miss,r};
+    if(!miss.length)now.push(item);
+    else if(k||(miss.length<=2&&r.m.length>miss.length))near.push(item);
+  });
+  now.sort((a,b)=>b.sc-a.sc);near.sort((a,b)=>a.miss.length-b.miss.length||b.sc-a.sc);
+  return {now:now.slice(0,k?40:4),near:near.slice(0,k?20:3),kw:k};
+}
+</script>
+<script>
+let tab="today",q="",rcpFilter="all",foodQ="";
+const view=document.getElementById("view");
+const $=id=>document.getElementById(id);
+
+async function loadWeather(force){
+  const w=S.w||{};
+  if(!force&&w.at&&Date.now()-w.at<3*3600e3)return;
+  if(S.set.lat==null||S.set.lon==null)return;
+  try{
+    const u=`https://api.open-meteo.com/v1/forecast?latitude=${S.set.lat}&longitude=${S.set.lon}&current=temperature_2m&daily=temperature_2m_max&timezone=auto&forecast_days=3`;
+    const r=await fetch(u);if(!r.ok)throw 0;
+    const d=await r.json();
+    const mx=(d.daily&&d.daily.temperature_2m_max)||[];
+    S.w={t:d.current.temperature_2m,avg3:mx.length?mx.reduce((a,b)=>a+b,0)/mx.length:null,src:"live",at:Date.now()};
+    save();render();
+  }catch(e){S.w=S.w||{};S.w.src="fail";save();render()}
+}
+async function geocode(city){
+  const u=`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=zh&format=json`;
+  const r=await fetch(u);if(!r.ok)throw 0;
+  const d=await r.json();
+  if(!d.results||!d.results.length)throw 1;
+  return d.results[0];
+}
+
+function subHtml(){
+  const rt=roomT();
+  let a='<span>600W · 无冰箱 · 净重口径</span>';
+  if(rt!=null){
+    const lag=S.w&&S.w.at&&Date.now()-S.w.at>3*3600e3?"（旧）":"";
+    a+=`<span class="w">气温 ${S.w.t.toFixed(0)}℃ · 室温估 ${rt.toFixed(0)}℃${lag}</span>`;
+  }else a+='<span class="w off">未设城市 · 按季节估算</span>';
+  return a;
+}
+function bar(lb,val,max,color){
+  const pct=max>0?Math.min(100,val/max*100):0;
+  return `<div class="bar-row"><span class="lb">${lb}</span><div class="tr"><div class="fl" style="width:${pct}%;background:${color}"></div></div><span class="vl">${Math.round(val)}/${max}</span></div>`;
+}
+function macLine(m){return `${m.kcal} kcal · 蛋白 ${m.p}g · 碳水 ${m.c}g · 脂肪 ${m.f}g`}
+
+function dailyBrief(){
+  const e=eatenToday(), sg=S.set;
+  const logs=S.logs.filter(function(l){return l.d===today()});
+  const now=new Date().getHours();
+  const phase=now<10?"早上":now<14?"上午":now<18?"下午":now<22?"晚上":"深夜";
+  const kLeft=Math.round(sg.kcal-e.kcal);
+  const pLeft=Math.max(0,Math.round(sg.protein-e.p));
+  const exp=expireList();
+  let head="",body=[],advice="";
+  if(!logs.length){
+    head="今天还没记录";
+    body.push(now<11?"现在是"+phase+"，早餐吃了什么？":"今天一条记录都还没有。");
+    advice = now<11 ? "先记早餐，再决定中午吃多少。"
+           : now<16 ? "补记早餐和午餐，晚上才有余量可算。"
+           : "今天快过去了，至少把晚上这顿记上，明天才有基线。";
+  }else{
+    head="已摄入 "+Math.round(e.kcal)+" / "+sg.kcal+" kcal（"+Math.round(sg.kcal>0?e.kcal/sg.kcal*100:0)+"%）";
+    body.push("蛋白 "+Math.round(e.p)+" / "+sg.protein+"g"+(pLeft>0?"（还差 "+pLeft+"g）":"（已达标）")
+      +"　｜　钠 "+Math.round(e.na)+"mg"+(e.na>2000?"（已超 2000 上限）":""));
+    if(kLeft>150){
+      advice=(phase==="晚上"||phase==="深夜")
+        ? "还剩 "+kLeft+" kcal，但已经不早了，别补主食，饿了吃点蛋白或蔬菜。"
+        : "还有 "+kLeft+" kcal 余量，够一顿正常的主食 + 蛋白 + 蔬菜。";
+    }else if(kLeft>0){
+      advice="热量快满了，接下来优先补蛋白和蔬菜，主食减半。";
+    }else{
+      advice="热量已超 "+Math.abs(kLeft)+" kcal，剩下时间只吃蔬菜和蛋白，别再碰主食和油。";
+    }
+    if(pLeft>25&&kLeft>200) advice+="　蛋白还差 "+pLeft+"g，优先一份鸡胸/虾仁/豆腐，比再吃一碗饭有用。";
+    if(e.na>2000) advice="钠超过 2000mg，明天生抽减半、多喝水；明早体重虚涨别慌，是水不是脂肪。";
+  }
+  if(exp.length){
+    const f=BY[F[exp[0].id].n];
+    body.push("库存："+f.n+(exp[0].rem<=0?"今天必须吃掉":"还剩 "+exp[0].rem+" 天")+(exp.length>1?"，另有 "+(exp.length-1)+" 样临期":""));
+  }
+  return '<div class="card"><h2>今日简报<span>'+phase+'</span></h2>'
+    +'<div style="font-size:13px;line-height:1.8">'
+    +'<div style="font-weight:500;font-size:14px;margin-bottom:5px">'+head+'</div>'
+    +body.map(function(x){return '<div style="color:#5F5E5A">'+x+'</div>'}).join("")
+    +'<div style="margin-top:10px;padding:10px 12px;background:#EAF3DE;border-radius:9px;color:#27500A;line-height:1.7">'+advice+'</div>'
+    +'</div></div>';
+}
+function renderToday(){
+  const e=eatenToday(),exp=expireList(),rec=recommend();
+  const sg=S.set;
+  const pLeft=Math.round(sg.protein-e.p),kLeft=Math.round(sg.kcal-e.kcal);
+  let advise="";
+  if(exp.length){
+    const f=BY[F[exp[0].id].n],r=exp[0].rem;
+    advise=r<0?`<b>${f.n}</b> 已过期 ${-r} 天，别再吃了。`:`<b>${f.n}</b> ${r===0?"今天是最后一天":"还剩 "+r+" 天"}，优先用掉。`;
+  }else if(pLeft>20)advise=`今天蛋白还差 <b>${pLeft}g</b>，下一餐优先补一份蛋白。`;
+  else if(kLeft>300)advise=`蛋白够了，热量还有 <b>${kLeft} kcal</b> 余量，可以安排主食和蔬菜。`;
+  else advise=`今天的缺口基本填满了，加餐别再加主食。`;
+
+  let h=dailyBrief()+`<div class="card"><h2>今日摄入<span>${today()}</span></h2><div class="bars">
+    ${bar("热量",e.kcal,sg.kcal,"#3B6D11")}
+    ${bar("蛋白",e.p,sg.protein,"#1D9E75")}
+    ${bar("碳水",e.c,sg.carb,"#378ADD")}
+    ${bar("脂肪",e.f,sg.fat,"#BA7517")}
+    ${bar("钠 mg",e.na,sg.na||2000,"#993C1D")}
+  </div></div>
+  <div class="tip ${exp.length?"":"ok"}">${exp.length?"⏳ ":"✓ "}${advise}</div>`;
+
+  h+=`<div class="card"><h2>现在就能做<span>库存齐全 · ${rec.now.length} 道</span></h2>`;
+  if(!rec.now.length)h+=`<div class="empty">库存还配不成一道完整的菜<br>去「食材」页加几样</div>`;
+  rec.now.forEach(x=>{
+    h+=`<div class="rec" onclick="openRcp(${x.i})">
+      <div class="t"><b>${x.r.n}</b><em>${x.r.t} 分钟</em></div>
+      <div class="d">${x.r.d||""}</div>
+      <div class="mac">${macLine(x.mac)}</div>
+      <div class="badges">${x.r.k?'<span class="badge mut">免开火</span>':''}
+        ${x.r.m.filter(n=>exp.some(e2=>F[e2.id].n===n)).map(n=>`<span class="badge warn">用掉临期：${n}</span>`).join("")}
+      </div></div>`;
+  });
+  h+=`</div>`;
+
+  if(rec.near.length){
+    h+=`<div class="card"><h2>差一样就能做<span>标的是需要买的</span></h2>`;
+    rec.near.forEach(x=>{
+      h+=`<div class="rec" onclick="openRcp(${x.i})">
+        <div class="t"><b>${x.r.n}</b><em>${x.r.t} 分钟</em></div>
+        <div class="mac">${macLine(x.mac)}</div>
+        <div class="badges">${x.miss.map(n=>`<span class="badge warn">需买：${n}</span>`).join("")}</div>
+      </div>`;
+    });
+    h+=`</div>`;
+  }
+
+  const tl=S.logs.filter(l=>l.d===today());
+  if(tl.length){
+    h+=`<div class="card"><h2>今天吃了<span>${tl.length} 次</span></h2>`;
+    tl.forEach(l=>{h+=`<div class="logitem"><span>${l.name}</span><span class="r">${Math.round(l.kcal)} kcal<br>P${Math.round(l.p)} C${Math.round(l.c||0)} F${Math.round(l.f||0)}</span></div>`});
+    h+=`</div>`;
+  }
+  return h;
+}
+
+function rcpMatch(r,kw){
+  if(!kw)return true;
+  if(r.n.indexOf(kw)>-1)return true;
+  if(r.m.some(n=>n.indexOf(kw)>-1))return true;
+  return (r.o||[]).some(n=>n.indexOf(kw)>-1);
+}
+let newRcp={n:"",items:[],steps:"",idx:-1};
+function openNewRcp(){newRcp={n:"",items:[],steps:"",idx:-1};renderNewRcp()}
+function openEditDish(i){
+  const d=(S.myDish||[])[i];
+  if(!d){alert("没找到这条");return}
+  newRcp={n:d.n||"",
+    items:(d.i||[]).map(function(x){return {n:x[0],raw:x[0],g:x[1]}}),
+    steps:(d.s||[]).join("\n"),idx:i};
+  renderNewRcp();
+}
+function newRcpTotalText(){
+  const m=dishMacro({i:newRcp.items.map(function(x){return [x.n,x.g]})},1);
+  return '<div class="l"><b>合计</b><b>'+m.kcal+' kcal</b></div>'
+    +'<div class="l"><span>约 '+m.g+'g · 蛋白 '+m.p+'g · 碳水 '+m.c+'g · 脂肪 '+m.f+'g · 钠 '+m.na+'mg</span></div>';
+}
+function recipePrompt(){
+  const pool=F.filter(function(f){return !f.my}).map(function(f){return f.n}).join("、");
+  return "请提取这份菜谱的信息。要求：\n"
+    +"1. 食材名优先从下面列表里一字不改地选择："+pool+"\n"
+    +"2. 列表里没有的，用菜谱里的原始叫法，不要硬套成别的名字\n"
+    +"3. 菜谱写「适量/少许/一把」的，按常见份量估克数，并把 guess 标 true\n"
+    +"4. 做法按顺序拆成一步一条，每条不超过 30 字\n"
+    +"5. 只输出 JSON，不要任何解释\n\n"
+    +'格式：{"name":"菜名","items":[{"name":"鸡胸肉","g":150,"guess":false}],"steps":["步骤1","步骤2"]}';
+}
+function pickRecipeImage(){
+  if(!window.AndroidBridge||!AndroidBridge.pickImage){
+    alert("截图识别要在 App 里用。浏览器或电脑上请用「粘贴文字解析」。");
+    return;
+  }
+  grabForm();
+  AndroidBridge.pickImage();
+}
+window.__imgCb=function(st){
+  if(st!=="ok"){alert("没有选到图片");renderNewRcp();return}
+  let b64="";
+  try{b64=AndroidBridge.takePickedImage()}catch(e){}
+  if(!b64){alert("读取图片失败");renderNewRcp();return}
+  runRecognize("img","",b64);
+};
+function openPasteText(){
+  grabForm();
+  openSheet('<h3>粘贴文字解析</h3><div class="sm">把刷到的文字复制进来，AI 帮你拆成食材和步骤</div>'
+    +'<textarea id="paste_txt" style="min-height:150px" placeholder="把菜谱文字粘在这里…"></textarea>'
+    +'<div style="height:12px"></div><button class="btn" onclick="runPasteParse()">开始解析</button>'
+    +'<div style="height:8px"></div><button class="btn ghost" onclick="renderNewRcp()">返回</button>');
+}
+function runPasteParse(){
+  const t=(document.getElementById("paste_txt")||{}).value||"";
+  if(t.trim().length<10){alert("文字太短，至少粘一段做法");return}
+  runRecognize("text",t.slice(0,4000),"");
+}
+function runRecognize(kind,text,b64){
+  if(!S.ai||!S.ai.key){alert("需要先在「记录」页填 AI 接口和 Key");return}
+  const tip=kind==="img"?"正在识别截图…图片通常 5–15 秒":"正在解析文字…通常 3–8 秒";
+  openSheet('<h3>识别中</h3><div class="empty loading"><span class="spinner"></span>'+tip+'</div>');
+  let content;
+  if(kind==="img"){
+    content=[{type:"text",text:recipePrompt()},
+             {type:"image_url",image_url:{url:"data:image/jpeg;base64,"+b64}}];
+  }else{
+    content=[{type:"text",text:recipePrompt()+"\n\n菜谱原文：\n"+text}];
+  }
+  const payload={model:(S.ai.model||"deepseek-flash"),temperature:0.3,max_tokens:1600,
+    messages:[{role:"user",content:content}],
+    response_format:{type:"json_object"}};
+  aiPost(payload,function(t){handleRecipe(t)});
+}
+function aiContentOf(t){
+  const d=JSON.parse(t);
+  let c=(d.choices&&d.choices[0]&&d.choices[0].message&&d.choices[0].message.content)||"";
+  c=c.replace(/^```(?:json)?/i,"").replace(/```$/,"").trim();
+  const i=c.indexOf("{"),j=c.lastIndexOf("}");
+  if(i>-1&&j>i)c=c.slice(i,j+1);
+  return JSON.parse(c);
+}
+function handleRecipe(t){
+  if(!t||String(t).indexOf("err:")===0){
+    openSheet('<h3>识别失败</h3><div class="tip">'+esc(String(t||"").slice(0,200))+'</div>'
+      +'<button class="btn ghost" onclick="renderNewRcp()">返回手填</button>');
+    return;
+  }
+  let obj=null;
+  try{obj=aiContentOf(t)}catch(e){
+    openSheet('<h3>识别失败</h3><div class="tip">返回内容不是合法 JSON，再试一次或换文字粘贴</div>'
+      +'<button class="btn ghost" onclick="renderNewRcp()">返回手填</button>');
+    return;
+  }
+  const items=(obj.items||[]).map(function(x){
+    const nm=String(x.name||x.n||"").trim();
+    const g=Math.round(+(x.g||x.gram||0))||100;
+    const mt=matchFood(nm);
+    return {raw:nm,n:mt?mt.n:null,how:mt?mt.how:null,g:g,guess:!!x.guess};
+  }).filter(function(x){return x.raw});
+  if(!items.length){
+    openSheet('<h3>没识别出食材</h3><div class="tip">这张图里没找到可用的食材清单，换一张更清晰的，或直接粘贴文字</div>'
+      +'<button class="btn ghost" onclick="renderNewRcp()">返回手填</button>');
+    return;
+  }
+  if(obj.name)newRcp.n=String(obj.name).trim();
+  newRcp.items=items;
+  newRcp.steps=(obj.steps||[]).map(function(x){return String(x)}).join("\n");
+  aiSug={};
+  const miss=items.filter(function(x){return !x.n}).map(function(x){return x.raw});
+  renderNewRcp();
+  if(miss.length)askSuggest(miss);
+}
+function askSuggest(names){
+  if(!S.ai||!S.ai.key)return;
+  aiSugBusy=true;renderNewRcp();
+  const pool=F.filter(function(f){return !f.my}).map(function(f){return f.n}).join("、");
+  const user="下面这些词在本地食材库里找不到。请从给定列表里为每个词挑选最接近的 1–3 个候选，按接近程度排序。\n\n"
+    +"待匹配："+names.join("、")+"\n\n可选列表："+pool+"\n\n"
+    +"要求：只输出 JSON；确实没有相近的就给空数组，不要硬凑。\n"
+    +'格式：{"items":[{"raw":"鸡里脊","c":["鸡胸肉","鸡腿肉"],"why":"同一部位，脂肪接近"}]}';
+  const payload={model:(S.ai.model||"deepseek-flash"),temperature:0.2,max_tokens:700,
+    messages:[{role:"user",content:user}],response_format:{type:"json_object"}};
+  aiPost(payload,function(t){
+    aiSugBusy=false;
+    try{
+      const o=aiContentOf(t);
+      (o.items||[]).forEach(function(x){
+        const raw=String(x.raw||"").trim();
+        const cs=(x.c||[]).filter(function(n){return BY[n]});
+        if(raw&&cs.length)aiSug[raw]={c:cs,why:String(x.why||"")};
+      });
+    }catch(e){}
+    renderNewRcp();
+  });
+}
+function openNewFood(name){
+  grabForm();
+  openSheet('<h3>新建食材</h3><div class="sm">库里没有「'+esc(name)+'」，录一条自己的</div>'
+    +'<label class="fl">名称</label><input type="search" id="nf_name" value="'+esc(name).replace(/"/g,"&quot;")+'">'
+    +'<div class="row3"><div><label class="fl">单位</label><input type="search" id="nf_un" value="份"></div>'
+    +'<div><label class="fl">1单位克数</label><input type="number" id="nf_ug" value="100" inputmode="decimal"></div></div>'
+    +'<label class="fl">每 100g 热量 kcal（必填）</label><input type="number" id="nf_k" inputmode="decimal" placeholder="比如 120">'
+    +'<div class="row3"><div><label class="fl">蛋白 g</label><input type="number" id="nf_p" value="0" inputmode="decimal"></div>'
+    +'<div><label class="fl">脂肪 g</label><input type="number" id="nf_f" value="0" inputmode="decimal"></div></div>'
+    +'<div class="row3"><div><label class="fl">碳水 g</label><input type="number" id="nf_c" value="0" inputmode="decimal"></div>'
+    +'<div><label class="fl">钠 mg</label><input type="number" id="nf_na" value="0" inputmode="decimal"></div></div>'
+    +'<div style="height:10px"></div><button class="btn ghost" onclick="aiFoodHint()">✦ 让 AI 给个参考范围</button>'
+    +'<div id="nf_hint" style="margin-top:8px"></div>'
+    +'<div style="height:12px"></div><button class="btn" onclick="saveNewFood()">保存这个食材</button>'
+    +'<div style="height:8px"></div><button class="btn ghost" onclick="renderNewRcp()">返回</button>');
+}
+function aiFoodHint(){
+  const nm=((document.getElementById("nf_name")||{}).value||"").trim();
+  if(!nm){alert("先填名称");return}
+  if(!S.ai||!S.ai.key){alert("需要先在「记录」页填 AI 接口和 Key");return}
+  const box=document.getElementById("nf_hint");
+  if(box)box.innerHTML='<div class="empty loading"><span class="spinner"></span>正在查参考值…</div>';
+  const user="请给出「"+nm+"」每 100 克的营养参考范围（不是单点值）。\n"
+    +"说明它是什么食材、属于什么部位或品类，给一个保守区间。\n"
+    +"只输出 JSON：{\"what\":\"一句话说明这是什么东西\",\"kcal\":[下限,上限],\"p\":[下限,上限],\"f\":[下限,上限],\"c\":[下限,上限],\"note\":\"一句提醒\"}";
+  aiPost({model:(S.ai.model||"deepseek-flash"),temperature:0.2,max_tokens:400,
+    messages:[{role:"user",content:user}],response_format:{type:"json_object"}},function(t){
+    let o=null;
+    try{o=aiContentOf(t)}catch(e){}
+    const box2=document.getElementById("nf_hint");
+    if(!box2)return;
+    if(!o||!o.kcal){box2.innerHTML='<div class="tip">没拿到参考值，请按包装标签填写</div>';return}
+    const mid=function(a){return a&&a.length===2?Math.round(((+a[0])+(+a[1]))/2):0};
+    box2.innerHTML='<div class="tip">'
+      +esc(o.what||"")+'<br>'
+      +'热量 '+(o.kcal?o.kcal[0]+'–'+o.kcal[1]+' kcal':'—')+'　蛋白 '+(o.p?o.p[0]+'–'+o.p[1]+'g':'—')
+      +'　脂肪 '+(o.f?o.f[0]+'–'+o.f[1]+'g':'—')+'　碳水 '+(o.c?o.c[0]+'–'+o.c[1]+'g':'—')
+      +(o.note?'<br>'+esc(o.note):'')
+      +'<div style="margin-top:6px;color:#A32D2D">这是 AI 的经验范围，不是成分表数据。请对照包装标签或常识确认后再填。</div>'
+      +'</div><button class="add" style="padding:3px 10px;margin-top:6px" onclick="fillFoodHint('
+      +mid(o.kcal)+','+mid(o.p)+','+mid(o.f)+','+mid(o.c)+')">用中间值填入（仍需你确认）</button>';
+  });
+}
+function fillFoodHint(k,p2,f,c){
+  const set=function(id,v){const e=document.getElementById(id);if(e)e.value=v};
+  set("nf_k",k);set("nf_p",p2);set("nf_f",f);set("nf_c",c);
+}
+function saveNewFood(){
+  const g=function(id){const e=document.getElementById(id);return e?e.value:""};
+  const name=String(g("nf_name")).trim();
+  const kcal=parseFloat(g("nf_k"));
+  if(!name){alert("先填名称");return}
+  if(!(kcal>0)){alert("热量必填，而且要大于 0");return}
+  if(BY[name]&&!BY[name].my){alert("库里已经有「"+name+"」了，直接用就行，不用新建");return}
+  const rec={n:name,cat:"protein",kcal:kcal,p:+g("nf_p")||0,f:+g("nf_f")||0,c:+g("nf_c")||0,
+    na:+g("nf_na")||0,un:String(g("nf_un")||"份").trim()||"份",ug:+g("nf_ug")||100,note:"自建，数值未核对"};
+  S.myFood=S.myFood||[];
+  const idx=S.myFood.findIndex(function(x){return x.n===name});
+  if(idx>-1)S.myFood.splice(idx,1);
+  S.myFood.push(rec);
+  rebuildFoods();save();
+  const target=newRcp.items.filter(function(x){return !x.n&&x.raw===name})[0]
+            ||newRcp.items.filter(function(x){return !x.n})[0];
+  if(target){target.n=name;target.how="新建"}
+  renderNewRcp();
+  alert("已新建「"+name+"」，以后在食材页和食谱里都能直接用。");
+}
+
+let aiSug={},aiSugBusy=false;
+function renderNewRcp(){
+  const items=newRcp.items;
+  const miss=items.filter(function(x){return !x.n});
+  const editing=(newRcp.idx>-1);
+  let h='<h3>'+(editing?"编辑菜谱":"自建菜谱")+'</h3><div class="sm">'
+    +(editing?"改完点底部保存，直接覆盖原来那条":"可以手填，也可以从截图或文字导入")+'</div>';
+  h+='<div class="btns" style="margin-bottom:4px">'
+    +'<button class="btn ghost" onclick="pickRecipeImage()">从截图识别</button>'
+    +'<button class="btn ghost" onclick="openPasteText()">粘贴文字解析</button></div>';
+  h+='<label class="fl">菜名</label><input type="search" id="nr_name" value="'+esc(newRcp.n).replace(/"/g,"&quot;")+'" placeholder="比如 蒜香鸡胸（抖音版）" oninput="newRcp.n=this.value">';
+  h+='<div class="sec"><b>食材</b><span>'+items.length+' 样'+(miss.length?' · '+miss.length+' 项待处理':'')+'</span></div>';
+  if(!items.length)h+='<div class="empty">还没加食材</div>';
+  if(aiSugBusy)h+='<div class="empty loading"><span class="spinner"></span>正在为缺失的食材找候选…</div>';
+  items.forEach(function(x,i){
+    const ok=!!x.n;
+    const f=ok?BY[x.n]:null;
+    h+='<div style="border:1px solid '+(ok?'var(--line)':'#E9B0B0')+';border-radius:10px;padding:9px 11px;margin-bottom:7px;background:'+(ok?'#fff':'#FDF6F6')+'">'
+      +'<div style="display:flex;align-items:center;gap:8px">'
+      +'<span style="flex:1;font-size:14px;font-weight:500">'+esc(ok?x.n:x.raw)
+      +(x.guess?' <span class="badge warn">克数是估的</span>':'')+'</span>'
+      +'<input type="number" value="'+x.g+'" inputmode="decimal" style="width:68px;text-align:right" oninput="newRcpSetG('+i+',this.value)">'
+      +'<button class="add" style="padding:1px 7px" onclick="newRcpDel('+i+')">删</button></div>';
+    if(ok){
+      h+='<div style="font-size:11.5px;color:#928F86;margin-top:5px">'
+        +Math.round(f.kcal*x.g/100)+' kcal · 蛋白 '+(f.p*x.g/100).toFixed(1)+'g · 碳水 '+(f.c*x.g/100).toFixed(1)
+        +'g · 脂肪 '+(f.f*x.g/100).toFixed(1)+'g · 钠 '+Math.round((f.na||0)*x.g/100)+'mg'
+        +(f.my?'　｜ 自建食材':'')+'</div>';
+    }else{
+      h+='<div style="font-size:11.5px;color:#A32D2D;margin-top:5px;line-height:1.7">库里没有「'+esc(x.raw)+'」<br>';
+      const s=aiSug[x.raw];
+      if(s&&s.c&&s.c.length){
+        h+=s.c.map(function(c){return '<span class="chip" style="margin:3px 4px 0 0" onclick="newRcpSetItem('+i+',\''+esc(c)+'\')">用 '+esc(c)+'</span>'}).join("");
+        if(s.why)h+='<div style="color:#888780;margin-top:3px">'+esc(s.why)+'</div>';
+      }
+      h+='<div style="margin-top:5px"><button class="add" style="padding:2px 8px" onclick="newRcpPick('+i+')">自己选</button>'
+        +' <button class="add" style="padding:2px 8px" onclick="openNewFood(\''+esc(x.raw).replace(/'/g,"")+'\')">新建这个食材</button></div>';
+      h+='</div>';
+    }
+    h+='</div>';
+  });
+  h+='<div style="height:8px"></div><button class="btn ghost" onclick="newRcpPick(-1)">＋ 加食材</button>';
+  h+='<div class="sec"><b>做法</b><span>一行一步，可以留空</span></div>';
+  h+='<textarea id="nr_steps" placeholder="鸡胸切块，加生抽腌 5 分钟&#10;水开下锅煮 3 分钟&#10;捞出拌蒜末" oninput="newRcp.steps=this.value">'+esc(newRcp.steps)+'</textarea>';
+  h+='<div class="preview" id="nr_total" style="margin-top:10px">'+newRcpTotalText()+'</div>';
+  h+='<div style="height:12px"></div><button class="btn" onclick="saveNewRcp()">'
+    +(editing?"保存修改":"保存到我的菜谱")+'</button>';
+  h+='<div style="height:8px"></div><button class="btn ghost" onclick="closeSheet()">取消</button>';
+  if(editing)h+='<div style="height:8px"></div><button class="btn ghost" style="color:#A32D2D" onclick="delDishFromEdit()">删除这条</button>';
+  openSheet(h);
+}
+function newRcpSetItem(i,name){
+  const f=BY[name];
+  if(!f)return;
+  newRcp.items[i].n=f.n;
+  newRcp.items[i].how="手动";
+  renderNewRcp();
+}
+function grabForm(){
+  const e1=document.getElementById("nr_name");
+  if(e1)newRcp.n=e1.value;
+  const e2=document.getElementById("nr_steps");
+  if(e2)newRcp.steps=e2.value;
+}
+function newRcpSetG(i,v){
+  const n=parseFloat(v);
+  if(isNaN(n)||n<0)return;
+  newRcp.items[i].g=Math.round(n);
+  const el=document.getElementById("nr_total");
+  if(el)el.innerHTML=newRcpTotalText();
+}
+function newRcpDel(i){
+  grabForm();
+  newRcp.items.splice(i,1);
+  renderNewRcp();
+}
+let newRcpPickIdx=-1;
+function newRcpPick(i){
+  grabForm();
+  newRcpPickIdx=(typeof i==="number")?i:-1;
+  const t=newRcpPickIdx>=0?"换成库里的哪个":"加食材";
+  openSheet('<h3>'+t+'</h3><div class="sm">选一样'+(newRcpPickIdx>=0?"替换「"+esc(newRcp.items[newRcpPickIdx].raw)+"」":"")+'</div>'
+    +'<input type="search" id="npq" placeholder="搜食材，比如 鸡胸 / 豆腐" oninput="newRcpPickSearch(this.value)">'
+    +'<div id="nplist" style="max-height:46vh;overflow-y:auto;margin-top:8px">'+newRcpPickList("")+'</div>'
+    +'<div style="height:8px"></div><button class="btn ghost" onclick="renderNewRcp()">返回</button>');
+}
+function newRcpPickList(kw){
+  const list=F.filter(function(f){return nameHit(f,kw)}).slice(0,40);
+  if(!list.length)return '<div class="empty">没找到，换个词</div>';
+  return list.map(function(f){
+    return '<div class="food" onclick="newRcpChoose('+f.id+')">'
+      +'<div class="info"><div class="nm">'+f.n+'<span class="badge mut">'+f.ug+'g/'+f.un+'</span></div>'
+      +'<div class="mt">'+f.kcal+' kcal · 蛋白 '+f.p+'g</div></div>'
+      +'<button class="add">加</button></div>';
+  }).join("");
+}
+function newRcpPickSearch(v){document.getElementById("nplist").innerHTML=newRcpPickList(v)}
+function newRcpChoose(id){
+  const f=F[id];
+  if(newRcpPickIdx>=0&&newRcp.items[newRcpPickIdx]){
+    newRcp.items[newRcpPickIdx].n=f.n;
+    newRcp.items[newRcpPickIdx].how="手动";
+    if(!newRcp.items[newRcpPickIdx].g)newRcp.items[newRcpPickIdx].g=f.ug;
+  }else{
+    newRcp.items.push({n:f.n,raw:f.n,g:f.ug});
+  }
+  newRcpPickIdx=-1;
+  renderNewRcp();
+}
+function delDishFromEdit(){
+  const i=newRcp.idx;
+  if(!(i>-1)||!S.myDish||!S.myDish[i])return;
+  if(!confirm("删除「"+S.myDish[i].n+"」？"))return;
+  S.myDish.splice(i,1);save();closeSheet();setTab("rcp");
+}
+function saveNewRcp(){
+  const name=String(newRcp.n||"").trim();
+  if(!name){alert("先给菜起个名字");return}
+  if(!newRcp.items.length){alert("至少加一样食材，否则算不出营养");return}
+  const bad=newRcp.items.filter(function(x){return !x.n});
+  if(bad.length){
+    alert("还有 "+bad.length+" 项没指定食材："+bad.map(function(x){return x.raw}).join("、")
+      +"\n\n先给它们指定库里的食材，或者删掉，否则算不出营养。");
+    return;
+  }
+  const steps=String(newRcp.steps||"").split(/\n/).map(function(x){return x.trim()}).filter(Boolean);
+  const rec={n:name,i:newRcp.items.map(function(x){return [x.n,x.g]}),note:"自建菜谱",use:0};
+  if(steps.length)rec.s=steps;
+  S.myDish=S.myDish||[];
+  const editing=(typeof newRcp.idx==="number"&&newRcp.idx>-1&&S.myDish[newRcp.idx]);
+  if(editing){
+    rec.use=S.myDish[newRcp.idx].use||0;
+    rec.note=S.myDish[newRcp.idx].note||"自建菜谱";
+    const same=S.myDish.filter(function(x,k){return k!==newRcp.idx&&x.n===name});
+    if(same.length&&!confirm("已经有一个叫「"+name+"」的了，保存后会用新的替换它。继续吗？"))return;
+    S.myDish=S.myDish.filter(function(x,k){return k!==newRcp.idx&&x.n!==name});
+    S.myDish.push(rec);
+  }else{
+    const idx=S.myDish.findIndex(function(x){return x.n===name});
+    if(idx>-1){
+      if(!confirm("「"+name+"」已经存在，覆盖原来的配方吗？"))return;
+      rec.use=S.myDish[idx].use||0;
+      S.myDish.splice(idx,1);
+    }
+    S.myDish.push(rec);
+  }
+  save();closeSheet();
+  q="";setTab("rcp");
+  const m=dishMacro(rec,1);
+  alert((editing?"已更新「":"已保存「")+name+"」：约 "+m.kcal+" kcal，蛋白 "+m.p+"g。");
+}
+function openMyRcp(idx){
+  const d=(S.myDish||[])[idx];
+  if(!d)return;
+  const m=dishMacro(d,1);
+  let h='<h3>'+esc(d.n)+'</h3><div class="sm">自建菜谱 ｜ '+(d.s?d.s.length+' 步':'没写做法')+'</div>';
+  h+='<div class="preview"><div class="l"><b>合计</b><b>'+m.kcal+' kcal</b></div>'
+    +'<div class="l"><span>约 '+m.g+'g · 蛋白 '+m.p+'g · 碳水 '+m.c+'g · 脂肪 '+m.f+'g · 钠 '+m.na+'mg</span></div></div>';
+  h+='<div class="sec"><b>食材</b><span>'+(d.i||[]).length+' 样</span></div>';
+  (d.i||[]).forEach(function(x){
+    const f=BY[x[0]];
+    h+='<div class="ing"><span>'+esc(x[0])+'</span><span class="q">'+x[1]+'g'+(f?' · '+Math.round(f.kcal*x[1]/100)+' kcal':'')+'</span></div>';
+  });
+  if(d.s&&d.s.length){
+    h+='<div class="sec"><b>做法</b><span>'+d.s.length+' 步</span></div><ol class="steps">'
+      +d.s.map(function(x){return '<li>'+esc(x)+'</li>'}).join("")+'</ol>';
+  }
+  h+='<div style="height:12px"></div><button class="btn" onclick="pickDish('+idx+',1)">记这一餐</button>';
+  h+='<div style="height:8px"></div><button class="btn ghost" onclick="openEditDish('+idx+')">编辑配方</button>';
+  h+='<div style="height:8px"></div><button class="btn ghost" onclick="closeSheet()">关闭</button>';
+  openSheet(h);
+}
+function renderRcp(){
+  let h=`<input type="search" id="rq" placeholder="搜菜名或食材，比如 虾 / 豆腐 / 番茄" value="${q}"><div class="chips">`;
+  [["all","全部"],["早","早餐"],["主","主菜"],["汤","汤锅"],["免","免开火"]].forEach(c=>{
+    h+=`<span class="chip ${rcpFilter===c[0]?"on":""}" onclick="setRcpFilter('${c[0]}')">${c[1]}</span>`;
+  });
+  h+=`</div><div class="card" style="padding:12px 14px">
+    <button class="btn ghost" onclick="openNewRcp()">＋ 自建菜谱（照着你看到的做法填）</button>
+    <div style="height:8px"></div>
+    <button class="btn ghost" onclick="openAI()">✦ 用 AI 写一道（需配 key）</button>
+  </div>
+  <div id="rlist">${rcpListHtml()}</div>`;
+  return h;
+}
+function rcpListHtml(){
+  const kw=q.trim();
+  let h="";
+  if(kw){
+    const hf=F.filter(f=>f.n.indexOf(kw)>-1).slice(0,3);
+    if(hf.length){
+      h+=`<div class="card"><h2>食材营养<span>每 100g · 成分表原值</span></h2>`;
+      hf.forEach(f=>{
+        h+=`<div class="food"><div class="info"><div class="nm">${f.n}<span class="badge mut">1${f.un}=${f.ug}g</span></div>
+        <div class="mt">${f.kcal} kcal · 蛋白 ${f.p}g · 碳水 ${f.c}g · 脂肪 ${f.f}g · ${f.label}</div></div>
+        <button class="add" onclick="openAdd(${f.id})">＋</button></div>`;
+      });
+      h+=`</div>`;
+    }
+  }
+  // 自定义食谱：AI 生成的食谱 + 自建/拆解的菜品，合成一处
+  const mine=[];
+  (S.myRcp||[]).forEach(function(r,i){
+    if(kw&&r.n.indexOf(kw)<0)return;
+    mine.push({k:"rcp",i:i,n:r.n,mac:rcpMacro(r),steps:(r.s||[]).length,tag:"AI 生成"});
+  });
+  (S.myDish||[]).forEach(function(d,i){
+    if(kw&&d.n.indexOf(kw)<0)return;
+    mine.push({k:"dish",i:i,n:d.n,mac:dishMacro(d,1),steps:(d.s||[]).length,tag:d.note&&d.note.indexOf("AI")>-1?"AI 拆解":"自建"});
+  });
+  if(mine.length){
+    h+=`<div class="card"><h2>自定义食谱<span>${mine.length} 道 · 点开可改</span></h2>`;
+    mine.forEach(function(x){
+      const m=x.mac;
+      h+=`<div class="rec" onclick="${x.k==="rcp"?"openRcp("+((typeof RCP!=="undefined"?RCP.length:0)+x.i)+")":"openMyRcp("+x.i+")"}">
+        <div class="t"><b>${esc(x.n)}</b><em><span class="badge ${x.k==="rcp"?"info":"mut"}">${x.tag}</span> ${x.steps?x.steps+" 步":"无步骤"}</em></div>
+        <div class="mac">${m.kcal} kcal · 蛋白 ${m.p}g · 碳水 ${m.c}g · 脂肪 ${m.f}g</div>
+      </div>`;
+    });
+    h+=`</div>`;
+  }
+  const list=RCP.map((r,i)=>({r,i})).filter(x=>(rcpFilter==="all"||x.r.c===rcpFilter)&&rcpMatch(x.r,kw));
+  h+=`<div class="card"><h2>${kw?"相关食谱":"全部食谱"}<span>${list.length} 道</span></h2>`;
+  if(!list.length)h+=`<div class="empty">没有找到。换个词，或去掉筛选。</div>`;
+  list.forEach(x=>{
+    const m=rcpMacro(x.r);
+    h+=`<div class="rec" onclick="openRcp(${x.i})">
+      <div class="t"><b>${x.r.n}</b><em>${x.r.t} 分钟</em></div>
+      <div class="mac">${macLine(m)}</div>
+      <div class="badges">${x.r.m.slice(0,4).map(n=>`<span class="badge info">${n}</span>`).join("")}</div>
+    </div>`;
+  });
+  h+=`</div>`;
+  return h;
+}
+
+function renderFood(){
+  let h=`<input type="search" id="fq" placeholder="搜食材，比如 鸡蛋 / 虾 / 菠菜" value="${foodQ}">
+  <div style="display:flex;justify-content:center;margin:16px 0 10px"><span class="chip on" style="display:inline-block;padding:7px 18px" onclick="openAdd()">＋ 添加食材到库存</span></div><div id="flist">${foodListHtml()}</div>`;
+  return h;
+}
+function foodListHtml(){
+  const kw=foodQ.trim();
+  if(!kw)return invHtml();
+  const list=F.filter(f=>nameHit(f,kw));
+  let h=`<div class="card"><h2>搜索结果<span>${list.length} 条</span></h2>`;
+  if(!list.length)h+=`<div class="empty">库里没有这样食材</div>`;
+  list.forEach(f=>{
+    const own=invItem(f.id);
+    h+=`<div class="food"><div class="info">
+      <div class="nm">${f.n}${own?`<span class="badge mut">库存 ${Math.round(own)}g</span>`:""}</div>
+      <div class="mt">${CAT[f.cat]} · ${f.kcal} kcal/100g · 蛋白 ${f.p}g · ${f.label} · ${keepDays(f)<=1?"需当天吃":"常温"+keepDays(f)+"天"}</div>
+      <div class="mt" style="color:#B4B2A9">来源：${f.src}</div>
+    </div><button class="add" onclick="openAdd(${f.id})">＋1${f.un}</button></div>`;
+  });
+  h+=`</div>`;
+  return h;
+}
+function invHtml(){
+  const sg=S.set;
+  let h=`<div class="stat">
+    <div class="s"><div class="k">库存种类</div><div class="v">${new Set(S.inv.map(x=>x.id)).size}</div></div>
+    <div class="s"><div class="k">临期/过期</div><div class="v">${expireList().length}</div></div>
+    <div class="s" onclick="openWaste()" style="cursor:pointer"><div class="k">浪费明细 ›</div><div class="v">${(S.waste||[]).filter(w=>daysAgo(w.d)<=6).length}</div></div>
+  </div>
+  <div class="card"><h2>我的库存<span>按到期排序</span></h2>`;
+  if(!S.inv.length)h+=`<div class="empty">还没有食材<br>点上面「＋ 添加食材到库存」</div>`;
+  else{
+    [...S.inv].sort((a,b)=>remDays(a)-remDays(b)).forEach(it=>{
+      const f=F[it.id],r=remDays(it);
+      const bd=r<0?["已过期","badge warn"]:r<=0?["今天要用","badge warn"]:r<=3?[r+"天","badge info"]:[r+"天","badge mut"];
+      h+=`<div class="food" onclick="openBatch('${it.d}',${it.id})">
+        <div class="info"><div class="nm">${f.n}<span class="${bd[1]}">${bd[0]}</span></div>
+        <div class="mt">净 ${Math.round(it.g)}g${f.e<100?"（毛 "+Math.round(it.g/(f.e/100))+"g）":""} · ${Math.round(f.kcal*it.g/100)} kcal · 蛋白 ${(f.p*it.g/100).toFixed(1)}g · 买于 ${it.d.slice(5)}</div></div></div>`;
+    });
+  }
+  h+=`</div>`;
+  return h;
+}
+
+function weekStats(days,last7){
+  const logged=last7.filter(function(d){return days[d]});
+  const n=logged.length;
+  const sum=logged.reduce(function(a,d){return a+days[d].kcal},0);
+  const avg=n?Math.round(sum/n):0;
+  const hit=last7.filter(function(d){return days[d]&&days[d].p>=S.set.protein*0.85}).length;
+  const w7=(S.waste||[]).filter(function(w){return daysAgo(w.d)<=6});
+  const wg=w7.reduce(function(a,w){return a+(w.g||0)},0);
+  const wk=w7.reduce(function(a,w){const f=F[w.id];return a+(f?f.kcal*w.g/100:0)},0);
+  return {n:n,avg:avg,hit:hit,w7:w7,wg:wg,wk:wk,exp:expireList()};
+}
+function weekBrief(days,last7){
+  const st=weekStats(days,last7), sg=S.set;
+  const adv=[];
+  if(st.n<4){
+    adv.push("这周只记了 "+st.n+" 天，还看不出趋势。先把记录稳定下来，哪怕每天只记一顿。");
+  }else{
+    if(st.avg>sg.kcal+200) adv.push("日均 "+st.avg+" kcal，比目标高 "+(st.avg-sg.kcal)+"，先查主食份量和食堂的油。");
+    else if(st.avg<sg.kcal-300) adv.push("日均 "+st.avg+" kcal，比目标低 "+(sg.kcal-st.avg)+"，掉太快容易掉肌肉，主食加回来一点。");
+    if(st.hit<4) adv.push("蛋白达标 "+st.hit+"/"+st.n+" 天，不到一半。每天固定一份蛋白比临时补更管用。");
+  }
+  if(st.w7.length>=2) adv.push("这周扔了 "+st.w7.length+" 次（"+Math.round(st.wg)+"g，折合 "+Math.round(st.wk)+" kcal）。看看是哪几样总放过期，直接从采购清单里删掉。");
+  if(st.exp.length) adv.push("现在有 "+st.exp.length+" 样快过期，今明两天优先用掉。");
+  if(!adv.length) adv.push("这周记录稳定、蛋白达标、没有浪费，保持就行。");
+  return '<div class="card"><h2>本周简报<span>记录了 '+st.n+'/7 天</span></h2>'
+    +'<div style="font-size:13px;line-height:1.85;color:#5F5E5A">'
+    +'<div>日均 <b style="color:#2C2C2A">'+st.avg+'</b> kcal（目标 '+sg.kcal+'）　·　蛋白达标 <b style="color:#2C2C2A">'+st.hit+'</b> 天</div>'
+    +'<div>浪费 '+st.w7.length+' 次 · '+Math.round(st.wg)+'g　·　库存临期 '+st.exp.length+' 样</div>'
+    +'<div style="margin-top:9px;padding:10px 12px;background:#EAF3DE;border-radius:9px;color:#27500A">'
+    +adv.map(function(x){return '<div>· '+x+'</div>'}).join("")+'</div>'
+    +'</div>'
+    +'<div style="height:10px"></div><button class="btn ghost" onclick="openWeekReport()">看明细</button>'
+    +'</div>';
+}
+function openWeekReport(){
+  const days={};S.logs.forEach(function(l){days[l.d]=days[l.d]||{kcal:0,p:0};days[l.d].kcal+=l.kcal||0;days[l.d].p+=l.p||0});
+  const last7=Array.from({length:7},function(_,i){const d=new Date();d.setDate(d.getDate()-i);return dstr(d)}).reverse();
+  const st=weekStats(days,last7);
+  let h='<h3>本周明细</h3><div class="sm">'+last7[0]+' 至 '+last7[6]+'</div>';
+  h+='<div class="sec"><b>逐日</b></div>';
+  last7.forEach(function(d){
+    const x=days[d];
+    h+='<div class="logitem"><span>'+d.slice(5)+'</span><span class="r">'
+      +(x?Math.round(x.kcal)+' kcal · 蛋白 '+Math.round(x.p)+'g'+(x.p>=S.set.protein*0.85?' ✓':'')
+         :'<span style="color:#B4B2A9">无记录</span>')+'</span></div>';
+  });
+  h+='<div class="sec"><b>浪费</b> · '+st.w7.length+' 次</div>';
+  if(!st.w7.length)h+='<div class="empty">这周没有浪费记录</div>';
+  else h+=st.w7.slice().sort(function(a,b){return b.d.localeCompare(a.d)}).map(function(w){
+    const f=F[w.id];if(!f)return "";
+    return '<div class="logitem"><span>'+esc(f.n)+'</span><span class="r">'+Math.round(w.g)+'g · '+Math.round(f.kcal*w.g/100)+' kcal<br><span style="color:#B4B2A9">'+w.d.slice(5)+'</span></span></div>';
+  }).join("");
+  h+='<div class="sec"><b>库存临期</b> · '+st.exp.length+' 样</div>';
+  if(!st.exp.length)h+='<div class="empty">没有临期食材</div>';
+  else h+=st.exp.map(function(x){
+    const f=BY[F[x.id].n];
+    return '<div class="logitem"><span>'+esc(f.n)+'</span><span class="r">'+(x.rem<=0?'今天要用':'还剩 '+x.rem+' 天')+'</span></div>';
+  }).join("");
+  h+='<div style="height:12px"></div><button class="btn ghost" onclick="closeSheet()">关闭</button>';
+  openSheet(h);
+}
+function renderLog(){
+  const e=eatenToday();
+  const days={};S.logs.forEach(l=>{days[l.d]=days[l.d]||{kcal:0,p:0};days[l.d].kcal+=l.kcal||0;days[l.d].p+=l.p||0});
+  const last7=Array.from({length:7},(_,i)=>{const d=new Date();d.setDate(d.getDate()-i);return dstr(d)}).reverse();
+  const hit=last7.filter(d=>days[d]&&days[d].p>=S.set.protein*0.85).length;
+  const avg=last7.filter(d=>days[d]).reduce((a,d)=>a+days[d].kcal,0)/Math.max(1,last7.filter(d=>days[d]).length);
+  let h=`<div class="stat">
+    <div class="s"><div class="k">7天蛋白达标</div><div class="v">${hit} 天</div></div>
+    <div class="s"><div class="k">日均热量</div><div class="v">${Math.round(avg)||0}</div></div>
+    <div class="s"><div class="k">今日</div><div class="v">${Math.round(e.kcal)}</div></div>
+  </div>`
+  +weekBrief(days,last7)+
+  `<div class="card"><button class="btn" onclick="openLogSheet()">＋ 记一笔（食堂 / 加餐）</button></div>
+  <div class="card"><h2>最近 7 天<span>灰条=无记录</span></h2><div class="bars">`;
+  last7.forEach(d=>{
+    const k=days[d]?days[d].kcal:0;
+    h+=`<div class="bar-row"><span class="lb">${d.slice(5)}</span><div class="tr"><div class="fl" style="width:${k?Math.min(100,k/S.set.kcal*100):2}%;background:${k?"#3B6D11":"#E8E5DC"}"></div></div><span class="vl">${k?Math.round(k):"—"}</span></div>`;
+  });
+  h+=`</div></div>`;
+  const tl=S.logs.filter(l=>l.d===today()).reverse();
+  h+=`<div class="card"><h2>今天的记录<span>${tl.length} 条</span></h2>`;
+  if(!tl.length)h+=`<div class="empty">还没有记录</div>`;
+  tl.forEach(l=>{
+    h+=`<div class="logitem"><span>${l.name}</span><span class="r">${Math.round(l.kcal)} kcal · P${Math.round(l.p)} C${Math.round(l.c||0)} F${Math.round(l.f||0)}
+    <br><button class="add" style="padding:1px 7px;margin-top:3px" onclick="delLog(${S.logs.indexOf(l)})">删</button></span></div>`;
+  });
+  h+=`</div>`;
+  h+='<div class="card" style="padding:0;overflow:hidden;margin-top:4px">'
+    +setRow("设置","目标 · 天气 · AI · 自定义食谱 · 数据","setTab('set')")
+    +'</div>';
+  return h;
+}
+/* ============ 设置：目录页 ============ */
+function setRow(title,sub,fn){
+  return '<div class="setrow" onclick="'+fn+'"><div class="t"><b>'+title+'</b><em>'+sub+'</em></div><span class="ar">›</span></div>';
+}
+function renderSettings(){
+  const s=S.set;
+  const nR=(S.myRcp||[]).length, nD=(S.myDish||[]).length;
+  let h="";
+  h+='<div class="card" style="padding:0;overflow:hidden">';
+  h+=setRow("身体与目标",s.sex+" · "+s.weight+"kg · 目标 "+s.kcal+" kcal / 蛋白 "+s.protein+"g","openSetBody()");
+  h+=setRow("本地天气",(s.city?s.city+" · ":"")+"室温偏移 +"+s.offset+"℃","openSetWeather()");
+  h+=setRow("AI 写菜谱",((S.ai&&S.ai.key)?"已配置 · "+(S.ai.model||"deepseek-flash"):"未配置 · 点这里填 key"),"openSetAI()");
+  h+=setRow("我的自定义食谱",nR+" 道 AI 食谱 · "+nD+" 道自建/拆解","openSetRcp()");
+  h+=setRow("数据","备份 · 恢复 · 清空（只存本机）","openSetData()");
+  h+='</div>';
+  h+='<div class="card"><h2>关于<span>v3.1</span></h2><div style="font-size:12px;color:var(--ink3);line-height:1.75">'
+    +'营养数据：《中国食物成分表 标准版（第6版）》'+F.filter(function(f){return !f.my}).length+' 条 + 包装标签 '
+    +F.filter(function(f){return String(f.src).indexOf("包装")>-1}).length+' 条 + 常见值若干，全部按每 100g 可食部，标注生重/熟重/净重。'
+    +'<br>保存期为食品常识估算，不是实验数据。</div></div>';
+  return h;
+}
+
+/* ============ 设置：各分组（用底部弹层编辑） ============ */
+function openSetBody(){
+  const s=S.set;
+  openSheet('<h3>身体与目标</h3><div class="sm">'+(s.locked?"手动锁定中":"随体重自动计算")+'</div>'
+    +'<div class="row3"><div><label class="fl">性别</label><select onchange="setP(\'sex\',this.value)">'
+    +'<option value="女"'+(s.sex==="女"?" selected":"")+'>女</option><option value="男"'+(s.sex==="男"?" selected":"")+'>男</option></select></div>'
+    +'<div><label class="fl">体重 kg</label><input type="number" value="'+s.weight+'" inputmode="decimal" onchange="setP(\'weight\',this.value)"></div></div>'
+    +'<div class="row3"><div><label class="fl">身高 cm</label><input type="number" value="'+s.height+'" inputmode="decimal" onchange="setP(\'height\',this.value)"></div>'
+    +'<div><label class="fl">年龄</label><input type="number" value="'+s.age+'" inputmode="numeric" onchange="setP(\'age\',this.value)"></div></div>'
+    +'<label class="fl">活动量</label><select onchange="setP(\'act\',this.value)">'
+    +'<option value="1.2"'+(s.act==1.2?" selected":"")+'>久坐（几乎不运动）</option>'
+    +'<option value="1.375"'+(s.act==1.375?" selected":"")+'>轻度（每周 1–3 次）</option>'
+    +'<option value="1.55"'+(s.act==1.55?" selected":"")+'>中度（每周 3–5 次）</option></select>'
+    +'<div class="preview"><div class="l"><b>当前目标</b><b>'+s.kcal+' kcal</b></div>'
+    +'<div class="l"><span>蛋白 '+s.protein+'g ｜ 脂肪 '+s.fat+'g ｜ 碳水 '+s.carb+'g ｜ 钠 2000mg</span></div></div>'
+    +'<div class="btns"><button class="btn ghost" onclick="toggleLock()">'+(s.locked?"恢复自动":"手动锁定")+'</button>'
+    +'<button class="btn ghost" onclick="openGoal()">直接改目标</button></div>'
+    +'<div style="height:8px"></div><button class="btn ghost" onclick="renderSettingsTab()">返回设置</button>'
+    +'<div style="margin-top:10px;font-size:11.5px;color:#B4B2A9;line-height:1.7">Mifflin-St Jeor 算基础代谢 × 活动系数 − 400 kcal 缺口；蛋白 1.6g/kg、脂肪 0.8g/kg，碳水由余量反推。</div>');
+}
+function openSetWeather(){
+  const s=S.set;
+  openSheet('<h3>本地天气</h3><div class="sm">只用来修正食材保存期</div>'
+    +'<label class="fl">城市</label><div style="display:flex;gap:8px">'
+    +'<input type="search" id="city" value="'+esc(s.city||"")+'" placeholder="如 北京 / 武汉" style="flex:1">'
+    +'<button class="add" onclick="saveCity()">保存</button></div>'
+    +'<label class="fl">室温偏移（寝室通常比室外高 2–5℃，有暖气可设 8–10）</label>'
+    +'<input type="number" id="w_off" value="'+s.offset+'" inputmode="decimal" onchange="setP(\'offset\',this.value)">'
+    +'<div class="preview"><div class="l"><b>当前</b><b>'+((S.w&&S.w.t!=null)?(S.w.t+"℃"):"未取到")+'</b></div>'
+    +'<div class="l"><span>室温估算 '+((S.w&&S.w.t!=null)?Math.round(S.w.t+(+s.offset||0))+"℃":"按季节")+'</span></div></div>'
+    +'<button class="btn ghost" onclick="loadWeather(true)">刷新气温</button>'
+    +'<div style="height:8px"></div><button class="btn ghost" onclick="renderSettingsTab()">返回设置</button>');
+}
+function openSetAI(){
+  const a=S.ai||{};
+  openSheet('<h3>AI 写菜谱</h3><div class="sm">可选 · 数值一律由本地库重算</div>'
+    +'<label class="fl">接口地址</label><input type="search" id="ai_base" value="'+esc(a.base||"https://api.deepseek.com/v1")+'">'
+    +'<label class="fl">API Key</label><div style="display:flex;gap:8px">'
+    +'<input type="password" id="ai_key" value="'+esc(a.key||"")+'" placeholder="sk-..." style="flex:1">'
+    +'<button class="add" onclick="toggleKey()">显示</button></div>'
+    +'<label class="fl">模型名</label><div class="chips" style="padding:2px 0 8px">'
+    +'<span class="chip" onclick="setModel(\'deepseek-flash\')">deepseek-flash</span>'
+    +'<span class="chip" onclick="setModel(\'deepseek-v4-pro\')">deepseek-v4-pro</span>'
+    +'<span class="chip" onclick="testAI()">测试连接取列表</span></div>'
+    +'<input type="search" id="ai_model" value="'+esc(a.model||"deepseek-flash")+'" placeholder="deepseek-flash">'
+    +'<div style="height:10px"></div><button class="btn" onclick="saveAI()">保存配置</button>'
+    +'<div id="ai_test" style="margin-top:10px"></div>'
+    +'<div style="height:8px"></div><button class="btn ghost" onclick="renderSettingsTab()">返回设置</button>'
+    +'<div style="margin-top:10px;font-size:11.5px;color:#B4B2A9;line-height:1.7">Key 明文存在本机，建议单独申请限额 key。</div>');
+}
+function openSetRcp(){
+  const R=S.myRcp||[], D=S.myDish||[];
+  let h='<h3>我的自定义食谱</h3><div class="sm">AI 生成的食谱 + 自建/拆解的菜品</div>';
+  h+='<div class="sec"><b>AI 生成的食谱</b><span>'+R.length+' 道</span></div>';
+  if(!R.length)h+='<div class="empty">没有<br>去食谱页用 AI 写一道</div>';
+  else h+=R.map(function(r,i){
+    const m=rcpMacro(r);
+    return '<div class="logitem"><span>'+esc(r.n)+'<br><span style="font-size:11px;color:#B4B2A9">'+m.kcal+' kcal · P'+m.p+'g</span></span>'
+      +'<span class="r" style="display:flex;gap:6px;align-items:center">'
+      +'<button class="add" style="padding:1px 8px" onclick="openEditRcp('+i+')">改</button>'
+      +'<button class="add" style="padding:1px 8px" onclick="delMyRcp('+i+')">删</button></span></div>';
+  }).join("");
+  h+='<div class="sec"><b>自建与拆解的菜品</b><span>'+D.length+' 道</span></div>';
+  if(!D.length)h+='<div class="empty">没有<br>食谱页「自建菜谱」或记一笔里 AI 拆解后保存</div>';
+  else h+=D.map(function(d,i){
+    const m=dishMacro(d,1);
+    return '<div class="logitem"><span>'+esc(d.n)+'<br><span style="font-size:11px;color:#B4B2A9">'+m.kcal+' kcal · P'+m.p+'g · '+(d.s?d.s.length+" 步":"无步骤")+'</span></span>'
+      +'<span class="r" style="display:flex;gap:6px;align-items:center">'
+      +'<button class="add" style="padding:1px 8px" onclick="closeSheet();openEditDish('+i+')">改</button>'
+      +'<button class="add" style="padding:1px 8px" onclick="delMyDish('+i+');openSetRcp()">删</button></span></div>';
+  }).join("");
+  if((R.length+D.length)>1)h+='<div style="height:10px"></div><button class="btn ghost" onclick="doDedupe();openSetRcp()">清理重复</button>';
+  h+='<div style="height:8px"></div><button class="btn ghost" onclick="renderSettingsTab()">返回设置</button>';
+  openSheet(h);
+}
+function openSetData(){
+  openSheet('<h3>数据</h3><div class="sm">都在这台手机里，不上传</div>'
+    +'<button class="btn" onclick="exportData()">导出备份到手机</button>'
+    +'<div style="height:8px"></div><button class="btn ghost" onclick="importData()">从备份恢复</button>'
+    +'<div style="height:8px"></div><button class="btn ghost" style="color:#A32D2D" onclick="clearAll()">清空数据</button>'
+    +'<div class="preview" style="margin-top:14px"><div class="l"><span>库存</span><b>'+S.inv.length+' 条</b></div>'
+    +'<div class="l"><span>饮食记录</span><b>'+S.logs.length+' 条</b></div>'
+    +'<div class="l"><span>自定义食谱</span><b>'+((S.myRcp||[]).length)+' 道</b></div>'
+    +'<div class="l"><span>自建菜品</span><b>'+((S.myDish||[]).length)+' 道</b></div>'
+    +'<div class="l"><span>自建食材</span><b>'+((S.myFood||[]).length)+' 项</b></div></div>'
+    +'<div style="height:8px"></div><button class="btn ghost" onclick="renderSettingsTab()">返回设置</button>');
+}
+function renderSettingsTab(){ setTab("set"); }
+
+
+function render(){
+  $("sub").innerHTML=subHtml();
+  const isSet=(tab==="set");
+  $("h1t").textContent=isSet?"设置":"寝室餐食助手";
+  $("backbtn").style.display=isSet?"block":"none";
+  $("sub").style.display=isSet?"none":"flex";
+  if(tab==="today")view.innerHTML=renderToday();
+  else if(tab==="rcp"){view.innerHTML=renderRcp();
+    const rq=$("rq");if(rq)rq.addEventListener("input",e=>{q=e.target.value;$("rlist").innerHTML=rcpListHtml()});}
+  else if(tab==="food"){view.innerHTML=renderFood();
+    const fq=$("fq");if(fq)fq.addEventListener("input",e=>{foodQ=e.target.value;$("flist").innerHTML=foodListHtml()});}
+  else if(tab==="set")view.innerHTML=renderSettings();
+  else view.innerHTML=renderLog();
+  document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on",b.dataset.tab===(tab==="set"?"log":tab)));
+  const _v=document.getElementById("view");
+  if(_v){_v.classList.remove("anim");void _v.offsetWidth;_v.classList.add("anim")}
+}
+function setTab(t){tab=t;q="";foodQ="";render();window.scrollTo({top:0})}
+document.querySelectorAll("nav button").forEach(b=>b.addEventListener("click",()=>setTab(b.dataset.tab)));
+function setRcpFilter(c){rcpFilter=c;render()}
+function setP(k,v){
+  const n=parseFloat(v);
+  if(k==="sex"||k==="city"){S.set[k]=v}else{if(!isNaN(n))S.set[k]=n}
+  calcTargets();save();render();
+}
+function toggleLock(){S.set.locked=!S.set.locked;if(!S.set.locked)calcTargets();save();render()}
+function openGoal(){
+  const k=prompt("每日热量目标 kcal",S.set.kcal);
+  if(k===null)return;
+  const p=prompt("每日蛋白目标 g",S.set.protein);
+  if(p===null)return;
+  S.set.kcal=Math.round(parseFloat(k)||S.set.kcal);
+  S.set.protein=Math.round(parseFloat(p)||S.set.protein);
+  S.set.locked=true;save();render();
+}
+async function saveCity(){
+  const c=($("city").value||"").trim();
+  S.set.city=c;
+  if(!c){S.set.lat=null;S.set.lon=null;save();render();return}
+  try{
+    const g=await geocode(c);
+    S.set.lat=g.latitude;S.set.lon=g.longitude;S.set.city=g.name||c;
+    save();render();loadWeather(true);
+  }catch(e){alert("没找到这个城市，换个写法试试")}
+}
+
+let sheetTimer=null;
+function closeSheet(instant){
+  const sh=$("sheet");
+  if(!sh)return;
+  if(sheetTimer){clearTimeout(sheetTimer);sheetTimer=null}
+  const box=$("sheetBox");
+  if(box)box.style.animation="";          /* 打开动画结束后会置 none，这里交还给 CSS 关闭动画 */
+  if(instant||!sh.classList.contains("on")){
+    sh.classList.remove("on","closing");
+    return;
+  }
+  sh.classList.add("closing");
+  sheetTimer=setTimeout(function(){
+    sh.classList.remove("on","closing");
+    sheetTimer=null;
+  },310);
+}
+$("sheet").addEventListener("click",e=>{if(e.target.id==="sheet")closeSheet()});
+function openSheet(html){
+  const sh=$("sheet"),box=$("sheetBox");
+  if(sheetTimer){clearTimeout(sheetTimer);sheetTimer=null}
+  const wasOn=sh.classList.contains("on");
+  sh.classList.remove("closing");
+  /* 只在「从无到有」时重播上滑动画；弹层内换内容（如点数量胶囊）不重播，避免整页跳动 */
+  if(!wasOn)box.style.animation="none";
+  box.innerHTML='<button class="x" onclick="closeSheet()">×</button>'+html;
+  if(!wasOn){void box.offsetWidth;box.style.animation=""}
+  sh.classList.add("on");
+}
+/* 打开动画放完就撤掉 fill:both，否则它会一直压住行内 transform，下拉拖动时面板不跟手 */
+$("sheetBox").addEventListener("animationend",function(e){
+  if(e.target===this&&e.animationName==="sheetUp")this.style.animation="none";
+});
+
+let addId=-1,addUnit="u",addGross=false;
+function openAdd(id){
+  if(id==null){
+    openSheet(`<h3>添加食材</h3><div class="sm">搜名字或别名，点一下就能加</div>
+    <input type="search" id="aq" placeholder="鸡蛋 / 虾 / 豆腐 / 西兰花" oninput="addSearch(this.value)">
+    <div id="alist" style="max-height:52vh;overflow-y:auto;margin-top:8px">${addListHtml("")}</div>`);
+    return;
+  }
+  addId=id;addUnit="u";addGross=false;renderAddSheet();
+}
+function renderAddSheet(){
+  const f=F[addId],er=f.e/100,gross1=f.ug/er;
+  let h=`<h3>${f.n}</h3><div class="sm">1${f.un} ≈ 净重 ${f.ug}g${f.e<100?"（毛重约 "+Math.round(gross1)+"g，可食部 "+f.e+"%）":""}<br>
+  ${f.kcal} kcal/100g ｜ 蛋白 ${f.p}g ｜ 碳水 ${f.c}g ｜ 脂肪 ${f.f}g<br>
+  钠 ${Math.round(f.na||0)}mg ｜ 钙 ${Math.round(f.ca||0)}mg ｜ 铁 ${(f.fe||0).toFixed(1)}mg ｜ 维C ${(f.vc||0).toFixed(1)}mg<br>
+  ${f.note?f.note+"<br>":""}<span style="color:#C0BDB4">来源：${f.src}</span></div>`;
+  h+=`<div class="chips">
+    <span class="chip ${addUnit==='u'?'on':''}" onclick="setAU('u')">按${f.un}</span>
+    <span class="chip ${addUnit==='g'?'on':''}" onclick="setAU('g')">按克数</span>
+  </div>`;
+  if(addUnit==='u'){
+    h+=`<label class="fl">数量（${f.un}）</label>
+    <input type="number" id="addq" value="1" inputmode="decimal" oninput="calcAdd()">
+    <div class="chips" style="margin-top:10px">
+      <span class="chip" onclick="setQ(0.5)">半${f.un}</span>
+      <span class="chip" onclick="setQ(1)">1${f.un}</span>
+      <span class="chip" onclick="setQ(2)">2${f.un}</span>
+      <span class="chip" onclick="setQ(3)">3${f.un}</span>
+    </div>`;
+  }else{
+    h+=`<div class="chips">
+      <span class="chip ${!addGross?'on':''}" onclick="setAG(false)">净重</span>
+      ${f.e<100?"<span class=\'chip "+(addGross?"on":"")+"\' onclick=\'setAG(true)\'>毛重（带壳/带骨）</span>":""}
+    </div>
+    <label class="fl">克数（${addGross?"带壳/带骨":"可食部净重"}）</label>
+    <input type="number" id="addq" value="${addGross?Math.round(gross1):f.ug}" inputmode="decimal" oninput="calcAdd()">`;
+  }
+  h+=`<div class="preview" id="apv"></div>
+  <button class="btn" onclick="doAdd()">加进库存</button>
+  <div style="height:8px"></div><button class="btn ghost" onclick="openAdd()">换个食材</button>`;
+  openSheet(h);calcAdd();
+}
+function setAU(u){addUnit=u;renderAddSheet()}
+function setAG(g){addGross=g;renderAddSheet()}
+function setQ(n){const e=document.getElementById("addq");if(e){e.value=n;calcAdd()}}
+function addNet(){
+  const f=F[addId];const el=document.getElementById("addq");
+  const v=el?parseFloat(el.value):0;
+  if(!v||v<=0)return 0;
+  if(addUnit==="u")return v*f.ug;
+  return addGross?v*(f.e/100):v;
+}
+function calcAdd(){
+  const f=F[addId],net=addNet(),pv=document.getElementById("apv");
+  if(!pv)return;
+  if(!net){pv.innerHTML='<span style="color:#928F86">填个数量或克数</span>';return}
+  pv.innerHTML=`<div class="l"><b>计入库存（净重）</b><b>${Math.round(net)}g</b></div>
+  <div class="l"><span style="color:#928F86">${f.e<100?"对应毛重 "+Math.round(net/(f.e/100))+"g（可食部 "+f.e+"%）":"全部可食"}</span></div>
+  <div class="l"><span>热量 ${Math.round(f.kcal*net/100)} kcal ｜ 蛋白 ${(f.p*net/100).toFixed(1)}g</span></div>`;
+}
+function doAdd(){
+  const net=addNet();
+  if(!net||net<=0)return;
+  S.inv.push({id:addId,g:Math.round(net*10)/10,d:today()});
+  save();closeSheet();render();
+}
+function addListHtml(kw){
+  const list=F.filter(f=>nameHit(f,kw)).slice(0,40);
+  return list.map(f=>`<div class="food" onclick="openAdd(${f.id})">
+    <div class="info"><div class="nm">${f.n}<span class="badge mut">${f.ug}g/${f.un}</span></div>
+    <div class="mt">${f.kcal} kcal · 蛋白 ${f.p}g · ${CAT[f.cat]}</div></div>
+    <button class="add">＋</button></div>`).join("");
+}
+function addSearch(v){document.getElementById("alist").innerHTML=addListHtml(v)}
+function setAdd(g){const e=document.getElementById("addg");if(e)e.value=g}
+function openBatch(d,id){
+  const b=S.inv.find(x=>x.d===d&&x.id===id);
+  if(!b)return;
+  const f=F[id],r=remDays(b);
+  const st=r<0?`已过期 ${-r} 天`:r<=0?"今天最后一天":`还剩 ${r} 天`;
+  openSheet(`<h3>${f.n}</h3><div class="sm">${Math.round(b.g)}g ｜ 买于 ${b.d.slice(5)} ｜ ${st}</div>
+  <label class="fl">改成实际剩余克数</label>
+  <input type="number" id="addg" value="${Math.round(b.g)}" inputmode="decimal">
+  <div style="height:14px"></div><button class="btn" onclick="saveBatch('${d}',${id})">保存</button>
+  <div style="height:8px"></div><button class="btn ghost" onclick="dropBatch('${d}',${id})">扔掉这一份（记入浪费）</button>
+  <div style="height:8px"></div><button class="btn ghost" style="color:#A32D2D" onclick="delBatch('${d}',${id})">删除这条（录错了，不计浪费）</button>`);
+}
+function delBatch(d,id){
+  if(!confirm("删除这条库存记录？\n\n用于录错了想重填，不计入浪费。"))return;
+  S.inv=S.inv.filter(function(x){return !(x.d===d&&x.id===id)});
+  save();closeSheet();render();
+}
+function saveBatch(d,id){
+  const n=parseFloat($("addg").value);
+  if(!n||n<=0)return;
+  const b=S.inv.find(x=>x.d===d&&x.id===id);if(b)b.g=n;
+  save();closeSheet();render();
+}
+function dropBatch(d,id){
+  S.waste=S.waste||[];
+  const b=S.inv.find(x=>x.d===d&&x.id===id);
+  if(b)S.waste.push({id,g:b.g,d:today()});
+  S.inv=S.inv.filter(x=>!(x.d===d&&x.id===id));
+  save();closeSheet();render();
+}
+
+let curRcp=-1,curPick={};
+function openRcp(i){
+  const _r=ALL()[i];
+  if(_r&&_r.myDishIdx!=null){openMyRcp(_r.myDishIdx);return}
+  curRcp=i;curPick={};
+  const r=ALL()[i],m=rcpMacro(r),names=invNames();
+  let h=`<h3>${r.n}</h3><div class="sm">${r.d||""} ｜ 约 ${r.t} 分钟 ｜ ${r.c==="免"?"不用开火":"一锅到底"}</div>`;
+  h+=`<div class="preview"><div class="l"><b>按默认份量</b><b>${m.kcal} kcal</b></div>
+    <div class="l"><span>蛋白 ${m.p}g ｜ 碳水 ${m.c}g ｜ 脂肪 ${m.f}g</span><span></span></div>
+    <div class="l"><span>钠 ${m.na}mg</span><span></span></div></div>`;
+  h+=`<div class="sec"><b>食材</b></div>`;
+  r.m.forEach(n=>{
+    const f=BY[n];if(!f)return;
+    const own=invItem(f.id);
+    h+=`<div class="ing"><span>${n}${own?"":" <span class='badge warn'>缺</span>"}</span><span class="q">${f.ug}g（1${f.un}）</span></div>`;
+  });
+  (r.o||[]).forEach(n=>{
+    if(!BY[n])return;
+    h+=`<div class="ing" style="opacity:.7"><span>${n}（可选）</span><span class="q">${BY[n].ug}g</span></div>`;
+  });
+  h+=`<div class="sec"><b>做法</b><span>${r.s.length} 步</span></div><ol class="steps">${r.s.map(x=>`<li>${x}</li>`).join("")}</ol>`;
+  if(r.chk)h+=`<div class="tip ok" style="margin-top:8px"><b>怎么算做好了</b><br>${r.chk}</div>`;
+  if(r.bad)h+=`<div class="tip" style="margin-top:6px;background:var(--rl);border-color:#F2D2D2;color:#7A2222"><b>容易翻车的地方</b><br>${r.bad}</div>`;
+  if(r.tip)h+=`<div class="tip" style="font-size:12.5px;margin-top:6px">${r.tip}</div>`;
+  const miss=r.m.filter(n=>!names.has(n));
+  if(miss.length){
+    h+=`<div class="tip" style="background:var(--rl);border-color:#F2D2D2;color:#7A2222">还缺：${miss.join("、")}。买回来就能做。</div>`;
+  }
+  h+=`<div style="height:12px"></div><button class="btn" onclick="openCook(${i})">开始做（扣库存并记录）</button>`;
+  h+=`<div style="height:8px"></div><button class="btn ghost" onclick="closeSheet()">关闭</button>`;
+  openSheet(h);
+}
+function openCook(i){
+  curRcp=i;curPick={};
+  const r=ALL()[i];
+  let h=`<h3>${r.n}</h3><div class="sm">调整实际用量，确认后自动扣库存并记账</div>`;
+  r.m.forEach(n=>{
+    const f=BY[n];if(!f)return;
+    const own=invItem(f.id);
+    const def=own>0?Math.min(f.ug,Math.round(own)):f.ug;
+    curPick[n]={id:f.id,g:def};
+    h+=`<div class="opt ${own>0?"on":""}" id="o-${f.id}">
+      <span class="on1">${n}<br><span style="font-size:11.5px;color:#928F86">库存 ${Math.round(own)}g${own<=0?"（缺，按默认份量记）":""}</span></span>
+      <input type="number" value="${def}" inputmode="decimal" onchange="setG('${n}',this.value)">
+    </div>`;
+  });
+  h+=`<div class="preview" id="pv"></div>
+  <button class="btn" onclick="confirmCook()">确认已做</button>
+  <div style="height:8px"></div><button class="btn ghost" onclick="openRcp(${i})">返回详情</button>`;
+  openSheet(h);
+  preview();
+}
+function setG(n,v){
+  const x=parseFloat(v);
+  if(!x||x<=0)return;
+  curPick[n].g=x;preview();
+}
+function preview(){
+  let k=0,p=0,f=0,c=0,na=0,txt="";
+  Object.keys(curPick).forEach(n=>{
+    const o=curPick[n],fd=BY[n];if(!fd)return;
+    k+=fd.kcal*o.g/100;p+=fd.p*o.g/100;f+=fd.f*o.g/100;c+=fd.c*o.g/100;na+=(fd.na||0)*o.g/100;
+    txt+=`<div class="l"><span>${n} ${Math.round(o.g)}g</span><span>${Math.round(fd.kcal*o.g/100)} kcal</span></div>`;
+  });
+  const e=eatenToday();
+  txt+=`<div class="l" style="border-top:1px solid var(--line);margin-top:6px;padding-top:8px"><b>合计</b><b>${Math.round(k)} kcal</b></div>
+  <div class="l"><span>蛋白 ${Math.round(p)}g ｜ 碳水 ${Math.round(c)}g ｜ 脂肪 ${Math.round(f)}g</span></div>
+  <div class="l"><span>钠 ${Math.round(na)}mg</span></div>
+  <div class="l"><span style="color:#928F86">今日剩余热量 ${Math.max(0,Math.round(S.set.kcal-e.kcal))} kcal</span></div>`;
+  const pv=$("pv");if(pv){pv.innerHTML=txt;pv.dataset.k=k;pv.dataset.p=p;pv.dataset.f=f;pv.dataset.c=c;pv.dataset.na=na}
+}
+function confirmCook(){
+  const pv=$("pv");if(!pv)return;
+  const k=+pv.dataset.k||0,p=+pv.dataset.p||0,f=+pv.dataset.f||0,c=+pv.dataset.c||0,na=+pv.dataset.na||0;
+  const r=ALL()[curRcp];
+  let names=[],veg=0;
+  Object.keys(curPick).forEach(n=>{
+    const o=curPick[n],fd=BY[n];
+    names.push(fd.n);
+    if(fd.cat==="veg")veg+=o.g;
+    let need=o.g;
+    S.inv.filter(x=>x.id===fd.id).sort((a,b)=>a.d.localeCompare(b.d)).forEach(b=>{
+      if(need<=0)return;
+      const use=Math.min(need,b.g);b.g-=use;need-=use;
+    });
+  });
+  S.inv=S.inv.filter(x=>x.g>0.5);
+  S.logs.push({d:today(),name:r.n,kcal:k,p,f,c,na,veg});
+  save();closeSheet();setTab("today");
+}
+function delLog(i){S.logs.splice(i,1);save();render()}
+
+let logTab="eat";
+function openLogSheet(){logTab="eat";cookQ="";renderLogSheet()}
+function renderLogSheet(){
+  let h=`<h3>记一笔</h3><div class="chips" style="margin-top:8px">
+    <span class="chip ${logTab==='eat'?'on':''}" onclick="setLogTab('eat')">食堂 / 加餐</span>
+    <span class="chip ${logTab==='cook'?'on':''}" onclick="setLogTab('cook')">用库存做</span>
+    <span class="chip ${logTab==='pick'?'on':''}" onclick="setLogTab('pick')">直接吃库存</span>
+  </div>`;
+  if(logTab==='eat'){
+    h+=`<input type="search" id="lq" placeholder="搜食物，比如 米饭 / 鸡腿 / 苹果" oninput="logSearch(this.value)">
+    <div id="llist" style="max-height:44vh;overflow-y:auto;margin-top:8px">${logListHtml("")}</div>`;
+  }else if(logTab==='cook'){
+    h+=`<div class="sm">选一道，做好后自动扣库存并记账</div>
+    <input type="search" id="cq" placeholder="搜菜名或食材，比如 番茄 / 鸡胸 / 荞麦" value="${esc(cookQ)}" oninput="cookSearch(this.value)">
+    <div id="clist" style="max-height:40vh;overflow-y:auto;margin-top:8px">${cookPickHtml(cookQ)}</div>`;
+  }else{
+    h+=`<div class="sm">不用做菜，直接从库存里扣掉你吃掉的部分</div>
+    <div style="max-height:46vh;overflow-y:auto">${eatPickHtml()}</div>`;
+  }
+  openSheet(h);
+}
+function setLogTab(t){logTab=t;renderLogSheet()}
+let cookQ="";
+function cookSearch(v){
+  cookQ=v;
+  const el=document.getElementById("clist");
+  if(el)el.innerHTML=cookPickHtml(v);
+}
+function cookPickHtml(kw){
+  const r=recommend(kw||"");
+  const kinds={};
+  S.inv.forEach(function(x){const f=F[x.id];if(f&&x.g>0.5)kinds[f.n]=1});
+  const nk=Object.keys(kinds).length;
+  const total=r.now.length+r.near.length;
+  let h='<div class="sm" style="margin:0 0 8px;color:#928F86">库存 '+nk+' 种食材'
+    +(r.kw?'　匹配 '+total+' 道':'　能做 '+r.now.length+' 道')+'</div>';
+  if(!S.inv.length){
+    return h+'<div class="empty">库存是空的<br>先去「食材」页加点东西</div>';
+  }
+  if(!r.now.length&&!r.near.length){
+    return h+(r.kw
+      ? '<div class="empty">库存里没有和「'+esc(r.kw)+'」相关的菜<br>换个词试试，或去「食堂 / 加餐」用 AI 拆解</div>'
+      : '<div class="empty">当前库存还配不成一道完整的菜<br>加点蛋白或蔬菜就有了</div>');
+  }
+  if(r.now.length){
+    h+='<div class="sec" style="margin-top:2px"><b>现在就能做</b><span>'+r.now.length+' 道</span></div>';
+    h+=r.now.map(function(x){
+      return '<div class="rec" onclick="openCook('+x.i+')">'
+        +'<div class="t"><b>'+esc(x.r.n)+(x.r.myDishIdx!=null?' <span class="badge info" style="font-weight:400;vertical-align:1px">我存的</span>':'')+'</b><em>'+x.r.t+' 分钟</em></div>'
+        +'<div class="mac">'+macLine(x.mac)+'</div></div>';
+    }).join("");
+  }else if(r.kw){
+    h+='<div class="empty" style="padding:10px 0 4px">「'+esc(r.kw)+'」现在做不了，下面这些差一样</div>';
+  }
+  if(r.near.length){
+    h+='<div class="sec"><b>还差一点</b><span>'+r.near.length+' 道</span></div>';
+    h+=r.near.map(function(x){
+      return '<div class="rec" onclick="openRcp('+x.i+')">'
+        +'<div class="t"><b>'+esc(x.r.n)+(x.r.myDishIdx!=null?' <span class="badge info" style="font-weight:400;vertical-align:1px">我存的</span>':'')+'</b><em>'+x.r.t+' 分钟</em></div>'
+        +'<div class="mac">'+macLine(x.mac)+'</div>'
+        +'<div class="badges">'+x.miss.map(function(n){return '<span class="badge warn">需买：'+esc(n)+'</span>'}).join("")+'</div></div>';
+    }).join("");
+  }
+  return h;
+}
+function allDish(){return DISH.concat(S.myDish||[])}
+function dishMacro(d,mult){
+  const m=mult||1;let k=0,p=0,f=0,c=0,g=0,na=0;
+  (d.i||[]).forEach(function(it){
+    const x=BY[it[0]];if(!x)return;
+    k+=x.kcal*it[1]*m/100;p+=x.p*it[1]*m/100;f+=x.f*it[1]*m/100;c+=x.c*it[1]*m/100;g+=it[1]*m;na+=(x.na||0)*it[1]*m/100;
+  });
+  return {kcal:Math.round(k),p:Math.round(p),f:Math.round(f),c:Math.round(c),g:Math.round(g),na:Math.round(na)};
+}
+function logListHtml(kw){
+  const mine=(S.myDish||[]).filter(function(d){return !kw||d.n.indexOf(kw)>-1})
+    .slice().sort(function(x,y){return (y.use||0)-(x.use||0)});
+  const built=DISH.filter(function(d){return !kw||d.n.indexOf(kw)>-1});
+  let h="";
+  if(mine.length){
+    h+='<div class="sec"><b>你存过的</b><span>用过越多排越前</span></div>';
+    h+=mine.slice(0,10).map(function(d){
+      const m=dishMacro(d,1),idx=(S.myDish||[]).indexOf(d);
+      return '<div class="food" onclick="pickDish('+idx+',1)">'
+        +'<div class="info"><div class="nm">'+esc(d.n)
+        +'<span class="badge info">我存的'+(d.use?' · 用过'+d.use+'次':'')+'</span></div>'
+        +'<div class="mt">'+m.g+'g · '+m.kcal+' kcal · 蛋白 '+m.p+'g · 钠 '+m.na+'mg</div></div>'
+        +'<button class="add">选</button></div>';
+    }).join("");
+  }
+  if(built.length){
+    h+='<div class="sec"><b>内置菜品</b><span>按配方算，可调份数</span></div>';
+    h+=built.slice(0,14).map(function(d){
+      const m=dishMacro(d,1),idx=DISH.indexOf(d);
+      return '<div class="food" onclick="pickDish('+idx+',0)">'
+        +'<div class="info"><div class="nm">'+esc(d.n)+'</div>'
+        +'<div class="mt">一份 '+m.g+'g · '+m.kcal+' kcal · 蛋白 '+m.p+'g</div></div>'
+        +'<button class="add">选</button></div>';
+    }).join("");
+  }
+  if(kw&&!mine.length&&!built.length){
+    h+='<div class="card" style="margin:10px 0"><button class="btn ghost" onclick="aiDish('
+      +JSON.stringify(kw).replace(/"/g,"&quot;")+')">✦ 库里没有「'+esc(kw)+'」？让 AI 拆解配方</button></div>';
+  }
+  const foods=F.filter(function(f){return nameHit(f,kw)}).slice(0,30);
+  h+='<div class="sec"><b>食材</b><span>单个食材的营养</span></div>';
+  h+=foods.map(function(f){
+    return '<div class="food" onclick="pickLog('+f.id+')"><div class="info">'
+      +'<div class="nm">'+f.n+'<span class="badge mut">'+f.ug+'g/'+f.un+'</span></div>'
+      +'<div class="mt">'+f.kcal+' kcal · 蛋白 '+f.p+'g</div></div>'
+      +'<button class="add">选</button></div>';
+  }).join("");
+  return h;
+}
+let curDish=null,curMult=1,curDishIdx=-1,curDishMine=false;
+function pickDish(i,isMine){
+  curDishMine=!!isMine;
+  curDishIdx=i;
+  curDish=isMine?(S.myDish||[])[i]:DISH[i];
+  curMult=1;renderDish();
+}
+function setMult(v){curMult=v;renderDish()}
+function renderDish(){
+  const d=curDish,one=dishMacro(d,1),m=dishMacro(d,curMult);
+  openSheet('<h3>'+esc(d.n)+'</h3><div class="sm">'
+    +(d.note?esc(d.note)+'<br>':'')+'一份按 '+one.g+'g 计</div>'
+    +'<div class="chips">'+[0.5,1,1.5,2].map(function(v){
+      return '<span class="chip '+(curMult===v?'on':'')+'" onclick="setMult('+v+')">'+v+' 份</span>';
+    }).join("")+'</div>'
+    +'<div class="preview"><div class="l"><b>合计</b><b>'+m.kcal+' kcal</b></div>'
+    +'<div class="l"><span>约 '+m.g+'g</span></div>'
+    +'<div class="l"><span>蛋白 '+m.p+'g ｜ 碳水 '+m.c+'g ｜ 脂肪 '+m.f+'g</span></div>'
+    +'<div class="l"><span>钠 '+m.na+'mg'+(m.na>800?'　⚠ 偏高':'')+'</span></div></div>'
+    +'<button class="btn" onclick="doDish()">记下</button>'
+    +'<div style="height:8px"></div><button class="btn ghost" onclick="openLogSheet()">返回</button>');
+}
+function doDish(){
+  const m=dishMacro(curDish,curMult);
+  const nm=curDish.n+(curMult!==1?" ×"+curMult:"");
+  S.logs.push({d:today(),name:nm,kcal:m.kcal,p:m.p,f:m.f,c:m.c,na:m.na,veg:0});
+  if(curDishMine&&S.myDish&&S.myDish[curDishIdx]){
+    S.myDish[curDishIdx].use=(S.myDish[curDishIdx].use||0)+1;
+  }
+  save();closeSheet();setTab("log");
+}
+let aiDishName="",aiDishItems=[],aiDishNote="",aiPickIdx=-1;
+const OIL_ALIAS={"食用油":"橄榄油","植物油":"橄榄油","色拉油":"橄榄油","调和油":"橄榄油","玉米油":"橄榄油","花生油":"橄榄油","菜籽油":"橄榄油","大豆油":"橄榄油","葵花油":"橄榄油","油":"橄榄油","植物油（豆油）":"橄榄油"};
+const NAME_EXTRA={"鸡腿（去皮）":"鸡腿肉（去皮）","鸡腿肉（去皮）":"鸡腿肉（去皮）","去皮鸡腿":"鸡腿肉（去皮）","鸡腿肉去皮":"鸡腿肉（去皮）","鸭腿（去皮）":"鸭腿肉（去皮）","去皮鸭腿":"鸭腿肉（去皮）","鸭腿":"鸭腿肉（带皮）","鸭腿肉":"鸭腿肉（带皮）","排骨":"猪小排","猪排骨":"猪小排","小排":"猪小排","大排":"猪大排","肋排":"猪小排","肉末":"猪肉（瘦）","猪肉末":"猪肉（瘦）","肉丝":"猪里脊","肉片":"猪里脊","里脊":"猪里脊","鸡胸":"鸡胸肉","鸡腿":"鸡腿肉","鸡腿肉丁":"鸡腿肉","牛柳":"牛里脊","牛肉":"牛里脊","虾":"虾仁","虾仁（鲜）":"虾仁","蛋液":"鸡蛋","鸡蛋液":"鸡蛋","雞蛋":"鸡蛋","米饭一碗":"米饭","白饭":"米饭","面条":"挂面","青菜":"小白菜","油菜":"小白菜","淀粉（玉米）":"淀粉","生粉":"淀粉","蒜末":"大蒜","蒜":"大蒜","姜末":"姜","姜片":"姜","葱花":"大葱","葱":"大葱"};
+function normName(s){
+  return String(s==null?"":s)
+    .replace(/[（(][^）)]*[）)]/g,"")
+    .replace(/[【\[][^】\]]*[】\]]/g,"")
+    .replace(/^(新鲜|鲜|生|熟|干)/,"")
+    .trim();
+}
+function matchFood(raw){
+  const n=String(raw==null?"":raw).trim();
+  if(!n)return null;
+  if(BY[n])return {n:BY[n].n,how:"同名"};
+  const base=normName(n);
+  let al=OIL_ALIAS[n]||NAME_EXTRA[n]||ALIAS[n];
+  if(al&&BY[al])return {n:al,how:"同义词"};
+  if(base&&BY[base])return {n:BY[base].n,how:"去括号"};
+  al=OIL_ALIAS[base]||NAME_EXTRA[base]||ALIAS[base];
+  if(al&&BY[al])return {n:al,how:"同义词"};
+  if(base.length>=2){
+    let best=null;
+    for(const k in BY){
+      if(k.length<2)continue;
+      if(n.indexOf(k)>-1||k.indexOf(base)>-1){
+        if(!best||k.length>best.length)best=k;
+      }
+    }
+    if(best)return {n:best,how:"近似"};
+  }
+  return null;
+}
+function aiDish(name){
+  const q=String(name||"").trim();
+  const all=allDish();
+  const hit=all.filter(function(d){return d.n===q})[0]
+          ||all.filter(function(d){return q&&(d.n.indexOf(q)>-1||q.indexOf(d.n)>-1)})[0];
+  if(hit){
+    const mm=dishMacro(hit,1);
+    const isMine=(S.myDish||[]).indexOf(hit)>-1;
+    const recipe=(hit.i||[]).map(function(x){return x[0]+" "+x[1]+"g"}).join("、");
+    if(confirm("「"+hit.n+"」库里已经有了"+(isMine?"（你存的）":"（内置）")+"：\n"
+      +(recipe?recipe+"\n":"")+"约 "+mm.kcal+" kcal · 蛋白 "+mm.p+"g\n\n"
+      +"点「确定」直接用这个记账，点「取消」还是让 AI 重拆一遍。")){
+      curDish=hit;curDishMine=isMine;curMult=1;
+      curDishIdx=isMine?(S.myDish||[]).indexOf(hit):DISH.indexOf(hit);
+      renderDish();return;
+    }
+  }
+  if(!S.ai||!S.ai.key){alert("「"+q+"」库里没有，AI 拆解需要先在「记录」页填接口和 Key");return}
+  aiDishName=name;aiDishItems=[];aiEstKcal=null;aiEstLoading=false;
+  openSheet('<h3>AI 拆解：'+esc(name)+'</h3><div class="sm">AI 只拆配料和克数，热量由本地成分表算</div>'
+    +'<div class="empty loading"><span class="spinner"></span>正在拆解…（5–20 秒）</div>');
+  const names=F.map(f=>f.n).join("、");
+  const sys="你是营养师助手。用户要估算食堂一份菜的热量，你只负责拆解配料和克数，不做热量计算。只输出 JSON。";
+  const user="菜品："+name+"\n\n请拆解这一份的配料与克数。要求：\n"
+   +"1. 每项的 name 必须从下面这个列表里【一字不改】地复制，不要加括号、不要加「去皮/去骨/切片/丝」等说明：\n"+names+"\n"
+   +"2. 处理方式（去皮、去骨、切丝）写在 prep 字段，不要写进 name\n"
+   +"3. 油统一写「橄榄油」，用量按做法判断：\n    蒸 / 煮 / 白灼 / 凉拌 / 卤 → 0–3g\n    普通炒菜 → 8–12g\n    红烧 / 干煸 / 过油 / 糖醋 / 干锅 → 15–25g\n"
+   +"4. 整份总重控制在 120–380g\n"
+   +"5. 带皮、带骨的食材（鸡腿、排骨、鱼）g 给的是可食部分净重\n"
+   +"6. 只输出 JSON，不要任何解释\n\n"
+   +'格式：{"name":"菜名","items":[{"name":"食材","g":150,"prep":"去皮"}],"note":"一句说明"}';
+  const payload={model:(S.ai.model||"deepseek-flash"),temperature:0.3,max_tokens:900,
+    messages:[{role:"system",content:sys},{role:"user",content:user}],
+    response_format:{type:"json_object"}};
+  aiPost(payload,function(t){renderAiDish(t)});
+}
+function renderAiDish(t){
+  if(!t||String(t).indexOf("err:")===0){
+    openSheet('<h3>拆解失败</h3><div class="tip">'+esc(String(t||"").slice(0,200))+'</div><button class="btn ghost" onclick="renderLogSheet()">返回</button>');
+    return;
+  }
+  let obj=null;
+  try{
+    const d=JSON.parse(t);
+    let c=(d.choices&&d.choices[0]&&d.choices[0].message&&d.choices[0].message.content)||"";
+    c=c.replace(/^```(?:json)?/i,"").replace(/```$/,"").trim();
+    const i=c.indexOf("{"),j=c.lastIndexOf("}");
+    if(i>-1&&j>i)c=c.slice(i,j+1);
+    obj=JSON.parse(c);
+  }catch(e){
+    openSheet('<h3>拆解失败</h3><div class="tip">返回内容无法解析，再试一次</div><button class="btn ghost" onclick="renderLogSheet()">返回</button>');
+    return;
+  }
+  aiDishNote=obj.note||"";
+  const items=(obj.items||[]).map(function(x){
+    const nm=typeof x==="string"?x:(x.name||x.n||"");
+    const g=typeof x==="string"?100:(x.g||x.gram||100);
+    const prep=typeof x==="string"?"":(x.prep||"");
+    let mt=matchFood(nm);
+    if(mt&&prep&&/去皮|无皮/.test(prep)){
+      const alt=BY[mt.n+"（去皮）"];
+      if(alt&&alt.n!==mt.n)mt={n:alt.n,how:"按去皮"};
+    }
+    return {raw:nm,n:mt?mt.n:null,how:mt?mt.how:null,prep:prep,g:Math.round(+g||0)};
+  }).filter(function(x){return x.raw&&x.g>0});
+  if(!items.length){
+    openSheet('<h3>没拆出配料</h3><div class="tip">AI 没有给出可用的配料，再试一次</div><button class="btn ghost" onclick="renderLogSheet()">返回</button>');
+    return;
+  }
+  aiDishItems=items;
+  renderAiDishSheet();
+  askEstimate();
+}
+let aiEstKcal=null,aiEstLo=0,aiEstHi=0,aiEstNote="",aiEstLoading=false;
+function askEstimate(){
+  const nm=aiDishName||"";
+  if(!nm)return;
+  aiEstKcal=null;aiEstLoading=true;aiEstNote="";
+  const payload={model:(S.ai.model||"deepseek-flash"),temperature:0.2,max_tokens:300,
+    messages:[
+      {role:"system",content:"你是中餐营养估算专家。只输出 JSON，不要拆解配方。"},
+      {role:"user",content:"请独立估算：中国大学食堂常见的一份「"+nm+"」大约多少千卡（整份，不含米饭）。\n"
+        +"只凭经验估，不要列配料、不要拆解。\n"
+        +'输出：{"kcal":整数,"lo":下限,"hi":上限,"note":"一句话依据，20字内"}'}
+    ],
+    response_format:{type:"json_object"}};
+  aiPost(payload,function(t){
+    aiEstLoading=false;
+    try{
+      const d=JSON.parse(t);
+      let c=(d.choices&&d.choices[0]&&d.choices[0].message&&d.choices[0].message.content)||"";
+      c=c.replace(/^```(?:json)?/i,"").replace(/```$/,"").trim();
+      const i=c.indexOf("{"),j=c.lastIndexOf("}");
+      if(i>-1&&j>i)c=c.slice(i,j+1);
+      const o=JSON.parse(c);
+      const k=Math.round(+o.kcal||0);
+      if(k>0){aiEstKcal=k;aiEstLo=Math.round(+o.lo||0);aiEstHi=Math.round(+o.hi||0);aiEstNote=o.note||""}
+    }catch(e){aiEstKcal=null}
+    updateAiTotal();
+  });
+}
+function itemsOfDish(){
+  return aiDishItems.filter(function(x){return x.n}).map(function(x){return [x.n,x.g]});
+}
+function renderAiDishSheet(){
+  const un=aiDishItems.filter(function(x){return !x.n});
+  const unG=un.reduce(function(a,x){return a+x.g},0);
+  let h='<h3>'+esc(aiDishName||"拆解结果")+'</h3><div class="sm">'
+    +(aiDishNote?esc(aiDishNote)+'<br>':'')
+    +'每项都能单独改克数、单独换食材，合计实时重算</div>';
+  if(un.length)h+='<div class="tip" style="background:var(--rl);border-color:#F2D2D2;color:#7A2222">有 '
+    +un.length+' 项没对上本地库（共 '+Math.round(unG)+'g），点「选食材」指定，否则不计入合计</div>';
+  h+='<div style="max-height:42vh;overflow-y:auto">';
+  aiDishItems.forEach(function(x,i){
+    const ok=!!x.n;
+    const f=ok?BY[x.n]:null;
+    const g=x.g;
+    h+='<div style="border:1px solid '+(ok?'var(--line)':'#E9B0B0')+';border-radius:10px;padding:9px 11px;margin-bottom:7px;background:'+(ok?'#fff':'#FDF6F6')+'">'
+      +'<div style="display:flex;align-items:center;gap:8px">'
+      +'<span style="flex:1;font-size:14px;font-weight:500">'+esc(ok?x.n:x.raw)+'</span>'
+      +(ok?'<span style="font-size:11px;color:#B4B2A9;white-space:nowrap">'+x.how+'</span>'
+          :'<button class="add" style="padding:2px 8px;white-space:nowrap" onclick="openAiPick('+i+')">选食材</button>')
+      +'<input type="number" value="'+g+'" inputmode="decimal" style="width:70px;text-align:right" oninput="setAiDishG('+i+',this.value)">'
+      +'</div>';
+    if(ok){
+      h+='<div id="nut'+i+'" style="font-size:11.5px;color:#928F86;margin-top:5px;line-height:1.5">'+rowNutText(i)+'</div>';
+    }else{
+      h+='<div style="font-size:11.5px;color:#A32D2D;margin-top:5px">库里没有「'+esc(x.raw)+'」，点「选食材」指定</div>';
+    }
+    h+='</div>';
+  });
+  h+='</div><div class="preview" id="ai_total"></div>'
+    +'<button class="btn" onclick="doAiDish()">记下并问是否存为常用</button>'
+    +'<div style="height:8px"></div><button class="btn ghost" onclick="renderLogSheet()">返回</button>';
+  openSheet(h);
+  updateAiTotal();
+}
+function updateAiTotal(){
+  const ok=aiDishItems.filter(function(x){return x.n});
+  const un=aiDishItems.filter(function(x){return !x.n});
+  const m=dishMacro({n:aiDishName,i:itemsOfDish()},1);
+  const unG=un.reduce(function(a,x){return a+x.g},0);
+  const el=document.getElementById("ai_total");
+  if(!el)return;
+  let h='<div class="l"><b>已计入合计</b><b>'+m.kcal+' kcal</b></div>'
+    +'<div class="l"><span>约 '+m.g+'g</span></div>'
+    +'<div class="l"><span>蛋白 '+m.p+'g ｜ 碳水 '+m.c+'g ｜ 脂肪 '+m.f+'g</span></div>'
+    +'<div class="l"><span>钠 '+m.na+'mg'+(m.na>800?'　⚠ 偏高':'')+'</span></div>';
+  if(un.length)h+='<div class="l"><span style="color:#A32D2D">未计入 '+un.length+' 项，共 '+Math.round(unG)+'g</span></div>';
+  // 合理性校验：抓自相矛盾的结果
+  const warn=[];
+  if(m.g>=120&&m.kcal<120)warn.push("总重 "+m.g+"g 却只有 "+m.kcal+" kcal，多半有食材没计入");
+  if(m.na>700&&m.kcal<250)warn.push("钠 "+m.na+"mg 但热量仅 "+m.kcal+" kcal，比例不对");
+  const hasMeat=aiDishItems.some(function(x){return x.n&&BY[x.n].cat==="protein"&&x.g>=50});
+  if(hasMeat&&m.p<8)warn.push("有蛋白类食材（≥50g）但蛋白只有 "+m.p+"g，检查是否漏项");
+  let estOk="",estMid="";
+  if(aiEstLoading){
+    h+='<div class="l"><span style="color:#888780"><span class="spinner" style="width:12px;height:12px;margin-right:5px"></span>正在让 AI 独立核对热量…</span></div>';
+  }else if(aiEstKcal){
+    const dd=Math.round((m.kcal-aiEstKcal)/aiEstKcal*100), ad=Math.abs(dd);
+    const rng=aiEstHi?"（"+aiEstLo+"–"+aiEstHi+" kcal）":"";
+    if(ad>40){
+      warn.push("AI 凭经验估 "+aiEstKcal+" kcal"+rng+"，本地算 "+m.kcal+" kcal，相差 "+ad+"%"
+        +(dd<0?"。本地偏低，多半还有漏项":"。本地偏高，检查油和糖是否给多了"));
+    }else if(ad>25){
+      estMid="AI 独立估算 "+aiEstKcal+" kcal"+rng+"，与本地相差 "+ad+"%，在估算误差范围内";
+    }else{
+      estOk="AI 独立估算 "+aiEstKcal+" kcal"+rng+"，与本地相差 "+ad+"%，互相印证";
+    }
+  }
+  if(warn.length)h+='<div class="l"><span style="color:#A32D2D;line-height:1.5">⚠ '+warn.join("<br>⚠ ")+'</span></div>';
+  if(estOk)h+='<div class="l"><span style="color:#0F6E56;line-height:1.5">✓ '+estOk+'</span></div>';
+  if(estMid)h+='<div class="l"><span style="color:#888780;line-height:1.5">≈ '+estMid+'</span></div>';
+  el.innerHTML=h;
+}
+function rowNutText(i){
+  const x=aiDishItems[i];if(!x||!x.n)return "";
+  const f=BY[x.n];if(!f)return "";
+  const g=x.g;
+  return Math.round(f.kcal*g/100)+' kcal · 蛋白 '+(f.p*g/100).toFixed(1)+'g · 碳水 '+(f.c*g/100).toFixed(1)
+    +'g · 脂肪 '+(f.f*g/100).toFixed(1)+'g · 钠 '+Math.round((f.na||0)*g/100)+'mg'
+    +(x.prep?'　｜ '+esc(x.prep):'');
+}
+function updateRowNut(i){
+  const el=document.getElementById("nut"+i);
+  if(!el)return;
+  el.innerHTML=rowNutText(i);
+}
+function setAiDishG(i,v){
+  const n=parseFloat(v);
+  if(isNaN(n)||n<0)return;
+  aiDishItems[i].g=Math.round(n);
+  updateRowNut(i);
+  updateAiTotal();
+}
+function openAiPick(i){
+  aiPickIdx=i;
+  const x=aiDishItems[i];
+  const kw=normName(x.raw);
+  openSheet('<h3>对应库里哪个食材</h3><div class="sm">AI 写的是「'+esc(x.raw)+'」</div>'
+    +'<input type="search" id="apq" placeholder="搜食材名" value="'+esc(kw)+'" oninput="aiPickSearch(this.value)">'
+    +'<div id="aplist" style="max-height:44vh;overflow-y:auto;margin-top:8px">'+aiPickList(kw)+'</div>'
+    +'<div style="height:8px"></div><button class="btn ghost" onclick="renderAiDishSheet()">返回修改</button>');
+}
+function aiPickList(kw){
+  const list=F.filter(function(f){return nameHit(f,kw)}).slice(0,30);
+  if(!list.length)return '<div class="empty">没找到，换个词试试</div>';
+  return list.map(function(f){
+    return '<div class="food" onclick="pickAiFood('+f.id+')">'
+      +'<div class="info"><div class="nm">'+f.n+'<span class="badge mut">'+f.ug+'g/'+f.un+'</span></div>'
+      +'<div class="mt">'+f.kcal+' kcal · 蛋白 '+f.p+'g · 钠 '+Math.round(f.na||0)+'mg</div></div>'
+      +'<button class="add">选</button></div>';
+  }).join("");
+}
+function aiPickSearch(v){document.getElementById("aplist").innerHTML=aiPickList(v)}
+function pickAiFood(id){
+  const f=F[id];
+  if(!f||aiPickIdx<0)return;
+  aiDishItems[aiPickIdx].n=f.n;
+  aiDishItems[aiPickIdx].how="手动";
+  renderAiDishSheet();
+}
+function doAiDish(){
+  const ok=aiDishItems.filter(function(x){return x.n});
+  const un=aiDishItems.filter(function(x){return !x.n});
+  const unG=un.reduce(function(a,x){return a+x.g},0);
+  if(!ok.length){alert("一项都没对上本地库，没法计算。至少先指定一项主料。");return}
+  if(unG>=30){
+    if(!confirm("还有 "+un.length+" 项没指定（共 "+Math.round(unG)+"g），这些不会计入。\n\n继续记账点「确定」，回去指定点「取消」。"))return;
+  }
+  const d={n:aiDishName||"自定义菜",i:itemsOfDish()};
+  const m=dishMacro(d,1);
+  S.logs.push({d:today(),name:d.n,kcal:m.kcal,p:m.p,f:m.f,c:m.c,na:m.na,veg:0});
+  S.myDish=S.myDish||[];
+  let msg="已记账："+d.n+" · "+m.kcal+" kcal · 蛋白 "+m.p+"g";
+  const builtIn=DISH.filter(function(x){return x.n===d.n})[0];
+  if(builtIn){
+    msg+="\n\n内置库里有同名菜，没重复存一份。以后搜「"+d.n+"」直接记，份量不对就调份数。";
+  }else{
+    const idx=S.myDish.findIndex(function(x){return x.n===d.n});
+    if(idx>-1){
+      const oldUse=(S.myDish[idx]&&S.myDish[idx].use)||0;
+      S.myDish.splice(idx,1);
+      S.myDish.push({n:d.n,i:d.i,note:aiDishNote||"AI 拆解，可自行调整",use:oldUse});
+      msg+="\n\n已更新「我的菜品」里同名的配方。";
+    }else{
+      S.myDish.push({n:d.n,i:d.i,note:aiDishNote||"AI 拆解，可自行调整",use:0});
+      msg+="\n\n已存进「我的菜品」，下次搜「"+d.n+"」直接可用，不用再调 AI。";
+    }
+  }
+  save();closeSheet();setTab("log");
+  alert(msg);
+}
+function logSearch(v){$("llist").innerHTML=logListHtml(v)}
+let logId=-1;
+function eatPickHtml(){
+  if(!S.inv.length)return '<div class="empty">库存是空的<br>先去「食材」页加点东西</div>';
+  return [...S.inv].sort((a,b)=>remDays(a)-remDays(b)).map(it=>{
+    const f=F[it.id],r=remDays(it);
+    const bd=r<0?'<span class="badge warn">已过期</span>':r<=0?'<span class="badge warn">今天要用</span>':`<span class="badge mut">${r}天</span>`;
+    return `<div class="food" onclick="openEat('${it.d}',${it.id})">
+      <div class="info"><div class="nm">${f.n}${bd}</div>
+      <div class="mt">剩 ${Math.round(it.g)}g · ${Math.round(f.kcal*it.g/100)} kcal</div></div>
+      <button class="add">吃掉</button></div>`;
+  }).join("");
+}
+function openEat(d,id){
+  const b=S.inv.find(x=>x.d===d&&x.id===id);
+  if(!b)return;
+  const f=F[id],left=Math.round(b.g);
+  const def=Math.min(f.ug,left);
+  openSheet(`<h3>${f.n}</h3><div class="sm">库存剩 ${left}g · ${f.kcal} kcal/100g<br>吃掉多少？</div>
+  <input type="number" id="eatg" value="${def}" inputmode="decimal" oninput="calcEat('${d}',${id})">
+  <div class="chips" style="margin-top:10px">
+    <span class="chip" onclick="setEat(${Math.round(left/2)})">一半</span>
+    <span class="chip" onclick="setEat(${left})">全吃掉</span>
+  </div>
+  <div class="preview" id="epv"></div>
+  <button class="btn" onclick="doEat('${d}',${id})">确认吃掉</button>
+  <div style="height:8px"></div><button class="btn ghost" onclick="renderLogSheet()">返回</button>`);
+  calcEat(d,id);
+}
+function setEat(v){const e=document.getElementById("eatg");if(e){e.value=v;e.dispatchEvent(new Event("input"))}}
+function calcEat(d,id){
+  const f=F[id],el=document.getElementById("eatg"),pv=document.getElementById("epv");
+  const g=el?parseFloat(el.value):0;
+  if(!pv)return;
+  if(!g||g<=0){pv.innerHTML='<span style="color:#928F86">填个克数</span>';return}
+  pv.innerHTML=`<div class="l"><b>扣掉</b><b>${Math.round(g)}g</b></div>
+  <div class="l"><span>热量 ${Math.round(f.kcal*g/100)} kcal ｜ 蛋白 ${(f.p*g/100).toFixed(1)}g</span></div>
+  <div class="l"><span>碳水 ${(f.c*g/100).toFixed(1)}g ｜ 脂肪 ${(f.f*g/100).toFixed(1)}g</span></div>`;
+}
+function doEat(d,id){
+  const el=document.getElementById("eatg");
+  const g=el?parseFloat(el.value):0;
+  if(!g||g<=0)return;
+  const f=F[id];
+  let need=g;
+  S.inv.filter(x=>x.id===id).sort((a,b)=>a.d.localeCompare(b.d)).forEach(b=>{
+    if(need<=0)return;
+    const use=Math.min(need,b.g);b.g-=use;need-=use;
+  });
+  S.inv=S.inv.filter(x=>x.g>0.5);
+  S.logs.push({d:today(),name:f.n+" "+Math.round(g)+"g",kcal:f.kcal*g/100,p:f.p*g/100,f:f.f*g/100,c:f.c*g/100,na:(f.na||0)*g/100,veg:f.cat==="veg"?g:0});
+  save();closeSheet();setTab("log");
+}
+function pickLog(id){
+  logId=id;const f=F[id];
+  openSheet(`<h3>${f.n}</h3><div class="sm">吃了多少克？1${f.un} ≈ ${f.ug}g</div>
+  <input type="number" id="addg" value="${f.ug}" inputmode="decimal">
+  <div class="chips" style="margin-top:10px">
+    <span class="chip" onclick="setAdd(${f.ug})">1${f.un}</span>
+    <span class="chip" onclick="setAdd(${f.ug*2})">2${f.un}</span>
+    <span class="chip" onclick="setAdd(${Math.round(f.ug/2)})">半份</span>
+  </div>
+  <div style="height:14px"></div><button class="btn" onclick="doLog()">记下</button>
+  <div style="height:8px"></div><button class="btn ghost" onclick="renderLogSheet()">换一个</button>`);
+}
+function doLog(){
+  const g=parseFloat($("addg").value);
+  if(!g||g<=0)return;
+  const f=F[logId];
+  S.logs.push({d:today(),name:f.n+" "+Math.round(g)+"g",kcal:f.kcal*g/100,p:f.p*g/100,f:f.f*g/100,c:f.c*g/100,veg:f.cat==="veg"?g:0});
+  save();closeSheet();setTab("log");
+}
+function toggleKey(){
+  const el=document.getElementById("ai_key");
+  el.type=el.type==="password"?"search":"password";
+}
+function setModel(m){
+  document.getElementById("ai_model").value=m;
+}
+function aiBase(){return ((S.ai&&S.ai.base)||"https://api.deepseek.com/v1").replace(/\/$/,"")}
+function testAI(){
+  const key=(document.getElementById("ai_key").value||"").trim();
+  if(!key){alert("先填 Key");return}
+  const out=document.getElementById("ai_test");
+  out.innerHTML='<div class="empty loading"><span class="spinner"></span>正在连接…</div>';
+  const url=((document.getElementById("ai_base").value||"https://api.deepseek.com/v1").replace(/\/$/,""))+"/models";
+  const cb=function(t){
+    if(!t||String(t).indexOf("err:")===0){
+      out.innerHTML='<div class="tip">连接失败：'+String(t||"").slice(0,160)+'</div>';return;
+    }
+    try{
+      const d=JSON.parse(t);
+      const ids=(d.data||[]).map(x=>x.id);
+      if(!ids.length){out.innerHTML='<div class="tip">没有返回模型</div>';return}
+      out.innerHTML='<div class="tip ok">连接正常，这个 key 可用下列模型，点一下填入：</div><div class="chips" style="flex-wrap:wrap">'
+        +ids.map(i=>'<span class="chip" onclick="setModel(\''+i+'\')">'+i+'</span>').join("")+'</div>';
+    }catch(e){out.innerHTML='<div class="tip">返回格式异常</div>'}
+  };
+  if(window.AndroidBridge&&window.AndroidBridge.aiGet){
+    window.__aiCb=cb;
+    window.AndroidBridge.aiGet(url,key);
+    return;
+  }
+  fetch(url,{headers:{"Authorization":"Bearer "+key}}).then(r=>r.text()).then(cb).catch(e=>cb("err:"+e.message));
+}
+function saveAI(){
+  S.ai={base:(document.getElementById("ai_base").value||"").trim(),
+        key:(document.getElementById("ai_key").value||"").trim(),
+        model:(document.getElementById("ai_model").value||"").trim()||"deepseek-flash"};
+  save();alert("已保存");
+}
+function openEditRcp(i){
+  const r=(S.myRcp||[])[i];
+  if(!r){alert("没找到这条");return}
+  openSheet('<h3>编辑食谱</h3><div class="sm">食材清单不改，只改名字、做法和提示</div>'
+    +'<label class="fl">菜名</label><input type="search" id="er_name" value="'+esc(r.n).replace(/"/g,"&quot;")+'">'
+    +'<div class="sec"><b>食材</b><span>'+(r.m||[]).length+' 样</span></div>'
+    +(r.m||[]).map(function(x){return '<span class="badge info" style="margin:0 4px 4px 0;display:inline-block">'+esc(x)+'</span>'}).join("")
+    +'<label class="fl">做法（一行一步）</label>'
+    +'<textarea id="er_steps" style="min-height:140px">'+esc((r.s||[]).join("\n"))+'</textarea>'
+    +'<label class="fl">关键提示（可留空）</label>'
+    +'<textarea id="er_tip" style="min-height:60px">'+esc(r.tip||"")+'</textarea>'
+    +'<div style="height:12px"></div><button class="btn" onclick="saveEditRcp('+i+')">保存修改</button>'
+    +'<div style="height:8px"></div><button class="btn ghost" style="color:#A32D2D" onclick="delRcpFromEdit('+i+')">删除这条</button>'
+    +'<div style="height:8px"></div><button class="btn ghost" onclick="closeSheet()">取消</button>');
+}
+function saveEditRcp(i){
+  const r=(S.myRcp||[])[i];
+  if(!r)return;
+  const nm=String((document.getElementById("er_name")||{}).value||"").trim();
+  if(!nm){alert("菜名不能空");return}
+  const dup=(S.myRcp||[]).findIndex(function(x,k){return k!==i&&x.n===nm});
+  const inBuilt=RCP.some(function(x){return x.n===nm});
+  if(dup>-1||inBuilt){
+    alert("已经有叫「"+nm+"」的食谱了，换个名字。");
+    return;
+  }
+  const st=String((document.getElementById("er_steps")||{}).value||"").split(/\n/)
+    .map(function(x){return x.trim()}).filter(Boolean);
+  const tp=String((document.getElementById("er_tip")||{}).value||"").trim();
+  r.n=nm;
+  r.s=st.length?st:r.s;
+  r.tip=tp;
+  save();closeSheet();render();
+  alert("已更新「"+nm+"」");
+}
+function delRcpFromEdit(i){
+  const r=(S.myRcp||[])[i];
+  if(!r)return;
+  if(!confirm("删除「"+r.n+"」？"))return;
+  S.myRcp.splice(i,1);save();closeSheet();render();
+}
+function delMyRcp(i){
+  if(!confirm("删除这道自定义食谱？"))return;
+  S.myRcp.splice(i,1);save();render();
+}
+function aiPost(payload,cb){
+  const ai=S.ai||{};
+  const base=(ai.base||"https://api.deepseek.com/v1").replace(/\/$/,"");
+  const url=base+"/chat/completions";
+  const body=JSON.stringify(payload);
+  if(window.AndroidBridge&&window.AndroidBridge.aiPost){
+    window.__aiCb=cb;
+    window.AndroidBridge.aiPost(url,ai.key,body);
+    return;
+  }
+  fetch(url,{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+ai.key},body})
+    .then(r=>r.text()).then(t=>cb(t)).catch(e=>cb("err:"+e.message));
+}
+let aiResults=[];
+function openAI(){
+  if(!S.ai||!S.ai.key){alert("先在「记录」页底部填 AI 接口和 Key");return}
+  const uniq=[...new Set(S.inv.map(x=>F[x.id].n))];
+  openSheet(`<h3>用 AI 写一道</h3><div class="sm">只用水煮、蒸、焯、焖；热量和营养由本地成分表重算</div>
+  <label class="fl">手上有什么（可以改、可以写想吃的）</label>
+  <textarea id="ai_in">${uniq.join("、")||"鸡蛋、番茄"}</textarea>
+  <label class="fl">额外要求（可选）</label>
+  <input type="search" id="ai_q" placeholder="比如：想喝汤 / 15分钟内 / 蛋白高一点">
+  <div style="height:12px"></div>
+  <button class="btn" onclick="runAI()">生成 3 个方案</button>
+  <div id="ai_out" style="margin-top:14px"></div>`);
+}
+function runAI(noFmt){
+  const ing=(document.getElementById("ai_in").value||"").trim();
+  const q=(document.getElementById("ai_q").value||"").trim();
+  if(!ing){alert("先写手上有什么");return}
+  document.getElementById("ai_out").innerHTML='<div class="empty loading"><span class="spinner"></span>AI 正在想…（通常 5–20 秒）</div>';
+  const sys="你是中式家常菜顾问。用户只有一台额定600W的电煮锅，只能水煮、蒸、焯、焖，没有炒锅、没有烤箱、没有冰箱。只输出 JSON。";
+  const user="用户现有食材："+ing+"\n额外要求："+(q||"无")+"\n\n"
+   +"要求：\n1. 只用上述食材，最多额外加一种常见调味\n2. 必须能用水煮/蒸/焯/焖完成，禁止炒、煎、炸、烤\n"
+   +"3. 给 3 道菜\n4. must 数组里的食材名必须严格从\"用户现有食材\"里原样复制，不要改写法\n"
+   +"5. steps 每条不超过 18 个字，desc 不超过 20 个字，tip 不超过 25 个字\n"
+   +"6. 下面这些菜已经有了，不要再推荐，换个思路："+ALL().map(function(x){return x.n}).join("、")+"\n"
+   +"7. 只输出 JSON 本身，一行都不要多写\n\n"
+   +'格式：{"recipes":[{"name":"菜名","time":18,"desc":"一句话","must":["食材1"],"opt":[],"steps":["步骤1","步骤2","步骤3"],"tip":"提示"}]}';
+  const payload={model:(S.ai.model||"deepseek-flash"),temperature:0.6,max_tokens:2600,
+    messages:[{role:"system",content:sys},{role:"user",content:user}]};
+  if(!noFmt)payload.response_format={type:"json_object"};
+  aiPost(payload,function(t){
+    if(!noFmt&&/response_format|json_object|not support/i.test(String(t))){
+      runAI(true);return;
+    }
+    document.getElementById("ai_out").innerHTML=handleAI(t);
+  });
+}
+function handleAI(t){
+  if(!t)return '<div class="tip">没有返回内容</div>';
+  if(t.indexOf("err:")===0){
+    let msg=String(t).slice(4);
+    const mm=msg.match(/"message"\s*:\s*"([^"]+)"/);
+    if(mm)msg=mm[1];
+    let hint="";
+    if(msg.indexOf("model")>-1||msg.indexOf("Model")>-1)hint="点上面的「测试连接取列表」能看到这个 key 支持哪些模型。";
+    else if(msg.indexOf("401")>-1||msg.indexOf("auth")>-1||msg.indexOf("Auth")>-1)hint="Key 不对或已作废，去后台重新建一个。";
+    else if(msg.indexOf("402")>-1||msg.indexOf("balance")>-1)hint="账户余额不足。";
+    else hint="如果是纯网络错误，检查手机是否联网；APK 版走原生请求，不受跨域限制。";
+    return '<div class="tip">调用失败：'+msg+'<br><br>'+hint+'</div>';
+  }
+  let content="";
+  try{
+    const d=JSON.parse(t);
+    content=(d.choices&&d.choices[0]&&d.choices[0].message&&d.choices[0].message.content)||"";
+  }catch(e){return '<div class="tip">接口返回的不是标准响应</div><details style="margin-top:8px"><summary style="font-size:12px;color:#928F86">看原始返回</summary><div style="font-size:11px;color:#928F86;word-break:break-all;margin-top:6px">'+esc(t.slice(0,600))+'</div></details>'}
+  if(!content.trim())return '<div class="tip">模型返回了空内容，再试一次</div>';
+  let obj=null,err="";
+  const cands=[];
+  let c=content.trim();
+  c=c.replace(/^\s*```(?:json)?/i,"").replace(/```\s*$/,"").trim();
+  cands.push(c);
+  const i=c.indexOf("{"),j=c.lastIndexOf("}");
+  if(i>-1&&j>i)cands.push(c.slice(i,j+1));
+  const i2=c.indexOf("{"),j2=c.indexOf("}");
+  if(i2>-1&&j2>i2)cands.push(c.slice(i2,j2+1));
+  for(const k of cands){
+    const tries=[k,k.replace(/,\s*([}\]])/g,"$1")];
+    for(const v of tries){
+      try{obj=JSON.parse(v);break}catch(e){err=e.message}
+    }
+    if(obj)break;
+  }
+  if(!obj){
+    return '<div class="tip">AI 返回的不是合法 JSON（可能是输出被截断）。再点一次通常就好了。<br><br><span style="color:#A32D2D">'+esc(err)+'</span></div>'
+      +'<details style="margin-top:8px"><summary style="font-size:12px;color:#928F86">看原始返回（前 500 字）</summary><div style="font-size:11px;color:#928F86;word-break:break-all;margin-top:6px">'+esc(content.slice(0,500))+'</div></details>';
+  }
+  let arr=obj.recipes||obj.recipe||obj.list||obj.data;
+  if(!Array.isArray(arr)){
+    for(const k in obj){if(Array.isArray(obj[k])){arr=obj[k];break}}
+  }
+  if(!Array.isArray(arr))return '<div class="tip">AI 没有给出菜谱数组，换个说法再试</div>';
+  const list=arr.filter(r=>r&&r.name&&(r.must||r.ingredients));
+  if(!list.length)return '<div class="tip">没有生成有效方案，再点一次</div>';
+  aiResults=list.map(r=>({
+    name:r.name,time:r.time||20,desc:r.desc||r.description||"",
+    must:(r.must||r.ingredients||[]).map(x=>typeof x==="string"?x:(x.name||"")),
+    opt:(r.opt||[]).map(x=>typeof x==="string"?x:(x.name||"")),
+    steps:(r.steps||[]).map(x=>typeof x==="string"?x:String(x)),
+    tip:r.tip||""
+  }));
+  return aiResults.map((r,i)=>{
+    const ok=r.must.filter(n=>BY[n]);
+    const bad=r.must.filter(n=>!BY[n]);
+    const dup=ALL().some(function(x){return x.n===r.name});
+    const mac=rcpMacro({n:r.name,m:ok,o:r.opt||[]});
+    return `<div class="rec" style="cursor:default">
+      <div class="t"><b>${esc(r.name)}</b><em>${r.time||"?"} 分钟</em></div>
+      <div class="d">${esc(r.desc||"")}</div>
+      <div class="mac">${macLine(mac)}<span style="color:#B4B2A9"> · 本地库计算</span></div>
+      <div class="badges">${dup?'<span class="badge mut">已在食谱库</span>':''}${ok.map(n=>`<span class="badge info">${esc(n)}</span>`).join("")}${bad.map(n=>`<span class="badge warn">库里没有：${esc(n)}</span>`).join("")}</div>
+      <ol class="steps">${(r.steps||[]).map(x=>`<li>${esc(x)}</li>`).join("")}</ol>
+      ${r.tip?`<div class="tip" style="font-size:12.5px;margin-top:6px">${esc(r.tip)}</div>`:""}
+      <div class="btns" style="margin-top:10px">
+        <button class="btn" onclick="adoptAI(${i})">采纳入库</button>
+        <button class="btn ghost" onclick="this.closest('.rec').remove()">丢弃</button>
+      </div></div>`;
+  }).join("");
+}
+function esc(x){return String(x).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
+function adoptAI(i){
+  const r=aiResults[i];if(!r)return;
+  const m=r.must.filter(n=>BY[n]);
+  if(!m.length){alert("食材名和本地库对不上，无法计算营养。可以让 AI 用完全一致的写法重写。");return}
+  S.myRcp=S.myRcp||[];
+  if(RCP.some(function(x){return x.n===r.name})){
+    alert("「"+r.name+"」是内置食谱，库里已经有，不用重复添加。\n去食谱页搜它就能直接用。");
+    return;
+  }
+  const idx=S.myRcp.findIndex(function(x){return x.n===r.name});
+  if(idx>-1){
+    if(!confirm("「"+r.name+"」已经在你的食谱库里了。\n\n要用这次的版本覆盖旧步骤吗？"))return;
+    S.myRcp.splice(idx,1);
+  }
+  S.myRcp.push({n:r.name,c:"主",t:r.time||20,d:r.desc||"",m:m,
+    o:(r.opt||[]).filter(n=>BY[n]),s:r.steps||[],k:0,tip:r.tip||"",ai:1});
+  save();alert("已加入食谱库，可以在食谱页找到，也能参与推荐");closeSheet();setTab("rcp");
+}
+function dedupeRcp(){
+  const base={};RCP.forEach(function(r){base[r.n]=1});
+  const seen={};const out=[];
+  (S.myRcp||[]).forEach(function(r){
+    if(base[r.n]||seen[r.n])return;
+    seen[r.n]=1;out.push(r);
+  });
+  const removed=(S.myRcp||[]).length-out.length;
+  S.myRcp=out;save();
+  return removed;
+}
+function dedupeDish(){
+  const base={};DISH.forEach(function(x){base[x.n]=1});
+  const seen={};const out=[];
+  (S.myDish||[]).forEach(function(x){
+    if(base[x.n]||seen[x.n])return;
+    seen[x.n]=1;out.push(x);
+  });
+  const removed=(S.myDish||[]).length-out.length;
+  S.myDish=out;save();
+  return removed;
+}
+function delMyDish(i){
+  if(!confirm("删除这道自定义菜品？"))return;
+  S.myDish.splice(i,1);save();render();
+}
+function doDedupe(){
+  const r=dedupeRcp(),d=dedupeDish();
+  const msg=[];
+  if(r>0)msg.push("食谱 "+r+" 条");
+  if(d>0)msg.push("菜品 "+d+" 条");
+  alert(msg.length?("已清理 "+msg.join("、")):"没有发现重复");
+  render();
+}
+function openWaste(){
+  const w=(S.waste||[]).slice().sort(function(a,b){return b.d.localeCompare(a.d)});
+  let h='<h3>浪费记录</h3><div class="sm">扔掉的食材，不计入摄入</div>';
+  if(!w.length){
+    h+='<div class="empty">还没有浪费记录<br>库存里点「扔掉这一份」才会记在这里</div>';
+  }else{
+    let tg=0,tk=0;
+    h+='<div style="max-height:54vh;overflow-y:auto">';
+    w.forEach(function(x){
+      const f=F[x.id];if(!f)return;
+      const k=f.kcal*x.g/100;tg+=x.g;tk+=k;
+      h+='<div class="logitem"><span>'+esc(f.n)+'</span><span class="r">'+Math.round(x.g)+'g · '+Math.round(k)+' kcal<br><span style="color:#B4B2A9">'+x.d.slice(5)+'</span></span></div>';
+    });
+    h+='</div><div class="preview"><div class="l"><b>合计</b><b>'+w.length+' 次</b></div>'
+      +'<div class="l"><span>约 '+Math.round(tg)+'g ｜ 折合 '+Math.round(tk)+' kcal</span></div></div>';
+  }
+  h+='<button class="btn ghost" onclick="closeSheet()">关闭</button>';
+  openSheet(h);
+}
+function exportData(){
+  const json=JSON.stringify(S,null,2);
+  const name="寝室餐食备份-"+today()+".json";
+  if(window.AndroidBridge&&window.AndroidBridge.save){
+    const r=window.AndroidBridge.save(name,json);
+    if(String(r).indexOf("ok:")===0)alert("已存到手机：\n"+String(r).slice(3)+"\n\n可以用文件管理器找到，也能直接发到微信或网盘。");
+    else alert("保存失败："+r);
+    return;
+  }
+  const blob=new Blob([json],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);a.download=name;a.click();
+}
+function importData(){
+  if(!window.AndroidBridge||!window.AndroidBridge.load){
+    alert("这个版本不支持从文件恢复，请在浏览器版里用；或把备份内容发给我。");
+    return;
+  }
+  const t=window.AndroidBridge.load();
+  if(!t||String(t).indexOf("err:")===0){alert("没有找到备份文件，先点「导出备份」生成一个。");return}
+  try{
+    const d=JSON.parse(t);
+    if(!d.inv||!d.logs)throw 0;
+    if(!confirm("用这份备份覆盖当前数据？现有记录会被替换。"))return;
+    S=d;S.myFood=S.myFood||[];rebuildFoods();calcTargets();save();render();alert("已恢复");
+  }catch(e){alert("备份文件格式不对")}
+}
+function clearAll(){
+  if(!confirm("清空所有库存与记录？不可恢复。"))return;
+  S={inv:[],logs:[],waste:[],myRcp:[],myDish:[],myFood:[],ai:S.ai,set:S.set,w:S.w};rebuildFoods();save();render();
+}
+
+calcTargets();save();render();
+if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
+loadWeather(false);
+
+
+(function(){
+  var el=document.getElementById("splash");
+  if(!el)return;
+  var seen=null;
+  try{seen=sessionStorage.getItem("booted")}catch(e){}
+  if(seen){ if(el.parentNode)el.parentNode.removeChild(el); return; }
+  try{sessionStorage.setItem("booted","1")}catch(e){}
+  setTimeout(function(){
+    el.classList.add("out");
+    setTimeout(function(){ if(el.parentNode)el.parentNode.removeChild(el); },440);
+  },1760);
+})();
+
+/* 键盘避让：把系统给出的 IME 高度换算成页面需要让出的空间 */
+window.__baseH=window.innerHeight;
+window.__imeDp=0;
+window.__setIme=function(dp){
+  window.__imeDp=dp||0;
+  applyKB();
+};
+function applyKB(){
+  const sh=Math.max(0,(window.__baseH||window.innerHeight)-window.innerHeight);
+  const kb=Math.max(0,(window.__imeDp||0)-sh);
+  document.documentElement.style.setProperty("--kb",kb+"px");
+}
+window.addEventListener("resize",function(){
+  if(!window.__imeDp)window.__baseH=window.innerHeight;
+  applyKB();
+});
+window.addEventListener("scroll",function(){
+  const hd=document.getElementById("hd");
+  if(hd)hd.classList.toggle("scrolled",window.scrollY>4);
+},{passive:true});
+document.addEventListener("focusin",function(e){
+  const t=e.target;
+  if(!t||!/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))return;
+  setTimeout(function(){
+    try{t.scrollIntoView({block:"center",behavior:"smooth"})}catch(_){}
+  },300);
+});
+
+/* 返回键：有弹层先关弹层，没有才让系统退出 */
+window.__onBack=function(){
+  const sh=document.getElementById("sheet");
+  if(sh&&sh.classList.contains("on")){closeSheet();return true}
+  if(typeof tab!=="undefined"&&tab==="set"){setTab("log");return true}
+  if(typeof tab!=="undefined"&&tab!=="today"){setTab("today");return true}
+  return false;
+};
+
+/* 弹层手势：向下拖、向右滑都能关 */
+(function(){
+  const sh=document.getElementById("sheet");
+  if(!sh)return;
+  let sx=0,sy=0,dir="",box=null;
+  sh.addEventListener("touchstart",function(e){
+    if(e.touches.length!==1){box=null;return}
+    box=sh.querySelector(".box");
+    if(box)box.style.transition="none";
+    sx=e.touches[0].clientX;sy=e.touches[0].clientY;dir="";
+  },{passive:true});
+  sh.addEventListener("touchmove",function(e){
+    if(!box||e.touches.length!==1)return;
+    const dx=e.touches[0].clientX-sx,dy=e.touches[0].clientY-sy;
+    if(!dir){
+      if(dy>10&&Math.abs(dy)>Math.abs(dx)&&box.scrollTop<=0)dir="down";
+      else if(dx>14&&Math.abs(dx)>Math.abs(dy))dir="right";
+      else if(Math.abs(dx)>10||Math.abs(dy)>10)dir="none";
+    }
+    if(dir==="down"&&dy>0)box.style.transform="translateY("+dy+"px)";
+    else if(dir==="right"&&dx>0)box.style.transform="translateX("+dx+"px)";
+  },{passive:true});
+  sh.addEventListener("touchend",function(e){
+    if(!box){return}
+    const t=e.changedTouches[0];
+    const dx=t.clientX-sx,dy=t.clientY-sy;
+    box.style.transform="";
+    box.style.transition="";
+    if(dir==="down"&&dy>92)closeSheet(true);
+    else if(dir==="right"&&dx>82)closeSheet(true);
+    dir="";box=null;
+  },{passive:true});
+})();
+</script>
+</body>
+</html>

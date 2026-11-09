@@ -1,0 +1,32 @@
+# ===== 签名密钥（绝对不要提交）=====
+_apk/dorm-release.jks
+_apk/*.jks
+_apk/*.keystore
+*.jks
+*.keystore
+
+# ===== 构建产物 =====
+_apk/build/
+_apk/assets/index.html
+*.apk
+*.idsig
+*.zip
+
+# ===== 本地历史版本与临时文件 =====
+_old/
+_cand.json
+_detail.py
+_check_usda.py
+_*.png
+_*.py
+
+# ===== 早期草稿 / 工具生成物 =====
+寝室减脂餐执行卡.html
+.wbapp_*.genie
+
+# ===== 编辑器 / 系统 / 会话数据 =====
+.workbuddy/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

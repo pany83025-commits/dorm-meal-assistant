@@ -1,0 +1,7 @@
+# 统一换行，避免 Windows 提交的 CRLF 让 macOS/Linux 上的 build.sh 直接报错
+* text=auto eol=lf
+*.bat text eol=crlf
+*.png binary
+*.jpg binary
+*.jks binary
+*.keystore binary
