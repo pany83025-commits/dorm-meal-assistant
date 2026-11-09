@@ -1,7 +1,7 @@
-const C = "dorm-eat-v2";
+const C = "dorm-eat-v3";
 const ASSETS = [
   "./",
-  "./寝室餐食助手.html",
+  "./index.html",
   "./manifest.json",
   "./icon-192.png",
   "./icon-512.png"
@@ -31,7 +31,7 @@ self.addEventListener("fetch", e => {
         const copy = res.clone();
         caches.open(C).then(c => c.put(e.request, copy)).catch(() => {});
         return res;
-      }).catch(() => caches.match("./寝室餐食助手.html"));
+      }).catch(() => caches.match("./index.html"));
     })
   );
 });

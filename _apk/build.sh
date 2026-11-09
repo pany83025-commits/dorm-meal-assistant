@@ -31,7 +31,7 @@ AAPT2=$(pick aapt2); ZIPALIGN=$(pick zipalign); APKSIGNER=$(pick apksigner)
 rm -rf "$OUT"; mkdir -p "$OUT/res" "$OUT/classes" "$OUT/dex"
 
 # 1) 页面资源（单文件应用：所有数据与逻辑都内联在 HTML 里）
-cp "$ROOT/寝室餐食助手.html" assets/index.html
+cp "$ROOT/index.html" assets/index.html
 
 # 2) 资源编译
 "$AAPT2" compile --dir res -o "$OUT/res.zip"

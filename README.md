@@ -4,6 +4,8 @@
 
 在只有一口 600W 小锅、没有冰箱的寝室里，能做什么、今天该吃多少、买的菜还剩几天、食堂这顿大概多少卡——这个应用想把这四件事算清楚，并且每个数字都能查到来源。
 
+**[在线试用 →](https://pany83025-commits.github.io/dorm-meal-assistant/)**　（手机浏览器打开后可「添加到主屏幕」，离线可用）
+
 <p align="center">
   <img src="docs/screenshot-today.png" width="300" alt="今天">
   <img src="docs/screenshot-recipes.png" width="300" alt="食谱">
@@ -36,7 +38,7 @@
 ## 项目结构
 
 ```
-寝室餐食助手.html          主程序（数据 + 逻辑 + 样式全部内联，约 200KB）
+index.html                 主程序（数据 + 逻辑 + 样式全部内联，约 200KB）
 manifest.json / sw.js      PWA 配置与离线缓存
 icon-*.png                 图标
 _apk/                      Android 壳工程
@@ -50,11 +52,11 @@ docs/                      README 截图
 
 ## 使用
 
-**网页版**：直接用浏览器打开 `寝室餐食助手.html`，或起个静态服务后访问（PWA 安装需要 http/https）：
+**网页版**：直接用浏览器打开 `index.html`（双击即可，无需服务器），或起个静态服务后访问（添加到主屏、离线缓存需要 http/https）：
 
 ```bash
 python -m http.server 8000
-# 浏览器打开 http://localhost:8000/寝室餐食助手.html
+# 浏览器打开 http://localhost:8000/
 ```
 
 **Android**：用 `_apk/build.sh` 打包，需要 JDK、Python 3、Android SDK 的 build-tools 与 `android.jar`，无需 Android Studio。
@@ -83,3 +85,7 @@ bash build.sh v3.1
 ## 免责声明
 
 个人自用工具，营养数值用于估算参考，不构成医学或营养学建议。有任何健康问题请咨询专业医师或注册营养师。
+
+## 许可证
+
+[MIT](LICENSE)。代码随便用，但如果要分发修改版，请保留版权声明；营养数据的原始来源（《中国食物成分表》）请遵守其自身的使用条款。
