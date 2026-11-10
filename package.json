@@ -1,13 +1,18 @@
 {
   "name": "dorm-meal-assistant",
-  "version": "3.4.0",
+  "version": "3.9.0",
   "private": true,
   "type": "module",
   "description": "寝室餐食助手：单文件 HTML 的减脂餐记账与配餐工具",
   "scripts": {
     "build:data": "node tools/build-data.mjs",
     "check:data": "node tools/check-data.mjs",
+    "check:version": "node tools/check-version.mjs",
     "test": "node tools/run-tests.mjs",
-    "verify": "node tools/build-data.mjs --check && node tools/check-data.mjs && node tools/run-tests.mjs"
+    "verify": "node tools/build-data.mjs --check && node tools/check-data.mjs && node tools/check-version.mjs && node tools/run-tests.mjs",
+    "bump": "node tools/bump.mjs",
+    "apk": "bash tools/build-apk.sh",
+    "push": "node tools/push.mjs",
+    "release": "node tools/release.mjs"
   }
 }

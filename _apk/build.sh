@@ -28,7 +28,9 @@ VER="${1:-v3.9}"
 pick(){ for c in "$SDKB/$1.exe" "$SDKB/$1.bat" "$SDKB/$1"; do [ -e "$c" ] && { printf '%s' "$c"; return; }; done; printf '%s' "$SDKB/$1"; }
 AAPT2=$(pick aapt2); ZIPALIGN=$(pick zipalign); APKSIGNER=$(pick apksigner)
 
-rm -rf "$OUT"; mkdir -p "$OUT/res" "$OUT/classes" "$OUT/dex"
+# 清理上次产物（用 find -delete 而不是 rm -rf：某些环境会把 rm 转成回收站操作并失败）
+if [ -d "$OUT" ]; then find "$OUT" -mindepth 1 -delete 2>/dev/null || true; fi
+mkdir -p "$OUT/res" "$OUT/classes" "$OUT/dex"
 
 # 1) 页面资源（单文件应用：所有数据与逻辑都内联在 HTML 里）
 cp "$ROOT/index.html" assets/index.html
