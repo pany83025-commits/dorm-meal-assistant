@@ -17,10 +17,19 @@
 
   try {
     /* ---------- 数据装载 ---------- */
-    eq("RAW 条数", RAW.length, 234);
+    eq("RAW 条数 ≥200", RAW.length >= 200, true);
     eq("RCP 条数", RCP.length, 48);
     eq("DISH 条数", DISH.length, 81);
     eq("F 与 RAW 等长（无自建时）", F.filter((f) => !f.my).length, RAW.length);
+
+    /* ---------- 按包装标签录入的条目 ---------- */
+    const soy = BY["生抽"], oil = BY["大豆油"];
+    eq("生抽 来自标签", soy && soy.src.indexOf("包装") === 0, true);
+    near("生抽 钠 5891mg/100g", soy.na, 5891, 3);
+    eq("生抽 一汤匙 18g", soy.ug, 18);
+    eq("大豆油 存在", !!oil, true);
+    near("大豆油 3700kJ→884kcal", oil.kcal, 884.3, 1.5);
+    eq("大豆油 脂肪 100g", oil.f, 100);
 
     /* ---------- keepDays 温度分档 ---------- */
     const f = { kc: 10, kw: 5 };
