@@ -100,7 +100,11 @@ nav button.on .ic{opacity:1}
   82%{transform:translateY(2px) scale(1);animation-timing-function:ease-out}
   100%{transform:translateY(0) scale(1);opacity:1}}
 @keyframes sheetDown{from{transform:none;opacity:1}to{transform:translateY(80px) scale(.985);opacity:0}}
-@keyframes sheetStep{from{opacity:.45}to{opacity:1}}   /* 只淡入，不做位移：位移会让按钮在指尖下"跑掉" */
+/* 换层：只让内容横向轻移，不做透明度变化——淡入在深色面板上就是"闪一下" */
+@keyframes sheetInR{from{transform:translateX(20px)}to{transform:none}}
+@keyframes sheetInL{from{transform:translateX(-20px)}to{transform:none}}
+.sheet .sheetIn.inR{animation:sheetInR .2s cubic-bezier(.22,1,.36,1) both}
+.sheet .sheetIn.inL{animation:sheetInL .2s cubic-bezier(.22,1,.36,1) both}
 @keyframes up{from{transform:translateY(24px);opacity:.6}to{transform:none;opacity:1}}
 .sheet h3{font-size:16.5px;font-weight:600;margin-bottom:3px;padding-right:30px}
 .sheet .sm{font-size:12.5px;color:var(--ink3);margin-bottom:12px;line-height:1.5}
@@ -213,6 +217,8 @@ label.fl{display:block;font-size:12.5px;color:var(--ink3);margin:12px 0 5px}
 .page.backstep #pageIn{animation:pageBack .18s ease both}
 @keyframes pageBack{from{opacity:.45;transform:translateX(-14px)}to{opacity:1;transform:none}}
 /* 日视图换天数：内容按方向滑入 */
+#pageIn.pushIn{animation:pushIn .26s cubic-bezier(.22,1,.36,1) both}
+@keyframes pushIn{from{transform:translateX(46px)}to{transform:none}}
 #pageIn.slideL{animation:slideInL .2s cubic-bezier(.22,1,.36,1) both}
 #pageIn.slideR{animation:slideInR .2s cubic-bezier(.22,1,.36,1) both}
 @keyframes slideInL{from{opacity:.4;transform:translateX(28px)}to{opacity:1;transform:none}}
@@ -351,7 +357,7 @@ function nameHit(f,kw){
 }
 const DISH=JSON.parse(document.getElementById("d-dishes").textContent);
 const CAT={protein:"蛋白",carb:"主食",veg:"蔬菜",fruit:"水果",fat:"油脂",other:"调味"};
-const APP_VER="3.11";              /* 发版只改这一处：关于页、SW 注册参数都读它 */
+const APP_VER="3.12";              /* 发版只改这一处：关于页、SW 注册参数都读它 */
 const K='dorm-eat-v2';
 let S=load();
 S.myFood=S.myFood||[];
@@ -1482,17 +1488,22 @@ function openSheet(html,opt){
     box.style.animation="none";
     if(!sheetHoldLock){sheetHoldLock=true;lockScroll(1)}
   }
-  box.innerHTML='<button class="x" onclick="closeSheet()" aria-label="关闭">×</button>'+html;
+  box.innerHTML='<button class="x" onclick="closeSheet()" aria-label="关闭">×</button>'
+    +'<div class="sheetIn">'+html+'</div>';
   sheetCur=html;
   box.scrollTop=0;
   if(!wasOn){
     void box.offsetWidth;
     box.style.animation="sheetUp .42s cubic-bezier(.22,1,.36,1) both";
   }else{
-    /* 换层：只做很轻的淡入+微位移，别整块重播上滑（那是"闪"的来源） */
+    /* 换层：面板本身不动，只让内容按方向轻移 20px（进＝从右，退＝从左） */
     box.style.animation="none";
-    void box.offsetWidth;
-    box.style.animation="sheetStep .15s ease both";
+    const inner=box.querySelector(".sheetIn");
+    if(inner){
+      inner.classList.remove("inR","inL");
+      void inner.offsetWidth;
+      inner.classList.add(opt.back?"inL":"inR");
+    }
   }
   sh.classList.add("on");
   a11yPatch(box);
@@ -1504,7 +1515,7 @@ function sheetBack(){
   if(!sh||!sh.classList.contains("on"))return false;
   if(!sheetStack.length){closeSheet();return true}
   const prev=sheetStack.pop();
-  openSheet(prev,{replace:1});
+  openSheet(prev,{replace:1,back:1});
   return true;
 }
 function closeSheet(instant){
@@ -1845,14 +1856,22 @@ function openPage(html,opt){
   /* 已经打开时重绘（点柱子、切范围）保持当前位置；首次打开才取记忆 */
   const keep=opt.top?0:(wasOpen?p.scrollTop:memoGet(opt.key||pageKey()));
   p.classList.remove("closing","backstep");
+  i.style.transition="";i.style.transform="";        /* 清掉拖拽留下的内联位移 */
+  i.classList.remove("slideL","slideR","pushIn","slideout");
   i.innerHTML=html;
   p.classList.add("on");
   if(!pageHoldLock){pageHoldLock=true;lockScroll(1)}
   p.scrollTop=keep;
   a11yPatch(i);
-  /* 换天数的方向感动效 */
-  i.classList.remove("slideL","slideR");
-  if(opt.slide){void i.offsetWidth;i.classList.add(opt.slide>0?"slideL":"slideR")}
+  void i.offsetWidth;
+  if(opt.slide){
+    const cls=opt.slide>0?"slideL":"slideR";
+    i.classList.add(cls);
+    setTimeout(function(){i.classList.remove(cls)},260);   /* 动画带 fill:both，不摘掉会压住后续拖拽 */
+  }else if(wasOpen&&!sameMode){
+    i.classList.add("pushIn");
+    setTimeout(function(){i.classList.remove("pushIn")},280);
+  }
 }
 function closePage(){
   const p=$("page"),i=$("pageIn");if(!p||!i||!p.classList.contains("on"))return;
@@ -2038,24 +2057,79 @@ function calPick(ds){
   dayCur=ds;closeSheet();renderDayView();
 }
 
-/* 覆盖层手势：边缘右滑＝退出这一页；内部左右滑＝换天；滑到底再上滑＝日历 */
+/* 覆盖层手势：
+   日视图里左右拖＝内容跟手平移，松手够远就翻到下一天（或前一天）；
+   屏幕边缘起手＝交给系统返回 / 退出这一页；滑到底再上滑＝日历 */
 (function(){
   const pg=document.getElementById("page");
-  if(!pg)return;
-  let sx=0,sy=0,st=0;
+  const inner=document.getElementById("pageIn");
+  if(!pg||!inner)return;
+  let sx=0,sy=0,t0=0,axis="",active=false,edge=false;
+
   pg.addEventListener("touchstart",function(e){
     if(e.touches.length!==1)return;
-    sx=e.touches[0].clientX;sy=e.touches[0].clientY;st=Date.now();
+    sx=e.touches[0].clientX;sy=e.touches[0].clientY;t0=Date.now();
+    axis="";active=false;edge=(sx<26||sx>window.innerWidth-26);
   },{passive:true});
+
+  pg.addEventListener("touchmove",function(e){
+    if(e.touches.length!==1||pageMode!=="day")return;
+    const dx=e.touches[0].clientX-sx,dy=e.touches[0].clientY-sy;
+    if(!axis){
+      if(Math.abs(dx)>10&&Math.abs(dx)>Math.abs(dy)*1.25)axis="x";
+      else if(Math.abs(dy)>10)axis="y";
+    }
+    if(axis!=="x"||edge)return;
+    if(!active){
+      active=true;
+      inner.classList.remove("slideL","slideR","pushIn","slideout");
+      inner.style.transition="none";
+    }
+    const lim=window.innerWidth*0.45;
+    let tx=dx;
+    if(Math.abs(tx)>lim)tx=(tx<0?-1:1)*(lim+(Math.abs(tx)-lim)*0.35);   /* 越界橡皮筋 */
+    inner.style.transform="translateX("+tx+"px)";
+    if(e.cancelable)e.preventDefault();
+  },{passive:false});
+
+  function settle(tx){
+    inner.style.transition="transform .24s cubic-bezier(.22,1,.36,1)";
+    inner.style.transform="";
+    setTimeout(function(){inner.style.transition=""},260);
+  }
+
   pg.addEventListener("touchend",function(e){
-    const t=e.changedTouches[0],dx=t.clientX-sx,dy=t.clientY-sy;
-    const fromEdge=(sx<26||sx>window.innerWidth-26);
-    /* 从屏幕边缘往右拖：退出这个整页（真机手势导航会先被系统接走，这里兜底三键导航） */
-    if(fromEdge&&dx>60&&Math.abs(dx)>Math.abs(dy)*1.4){closePage();return}
+    const t=(e.changedTouches&&e.changedTouches[0])||{clientX:sx,clientY:sy};
+    const dx=t.clientX-sx,dy=t.clientY-sy,dt=Math.max(1,Date.now()-t0),vx=dx/dt;
+    if(active){
+      active=false;axis="";
+      const w=window.innerWidth;
+      /* 距离够远，或者"又快又有一点距离"的甩动才翻页；轻点式的小位移一律回弹 */
+      const far=Math.abs(dx)>w*0.22;
+      const flick=Math.abs(vx)>0.55&&Math.abs(dx)>40&&dt<=400;
+      if(far||flick){
+        const dir=dx<0?1:-1;                       /* 往左滑＝后一天 */
+        inner.style.transition="transform .2s cubic-bezier(.4,0,.6,1)";
+        inner.style.transform="translateX("+(dir>0?-100:100)+"%)";
+        setTimeout(function(){
+          inner.style.transition="";inner.style.transform="";
+          shiftDay(dir);                           /* 新一天从另一侧滑入 */
+        },200);
+      }else{
+        settle(dx);
+      }
+      return;
+    }
+    /* 没进入拖拽：边缘退出、快速轻扫换天、底部上滑开日历 */
+    if(edge&&dx>60&&Math.abs(dx)>Math.abs(dy)*1.4){closePage();return}
     if(pageMode!=="day")return;
-    if(!fromEdge&&Math.abs(dx)>55&&Math.abs(dx)>Math.abs(dy)*1.5){shiftDay(dx<0?1:-1);return}
+    if(!edge&&Math.abs(dx)>55&&Math.abs(dx)>Math.abs(dy)*1.5){shiftDay(dx<0?1:-1);return}
     const atBottom=pg.scrollTop+pg.clientHeight>=pg.scrollHeight-30;
     if(dy<-70&&Math.abs(dy)>Math.abs(dx)*1.5&&atBottom)openCal();
+  },{passive:true});
+
+  pg.addEventListener("touchcancel",function(){
+    if(active){active=false;axis="";settle(0)}
   },{passive:true});
 })();
 
