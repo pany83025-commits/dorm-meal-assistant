@@ -263,6 +263,25 @@ function foodOf(x){
   return (x.n&&BY[x.n])||F[x.id]||null;
 }
 function foodName(x){const f=foodOf(x);return f?f.n:""}
+
+/* ===== 食材互认：同一类可以顶替（目前只处理食用油） =====
+   宿舍里买什么油是随机的，但橄榄油/大豆油/花生油的热量差别 <2%，
+   不该因为"食谱写了橄榄油"就判定你没油。 */
+function isOil(n){const f=BY[n];return !!(f&&f.cat==="fat"&&/油$/.test(f.n))}
+function stockOils(){
+  return S.inv.filter(function(x){const f=foodOf(x);return f&&f.cat==="fat"&&/油$/.test(f.n)&&x.g>0.5})
+    .sort(function(a,b){return b.g-a.g});
+}
+/* 这个食材用什么满足：自己有就自己，油类则用库存最多的那种油；都没有返回 null */
+function supplyOf(n){
+  if(invQty(n)>0)return n;
+  if(isOil(n)){
+    const oils=stockOils();
+    if(oils.length)return foodName(oils[0]);
+  }
+  return null;
+}
+function haveIng(n){return !!supplyOf(n)}
 function ALL(){
   const base=RCP.concat(S.myRcp||[]);
   (S.myDish||[]).forEach(function(d,k){
@@ -284,7 +303,7 @@ function nameHit(f,kw){
 }
 const DISH=JSON.parse(document.getElementById("d-dishes").textContent);
 const CAT={protein:"蛋白",carb:"主食",veg:"蔬菜",fruit:"水果",fat:"油脂",other:"调味"};
-const APP_VER="3.5";              /* 发版只改这一处：关于页、SW 注册参数都读它 */
+const APP_VER="3.6";              /* 发版只改这一处：关于页、SW 注册参数都读它 */
 const K='dorm-eat-v2';
 let S=load();
 S.myFood=S.myFood||[];
@@ -413,7 +432,6 @@ function keepDays(f){
 function remDays(it){const f=foodOf(it);return (f?keepDays(f):0)-daysAgo(it.d)}
 function invQty(name){return S.inv.filter(x=>foodName(x)===name).reduce((a,b)=>a+b.g,0)}
 function invItem(id){const f=F[id];return f?invQty(f.n):0}
-function invNames(){const s=new Set();S.inv.forEach(x=>{const n=foodName(x);if(n)s.add(n)});return s}
 function expireList(){return S.inv.filter(x=>foodOf(x)).map(x=>({...x,rem:remDays(x)})).filter(x=>x.rem<=0).sort((a,b)=>a.rem-b.rem)}
 function eatenToday(){
   const t=today();
@@ -437,7 +455,7 @@ function macOfRcp(r){
 }
 function recommend(kw){
   const k=String(kw||"").trim();
-  const names=invNames(),exp=expireList().map(foodName);
+  const exp=expireList().map(foodName);
   const recent={};S.logs.filter(l=>daysAgo(l.d)<=2).forEach(l=>{const n=l.name.split("（")[0];recent[n]=(recent[n]||0)+1});
   const now=[],near=[];
   ALL().forEach((r,i)=>{
@@ -445,8 +463,8 @@ function recommend(kw){
       const hay=[r.n].concat(r.m||[]).concat(r.o||[]).join("|");
       if(hay.indexOf(k)<0)return;
     }
-    const miss=r.m.filter(n=>!names.has(n));
-    let sc=r.m.length*2+(r.o||[]).filter(n=>names.has(n)).length;
+    const miss=r.m.filter(n=>!haveIng(n));
+    let sc=r.m.length*2+(r.o||[]).filter(haveIng).length;
     miss.forEach(n=>{if(exp.indexOf(n)>-1)sc+=3});
     r.m.forEach(n=>{if(exp.indexOf(n)>-1)sc+=6});
     const mac=macOfRcp(r);
@@ -1511,7 +1529,7 @@ function openRcp(i){
   const _r=ALL()[i];
   if(_r&&_r.myDishIdx!=null){openMyRcp(_r.myDishIdx);return}
   curRcp=i;curPick={};
-  const r=ALL()[i],m=rcpMacro(r),names=invNames();
+  const r=ALL()[i],m=rcpMacro(r);
   let h=`<h3>${r.n}</h3><div class="sm">${r.d||""} ｜ 约 ${r.t} 分钟 ｜ ${r.c==="免"?"不用开火":"一锅到底"}</div>`;
   h+=`<div class="preview"><div class="l"><b>按默认份量</b><b>${m.kcal} kcal</b></div>
     <div class="l"><span>蛋白 ${m.p}g ｜ 碳水 ${m.c}g ｜ 脂肪 ${m.f}g</span><span></span></div>
@@ -1519,8 +1537,9 @@ function openRcp(i){
   h+=`<div class="sec"><b>食材</b></div>`;
   r.m.forEach(n=>{
     const f=BY[n];if(!f)return;
-    const own=invItem(f.id);
-    h+=`<div class="ing"><span>${n}${own?"":" <span class='badge warn'>缺</span>"}</span><span class="q">${f.ug}g（1${f.un}）</span></div>`;
+    const alt=supplyOf(n);
+    const badge=alt?(alt===n?"":" <span class='badge info'>用"+alt+"</span>"):" <span class='badge warn'>缺</span>";
+    h+=`<div class="ing"><span>${n}${badge}</span><span class="q">${f.ug}g（1${f.un}）</span></div>`;
   });
   (r.o||[]).forEach(n=>{
     if(!BY[n])return;
@@ -1530,7 +1549,7 @@ function openRcp(i){
   if(r.chk)h+=`<div class="tip ok" style="margin-top:8px"><b>怎么算做好了</b><br>${r.chk}</div>`;
   if(r.bad)h+=`<div class="tip" style="margin-top:6px;background:var(--rl);border-color:var(--r-line);color:var(--r-ink)"><b>容易翻车的地方</b><br>${r.bad}</div>`;
   if(r.tip)h+=`<div class="tip" style="font-size:12.5px;margin-top:6px">${r.tip}</div>`;
-  const miss=r.m.filter(n=>!names.has(n));
+  const miss=r.m.filter(n=>!haveIng(n));
   if(miss.length){
     h+=`<div class="tip" style="background:var(--rl);border-color:var(--r-line);color:var(--r-ink)">还缺：${miss.join("、")}。买回来就能做。</div>`;
   }
@@ -1544,11 +1563,15 @@ function openCook(i){
   let h=`<h3>${r.n}</h3><div class="sm">调整实际用量，确认后自动扣库存并记账</div>`;
   r.m.forEach(n=>{
     const f=BY[n];if(!f)return;
-    const own=invItem(f.id);
-    const def=own>0?Math.min(f.ug,Math.round(own)):f.ug;
-    curPick[n]={id:f.id,g:def};
-    h+=`<div class="opt ${own>0?"on":""}" id="o-${f.id}">
-      <span class="on1">${n}<br><span style="font-size:11.5px;color:var(--ink3)">库存 ${Math.round(own)}g${own<=0?"（缺，按默认份量记）":""}</span></span>
+    const alt=supplyOf(n);                 /* 油类可互认：自己有就自己，否则用库存里最多的那种油 */
+    const fn=alt||n, fa=BY[fn]||f;
+    const own=alt?invQty(fn):0;
+    const def=own>0?Math.min(fa.ug,Math.round(own)):f.ug;
+    curPick[n]={id:fa.id,g:def,use:fn};
+    const tag=own>0?"":"（缺，按默认份量记）";
+    const swap=(alt&&alt!==n)?`<span class="badge info" style="margin-left:4px">用${alt}</span>`:"";
+    h+=`<div class="opt ${own>0?"on":""}" id="o-${fa.id}">
+      <span class="on1">${n}${swap}<br><span style="font-size:11.5px;color:var(--ink3)">库存 ${Math.round(own)}g${tag}</span></span>
       <input type="number" value="${def}" inputmode="decimal" onchange="setG('${n}',this.value)">
     </div>`;
   });
@@ -1566,9 +1589,10 @@ function setG(n,v){
 function preview(){
   let k=0,p=0,f=0,c=0,na=0,txt="";
   Object.keys(curPick).forEach(n=>{
-    const o=curPick[n],fd=BY[n];if(!fd)return;
+    const o=curPick[n],fd=BY[o.use||n]||BY[n];if(!fd)return;
     k+=fd.kcal*o.g/100;p+=fd.p*o.g/100;f+=fd.f*o.g/100;c+=fd.c*o.g/100;na+=(fd.na||0)*o.g/100;
-    txt+=`<div class="l"><span>${n} ${Math.round(o.g)}g</span><span>${Math.round(fd.kcal*o.g/100)} kcal</span></div>`;
+    const lab=(o.use&&o.use!==n)?`${n}（用${o.use}）`:n;
+    txt+=`<div class="l"><span>${lab} ${Math.round(o.g)}g</span><span>${Math.round(fd.kcal*o.g/100)} kcal</span></div>`;
   });
   const e=eatenToday();
   txt+=`<div class="l" style="border-top:1px solid var(--line);margin-top:6px;padding-top:8px"><b>合计</b><b>${Math.round(k)} kcal</b></div>
@@ -1583,7 +1607,8 @@ function confirmCook(){
   const r=ALL()[curRcp];
   let names=[],veg=0;
   Object.keys(curPick).forEach(n=>{
-    const o=curPick[n],fd=BY[n];
+    const o=curPick[n],fd=BY[o.use||n]||BY[n];
+    if(!fd)return;
     names.push(fd.n);
     if(fd.cat==="veg")veg+=o.g;
     let need=o.g;
@@ -2421,9 +2446,9 @@ function doDedupe(){
 }
 /* ============ 买菜清单 ============ */
 function shopGap(){
-  const have=invNames(),one={},two={};
+  const one={},two={};
   ALL().forEach(function(r){
-    const miss=(r.m||[]).filter(function(n){return !have.has(n)&&BY[n]});
+    const miss=(r.m||[]).filter(function(n){return BY[n]&&!haveIng(n)});
     if(miss.length===1)one[miss[0]]=(one[miss[0]]||0)+1;   /* 只差这一样：买它就能多做几道 */
     else if(miss.length===2)miss.forEach(function(n){two[n]=(two[n]||0)+1});
   });

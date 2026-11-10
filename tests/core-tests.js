@@ -95,6 +95,14 @@
     const first = Object.keys(gap)[0];
     eq("shopGap 解锁数 ≥1", gap[first].unlock >= 1, true);
 
+    /* ---------- 油脂互认 ---------- */
+    S.inv = [{ id: 200, n: "大豆油", g: 400, d: dstr(new Date()) }];
+    rebuildFoods();
+    eq("只有大豆油也能满足橄榄油", haveIng("橄榄油"), true);
+    eq("supplyOf 指向库存那种油", supplyOf("橄榄油"), "大豆油");
+    eq("没有油时判定为缺", (S.inv = [], rebuildFoods(), haveIng("橄榄油")), false);
+    eq("非油食材不互认", (S.inv = [{ id: 0, n: "鸡蛋", g: 100, d: dstr(new Date()) }], rebuildFoods(), haveIng("鸡胸肉")), false);
+
     /* ---------- 状态迁移 ---------- */
     const ms = mergeState({ inv: [], logs: [] });
     eq("mergeState 补 set", ms.set.protein, 96);
