@@ -22,7 +22,7 @@ KS="${DORM_KS:-../keystore/release.jks}"
 KS_ALIAS="${DORM_KS_ALIAS:-dorm}"
 OUT="build"
 ROOT=".."
-VER="${1:-v3.2}"
+VER="${1:-v3.3}"
 
 # 兼容 Windows（.exe/.bat）与 macOS/Linux（无后缀）
 pick(){ for c in "$SDKB/$1.exe" "$SDKB/$1.bat" "$SDKB/$1"; do [ -e "$c" ] && { printf '%s' "$c"; return; }; done; printf '%s' "$SDKB/$1"; }

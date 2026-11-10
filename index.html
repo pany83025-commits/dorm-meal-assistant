@@ -497,14 +497,34 @@ function rebuildFoods(){
     return {id:i,n:r[0],cat:r[1],kcal:r[2],p:r[3],f:r[4],c:r[5],fib:r[6],un:r[7],ug:r[8],e:r[9],
       kw:r[10],kc:r[11],label:r[12],src:r[13],note:r[14],na:r[15],ca:r[16],fe:r[17],vc:r[18],chol:r[19]};
   });
-  ((typeof S!=="undefined"&&S&&S.myFood)||[]).forEach(function(x,k){
-    F.push({id:1000+k,n:x.n,cat:x.cat||"protein",kcal:+x.kcal||0,p:+x.p||0,f:+x.f||0,c:+x.c||0,fib:+x.fib||0,
+  /* 自建食材用固定 id（≥1000），不再按数组下标现编：删掉中间一条，后面的不会整体前移 */
+  const list=((typeof S!=="undefined"&&S&&S.myFood)||[]);
+  const used={};
+  list.forEach(function(x){if(+x.id>=1000)used[+x.id]=1});
+  let next=1000;
+  list.forEach(function(x){
+    if(!(+x.id>=1000)){
+      while(used[next])next++;
+      x.id=next;used[next]=1;
+    }
+    F.push({id:x.id,n:x.n,cat:x.cat||"protein",kcal:+x.kcal||0,p:+x.p||0,f:+x.f||0,c:+x.c||0,fib:+x.fib||0,
       un:x.un||"份",ug:+x.ug||100,e:100,kw:365,kc:365,label:"净重",src:"自建食材（非成分表）",
       note:x.note||"",na:+x.na||0,ca:0,fe:0,vc:0,chol:0,my:true});
   });
   BY={};
   F.forEach(function(f){BY[f.n]=f});
+  /* 库存/浪费条目补上食材名：以后 RAW 顺序变了也认得出来是谁 */
+  if(typeof S!=="undefined"&&S){
+    (S.inv||[]).forEach(function(x){if(!x.n&&F[x.id])x.n=F[x.id].n});
+    (S.waste||[]).forEach(function(x){if(!x.n&&F[x.id])x.n=F[x.id].n});
+  }
 }
+/* 统一入口：条目 → 食材（优先认名字，id 只作兜底） */
+function foodOf(x){
+  if(!x)return null;
+  return (x.n&&BY[x.n])||F[x.id]||null;
+}
+function foodName(x){const f=foodOf(x);return f?f.n:""}
 function ALL(){
   const base=RCP.concat(S.myRcp||[]);
   (S.myDish||[]).forEach(function(d,k){
@@ -608,7 +628,7 @@ const DISH=[
 {"n": "燕麦粥", "i": [["燕麦", 40], ["牛奶", 200]], "note": ""}
 ];
 const CAT={protein:"蛋白",carb:"主食",veg:"蔬菜",fruit:"水果",fat:"油脂",other:"调味"};
-const APP_VER="3.2";              /* 发版只改这一处：关于页、SW 注册参数都读它 */
+const APP_VER="3.3";              /* 发版只改这一处：关于页、SW 注册参数都读它 */
 const K='dorm-eat-v2';
 let S=load();
 S.myFood=S.myFood||[];
@@ -633,7 +653,7 @@ function hideNotice(){const el=document.getElementById("notice");if(el)el.classL
 
 /* ---------- 状态：默认值 + 迁移 ---------- */
 function defaultState(){
-  return {v:3,inv:[],logs:[],waste:[],myRcp:[],myDish:[],myFood:[],ai:{},
+  return {v:3,inv:[],logs:[],waste:[],myRcp:[],myDish:[],myFood:[],nextFoodId:1000,ai:{},
     set:{sex:"女",height:165,age:22,weight:60,act:1.375,kcal:1470,protein:96,fat:48,carb:163,
          na:2000,locked:false,city:"",lat:null,lon:null,offset:3},
     w:{t:null,avg3:null,src:"init",at:0}};
@@ -700,12 +720,11 @@ function keepDays(f){
   else if(rt<=32)b=f.kw;else b=Math.floor(f.kw*0.8);
   return Math.max(0,b);
 }
-function remDays(it){return keepDays(BY[it.n||F[it.id].n])-daysAgo(it.d)}
-function invItem(id){return S.inv.filter(x=>x.id===id).reduce((a,b)=>a+b.g,0)}
-function invByCat(cat){const m={};S.inv.forEach(x=>{if(F[x.id].cat===cat)m[x.id]=(m[x.id]||0)+x.g});
-  return Object.keys(m).map(id=>({id:+id,g:m[id]}))}
-function invNames(){const s=new Set();S.inv.forEach(x=>s.add(F[x.id].n));return s}
-function expireList(){return S.inv.map(x=>({...x,rem:remDays(x)})).filter(x=>x.rem<=0).sort((a,b)=>a.rem-b.rem)}
+function remDays(it){const f=foodOf(it);return (f?keepDays(f):0)-daysAgo(it.d)}
+function invQty(name){return S.inv.filter(x=>foodName(x)===name).reduce((a,b)=>a+b.g,0)}
+function invItem(id){const f=F[id];return f?invQty(f.n):0}
+function invNames(){const s=new Set();S.inv.forEach(x=>{const n=foodName(x);if(n)s.add(n)});return s}
+function expireList(){return S.inv.filter(x=>foodOf(x)).map(x=>({...x,rem:remDays(x)})).filter(x=>x.rem<=0).sort((a,b)=>a.rem-b.rem)}
 function eatenToday(){
   const t=today();
   return S.logs.filter(l=>l.d===t).reduce((a,l)=>({kcal:a.kcal+(l.kcal||0),p:a.p+(l.p||0),f:a.f+(l.f||0),c:a.c+(l.c||0),na:a.na+(l.na||0),veg:a.veg+(l.veg||0)}),{kcal:0,p:0,f:0,c:0,na:0,veg:0});
@@ -728,7 +747,7 @@ function macOfRcp(r){
 }
 function recommend(kw){
   const k=String(kw||"").trim();
-  const names=invNames(),exp=expireList().map(x=>F[x.id].n);
+  const names=invNames(),exp=expireList().map(foodName);
   const recent={};S.logs.filter(l=>daysAgo(l.d)<=2).forEach(l=>{const n=l.name.split("（")[0];recent[n]=(recent[n]||0)+1});
   const now=[],near=[];
   ALL().forEach((r,i)=>{
@@ -1084,7 +1103,19 @@ function saveNewFood(){
     na:+g("nf_na")||0,un:String(g("nf_un")||"份").trim()||"份",ug:+g("nf_ug")||100,note:"自建，数值未核对"};
   S.myFood=S.myFood||[];
   const idx=S.myFood.findIndex(function(x){return x.n===name});
-  if(idx>-1)S.myFood.splice(idx,1);
+  if(idx>-1){
+    /* 同名覆盖＝编辑原食材，沿用原 id，库存/浪费里的引用才不会断 */
+    const old=S.myFood[idx];
+    if(+old.id>=1000)rec.id=old.id;
+    S.myFood.splice(idx,1);
+  }
+  if(!(+rec.id>=1000)){
+    const used={};
+    S.myFood.forEach(function(x){if(+x.id>=1000)used[+x.id]=1});
+    let nid=Math.max(1000,+(S.nextFoodId||1000));
+    while(used[nid])nid++;
+    rec.id=nid;S.nextFoodId=nid+1;
+  }
   S.myFood.push(rec);
   rebuildFoods();save();
   const target=newRcp.items.filter(function(x){return !x.n&&x.raw===name})[0]
@@ -1363,7 +1394,8 @@ function invHtml(){
   if(!S.inv.length)h+=`<div class="empty">还没有食材<br>点上面「＋ 添加食材到库存」</div>`;
   else{
     [...S.inv].sort((a,b)=>remDays(a)-remDays(b)).forEach(it=>{
-      const f=F[it.id],r=remDays(it);
+      const f=foodOf(it),r=remDays(it);
+      if(!f)return;
       const bd=r<0?["已过期","badge warn"]:r<=0?["今天要用","badge warn"]:r<=3?[r+"天","badge info"]:[r+"天","badge mut"];
       h+=`<div class="food" onclick="openBatch('${it.d}',${it.id})">
         <div class="info"><div class="nm">${f.n}<span class="${bd[1]}">${bd[0]}</span></div>
@@ -1382,7 +1414,7 @@ function weekStats(days,last7){
   const hit=last7.filter(function(d){return days[d]&&days[d].p>=S.set.protein*0.85}).length;
   const w7=(S.waste||[]).filter(function(w){return daysAgo(w.d)<=6});
   const wg=w7.reduce(function(a,w){return a+(w.g||0)},0);
-  const wk=w7.reduce(function(a,w){const f=F[w.id];return a+(f?f.kcal*w.g/100:0)},0);
+  const wk=w7.reduce(function(a,w){const f=foodOf(w);return a+(f?f.kcal*w.g/100:0)},0);
   return {n:n,avg:avg,hit:hit,w7:w7,wg:wg,wk:wk,exp:expireList()};
 }
 function weekBrief(days,last7){
@@ -1423,13 +1455,13 @@ function openWeekReport(){
   h+='<div class="sec"><b>浪费</b> · '+st.w7.length+' 次</div>';
   if(!st.w7.length)h+='<div class="empty">这周没有浪费记录</div>';
   else h+=st.w7.slice().sort(function(a,b){return b.d.localeCompare(a.d)}).map(function(w){
-    const f=F[w.id];if(!f)return "";
+    const f=foodOf(w);if(!f)return "";
     return '<div class="logitem"><span>'+esc(f.n)+'</span><span class="r">'+Math.round(w.g)+'g · '+Math.round(f.kcal*w.g/100)+' kcal<br><span style="color:#B4B2A9">'+w.d.slice(5)+'</span></span></div>';
   }).join("");
   h+='<div class="sec"><b>库存临期</b> · '+st.exp.length+' 样</div>';
   if(!st.exp.length)h+='<div class="empty">没有临期食材</div>';
   else h+=st.exp.map(function(x){
-    const f=BY[F[x.id].n];
+    const f=BY[foodName(x)];
     return '<div class="logitem"><span>'+esc(f.n)+'</span><span class="r">'+(x.rem<=0?'今天要用':'还剩 '+x.rem+' 天')+'</span></div>';
   }).join("");
   h+='<div style="height:12px"></div><button class="btn ghost" onclick="closeSheet()">关闭</button>';
@@ -1458,8 +1490,9 @@ function renderLog(){
   h+=`<div class="card"><h2>今天的记录<span>${tl.length} 条</span></h2>`;
   if(!tl.length)h+=`<div class="empty">还没有记录</div>`;
   tl.forEach(l=>{
-    h+=`<div class="logitem"><span>${l.name}</span><span class="r">${Math.round(l.kcal)} kcal · P${Math.round(l.p)} C${Math.round(l.c||0)} F${Math.round(l.f||0)}
-    <br><button class="add" style="padding:1px 7px;margin-top:3px" onclick="delLog(${S.logs.indexOf(l)})">删</button></span></div>`;
+    const li=S.logs.indexOf(l);
+    h+=`<div class="logitem"><span>${esc(l.name)}</span><span class="r">${Math.round(l.kcal)} kcal · P${Math.round(l.p)} C${Math.round(l.c||0)} F${Math.round(l.f||0)}
+    <br><span style="display:inline-flex;gap:6px;margin-top:3px"><button class="add" style="padding:1px 8px" onclick="openEditLog(${li})">改</button><button class="add" style="padding:1px 7px" onclick="delLog(${li})">删</button></span></span></div>`;
   });
   h+=`</div>`;
   h+='<div class="card" style="padding:0;overflow:hidden;margin-top:4px">'
@@ -1722,7 +1755,7 @@ function calcAdd(){
 function doAdd(){
   const net=addNet();
   if(!net||net<=0)return;
-  S.inv.push({id:addId,g:Math.round(net*10)/10,d:today()});
+  S.inv.push({id:addId,n:(F[addId]||{}).n,g:Math.round(net*10)/10,d:today()});
   save();closeSheet();render();
 }
 function addListHtml(kw){
@@ -1737,7 +1770,8 @@ function setAdd(g){const e=document.getElementById("addg");if(e)e.value=g}
 function openBatch(d,id){
   const b=S.inv.find(x=>x.d===d&&x.id===id);
   if(!b)return;
-  const f=F[id],r=remDays(b);
+  const f=foodOf(b),r=remDays(b);
+  if(!f)return;
   const st=r<0?`已过期 ${-r} 天`:r<=0?"今天最后一天":`还剩 ${r} 天`;
   openSheet(`<h3>${f.n}</h3><div class="sm">${Math.round(b.g)}g ｜ 买于 ${b.d.slice(5)} ｜ ${st}</div>
   <label class="fl">改成实际剩余克数</label>
@@ -1760,7 +1794,7 @@ function saveBatch(d,id){
 function dropBatch(d,id){
   S.waste=S.waste||[];
   const b=S.inv.find(x=>x.d===d&&x.id===id);
-  if(b)S.waste.push({id,g:b.g,d:today()});
+  if(b)S.waste.push({id:b.id,n:foodName(b),g:b.g,d:today()});
   S.inv=S.inv.filter(x=>!(x.d===d&&x.id===id));
   save();closeSheet();render();
 }
@@ -1846,7 +1880,7 @@ function confirmCook(){
     names.push(fd.n);
     if(fd.cat==="veg")veg+=o.g;
     let need=o.g;
-    S.inv.filter(x=>x.id===fd.id).sort((a,b)=>a.d.localeCompare(b.d)).forEach(b=>{
+    S.inv.filter(x=>foodName(x)===fd.n).sort((a,b)=>a.d.localeCompare(b.d)).forEach(b=>{
       if(need<=0)return;
       const use=Math.min(need,b.g);b.g-=use;need-=use;
     });
@@ -1854,6 +1888,33 @@ function confirmCook(){
   S.inv=S.inv.filter(x=>x.g>0.5);
   S.logs.push({d:today(),name:r.n,kcal:k,p,f,c,na,veg});
   save();closeSheet();setTab("today");
+}
+function openEditLog(i){
+  const l=S.logs[i];if(!l)return;
+  const num=function(x){return Math.round((+x||0)*10)/10};
+  openSheet('<h3>改这条记录</h3><div class="sm">'+l.d+' ｜ 改完直接覆盖，日期不变</div>'
+    +'<label class="fl">名称</label>'
+    +'<input type="search" id="el_name" value="'+esc(l.name).replace(/"/g,"&quot;")+'">'
+    +'<div class="row3"><div><label class="fl">热量 kcal</label><input type="number" id="el_k" value="'+Math.round(l.kcal||0)+'" inputmode="decimal"></div>'
+    +'<div><label class="fl">蛋白 g</label><input type="number" id="el_p" value="'+num(l.p)+'" inputmode="decimal"></div></div>'
+    +'<div class="row3"><div><label class="fl">碳水 g</label><input type="number" id="el_c" value="'+num(l.c)+'" inputmode="decimal"></div>'
+    +'<div><label class="fl">脂肪 g</label><input type="number" id="el_f" value="'+num(l.f)+'" inputmode="decimal"></div></div>'
+    +'<div class="row3"><div><label class="fl">钠 mg</label><input type="number" id="el_na" value="'+Math.round(l.na||0)+'" inputmode="decimal"></div>'
+    +'<div><label class="fl">蔬菜 g</label><input type="number" id="el_veg" value="'+Math.round(l.veg||0)+'" inputmode="numeric"></div></div>'
+    +'<div style="height:14px"></div><button class="btn" onclick="saveEditLog('+i+')">保存修改</button>'
+    +'<div style="height:8px"></div><button class="btn ghost" onclick="closeSheet()">取消</button>');
+}
+function saveEditLog(i){
+  const l=S.logs[i];if(!l)return;
+  const v=function(id){const e=document.getElementById(id);return e?e.value:""};
+  const name=String(v("el_name")).trim();
+  if(!name){alert("名字不能空");return}
+  const k=parseFloat(v("el_k"));
+  if(!(k>=0)){alert("热量要填个数字");return}
+  l.name=name;l.kcal=k;
+  l.p=+v("el_p")||0;l.c=+v("el_c")||0;l.f=+v("el_f")||0;
+  l.na=+v("el_na")||0;l.veg=+v("el_veg")||0;
+  save();closeSheet();render();
 }
 function delLog(i){S.logs.splice(i,1);save();render()}
 
@@ -1888,7 +1949,7 @@ function cookSearch(v){
 function cookPickHtml(kw){
   const r=recommend(kw||"");
   const kinds={};
-  S.inv.forEach(function(x){const f=F[x.id];if(f&&x.g>0.5)kinds[f.n]=1});
+  S.inv.forEach(function(x){const f=foodOf(x);if(f&&x.g>0.5)kinds[f.n]=1});
   const nk=Object.keys(kinds).length;
   const total=r.now.length+r.near.length;
   let h='<div class="sm" style="margin:0 0 8px;color:#928F86">库存 '+nk+' 种食材'
@@ -2292,7 +2353,8 @@ let logId=-1;
 function eatPickHtml(){
   if(!S.inv.length)return '<div class="empty">库存是空的<br>先去「食材」页加点东西</div>';
   return [...S.inv].sort((a,b)=>remDays(a)-remDays(b)).map(it=>{
-    const f=F[it.id],r=remDays(it);
+    const f=foodOf(it),r=remDays(it);
+    if(!f)return "";
     const bd=r<0?'<span class="badge warn">已过期</span>':r<=0?'<span class="badge warn">今天要用</span>':`<span class="badge mut">${r}天</span>`;
     return `<div class="food" onclick="openEat('${it.d}',${it.id})">
       <div class="info"><div class="nm">${f.n}${bd}</div>
@@ -2303,7 +2365,8 @@ function eatPickHtml(){
 function openEat(d,id){
   const b=S.inv.find(x=>x.d===d&&x.id===id);
   if(!b)return;
-  const f=F[id],left=Math.round(b.g);
+  const f=foodOf(b),left=Math.round(b.g);
+  if(!f)return;
   const def=Math.min(f.ug,left);
   openSheet(`<h3>${f.n}</h3><div class="sm">库存剩 ${left}g · ${f.kcal} kcal/100g<br>吃掉多少？</div>
   <input type="number" id="eatg" value="${def}" inputmode="decimal" oninput="calcEat('${d}',${id})">
@@ -2318,7 +2381,8 @@ function openEat(d,id){
 }
 function setEat(v){const e=document.getElementById("eatg");if(e){e.value=v;e.dispatchEvent(new Event("input"))}}
 function calcEat(d,id){
-  const f=F[id],el=document.getElementById("eatg"),pv=document.getElementById("epv");
+  const f=foodOf(S.inv.find(x=>x.d===d&&x.id===id)),el=document.getElementById("eatg"),pv=document.getElementById("epv");
+  if(!f)return;
   const g=el?parseFloat(el.value):0;
   if(!pv)return;
   if(!g||g<=0){pv.innerHTML='<span style="color:#928F86">填个克数</span>';return}
@@ -2330,9 +2394,11 @@ function doEat(d,id){
   const el=document.getElementById("eatg");
   const g=el?parseFloat(el.value):0;
   if(!g||g<=0)return;
-  const f=F[id];
+  const cur=S.inv.find(x=>x.d===d&&x.id===id);
+  const f=foodOf(cur);
+  if(!f)return;
   let need=g;
-  S.inv.filter(x=>x.id===id).sort((a,b)=>a.d.localeCompare(b.d)).forEach(b=>{
+  S.inv.filter(x=>foodName(x)===f.n).sort((a,b)=>a.d.localeCompare(b.d)).forEach(b=>{
     if(need<=0)return;
     const use=Math.min(need,b.g);b.g-=use;need-=use;
   });
@@ -2356,7 +2422,7 @@ function doLog(){
   const g=parseFloat($("addg").value);
   if(!g||g<=0)return;
   const f=F[logId];
-  S.logs.push({d:today(),name:f.n+" "+Math.round(g)+"g",kcal:f.kcal*g/100,p:f.p*g/100,f:f.f*g/100,c:f.c*g/100,veg:f.cat==="veg"?g:0});
+  S.logs.push({d:today(),name:f.n+" "+Math.round(g)+"g",kcal:f.kcal*g/100,p:f.p*g/100,f:f.f*g/100,c:f.c*g/100,na:(f.na||0)*g/100,veg:f.cat==="veg"?g:0});
   save();closeSheet();setTab("log");
 }
 function toggleKey(){
@@ -2459,7 +2525,7 @@ function aiPost(payload,cb){
 let aiResults=[];
 function openAI(){
   if(!S.ai||!S.ai.key){alert("先在「记录」页底部填 AI 接口和 Key");return}
-  const uniq=[...new Set(S.inv.map(x=>F[x.id].n))];
+  const uniq=[...new Set(S.inv.map(foodName).filter(Boolean))];
   openSheet(`<h3>用 AI 写一道</h3><div class="sm">只用水煮、蒸、焯、焖；热量和营养由本地成分表重算</div>
   <label class="fl">手上有什么（可以改、可以写想吃的）</label>
   <textarea id="ai_in">${uniq.join("、")||"鸡蛋、番茄"}</textarea>
@@ -2625,7 +2691,7 @@ function openWaste(){
     let tg=0,tk=0;
     h+='<div style="max-height:54vh;overflow-y:auto">';
     w.forEach(function(x){
-      const f=F[x.id];if(!f)return;
+      const f=foodOf(x);if(!f)return;
       const k=f.kcal*x.g/100;tg+=x.g;tk+=k;
       h+='<div class="logitem"><span>'+esc(f.n)+'</span><span class="r">'+Math.round(x.g)+'g · '+Math.round(k)+' kcal<br><span style="color:#B4B2A9">'+x.d.slice(5)+'</span></span></div>';
     });
