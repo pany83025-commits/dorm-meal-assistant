@@ -1,6 +1,6 @@
 {
-  "version": "3.7",
-  "released": "2026-11-10",
-  "note": "应用内检查更新；油脂互认；买菜清单",
+  "version": "3.8",
+  "released": "2026-11-11",
+  "note": "记这一餐可调食材/选食堂或库存；记录按天看、趋势图与日历",
   "apk": "https://github.com/pany83025-commits/dorm-meal-assistant/releases/latest/download/dorm-meal.apk"
 }
