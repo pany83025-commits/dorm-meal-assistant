@@ -1,6 +1,6 @@
 {
-  "version": "3.9",
+  "version": "3.10",
   "released": "2026-11-11",
-  "note": "修复收不到更新提示：新增「设置 → 检查更新」可看具体错误",
+  "note": "交互重做：弹层逐级返回、整页滚动记忆、边缘滑动退出",
   "apk": "https://github.com/pany83025-commits/dorm-meal-assistant/releases/latest/download/dorm-meal.apk"
 }

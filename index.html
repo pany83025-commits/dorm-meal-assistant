@@ -89,7 +89,7 @@ nav button.on .ic{opacity:1}
 .sheet{position:fixed;inset:0;background:rgba(0,0,0,.32);z-index:55;display:none;align-items:flex-end;justify-content:center;padding-bottom:var(--kb,0px)}
 .sheet.on{display:flex;animation:maskIn .28s ease both}
 .sheet.closing{animation:maskOut .26s ease both}
-.sheet .box{outline:none;background:var(--bg);width:100%;max-width:520px;border-radius:18px 18px 0 0;padding:16px 16px max(20px,env(safe-area-inset-bottom));max-height:calc(90vh - var(--kb,0px));overflow-y:auto;transition:transform .2s ease;transform-origin:50% 100%}
+.sheet .box{outline:none;background:var(--bg);width:100%;max-width:520px;border-radius:18px 18px 0 0;padding:16px 16px max(20px,env(safe-area-inset-bottom));max-height:calc(90vh - var(--kb,0px));overflow-y:auto;overscroll-behavior:contain;transition:transform .2s ease;transform-origin:50% 100%;will-change:transform}
 .sheet.on .box{animation:sheetUp .46s both}
 .sheet.closing .box{animation:sheetDown .30s cubic-bezier(.42,0,.86,.5) both}
 @keyframes maskIn{from{background:rgba(0,0,0,0)}to{background:rgba(0,0,0,.32)}}
@@ -100,6 +100,7 @@ nav button.on .ic{opacity:1}
   82%{transform:translateY(2px) scale(1);animation-timing-function:ease-out}
   100%{transform:translateY(0) scale(1);opacity:1}}
 @keyframes sheetDown{from{transform:none;opacity:1}to{transform:translateY(80px) scale(.985);opacity:0}}
+@keyframes sheetStep{from{opacity:.25;transform:translateX(18px)}to{opacity:1;transform:none}}
 @keyframes up{from{transform:translateY(24px);opacity:.6}to{transform:none;opacity:1}}
 .sheet h3{font-size:16.5px;font-weight:600;margin-bottom:3px;padding-right:30px}
 .sheet .sm{font-size:12.5px;color:var(--ink3);margin-bottom:12px;line-height:1.5}
@@ -200,8 +201,11 @@ label.fl{display:block;font-size:12.5px;color:var(--ink3);margin:12px 0 5px}
   font-size:12.5px;padding:6px 12px;border-radius:9px;cursor:pointer;transition:background .12s ease}
 #notice button:active{background:rgba(255,255,255,.3)}
 /* ===== 整页覆盖层（日视图 / 趋势） ===== */
-.page{position:fixed;inset:0;background:var(--bg);z-index:45;display:none;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:28px}
-.page.on{display:block}
+.page{position:fixed;inset:0;background:var(--bg);z-index:45;display:none;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding-bottom:28px;will-change:transform,opacity}
+.page.on{display:block;animation:pageIn .30s cubic-bezier(.22,1,.36,1) both}
+.page.closing{animation:pageOut .22s ease both}
+@keyframes pageIn{from{opacity:0;transform:translateX(22px)}to{opacity:1;transform:none}}
+@keyframes pageOut{from{opacity:1;transform:none}to{opacity:.3;transform:translateX(28px)}}
 .phead{position:sticky;top:0;z-index:3;display:flex;align-items:center;gap:8px;
   padding:calc(10px + var(--sat)) 14px 10px;background:var(--bg);border-bottom:1px solid var(--line)}
 .phead .ttl{flex:1;min-width:0;font-size:15px;font-weight:600;text-align:center}
@@ -336,7 +340,7 @@ function nameHit(f,kw){
 }
 const DISH=JSON.parse(document.getElementById("d-dishes").textContent);
 const CAT={protein:"蛋白",carb:"主食",veg:"蔬菜",fruit:"水果",fat:"油脂",other:"调味"};
-const APP_VER="3.9";              /* 发版只改这一处：关于页、SW 注册参数都读它 */
+const APP_VER="3.10";              /* 发版只改这一处：关于页、SW 注册参数都读它 */
 const K='dorm-eat-v2';
 let S=load();
 S.myFood=S.myFood||[];
@@ -674,14 +678,14 @@ function rcpMatch(r,kw){
   return (r.o||[]).some(n=>n.indexOf(kw)>-1);
 }
 let newRcp={n:"",items:[],steps:"",idx:-1};
-function openNewRcp(){newRcp={n:"",items:[],steps:"",idx:-1};renderNewRcp()}
+function openNewRcp(){newRcp={n:"",items:[],steps:"",idx:-1};sheetPushNext=1;renderNewRcp()}
 function openEditDish(i){
   const d=(S.myDish||[])[i];
   if(!d){alert("没找到这条");return}
   newRcp={n:d.n||"",
     items:(d.i||[]).map(function(x){return {n:x[0],raw:x[0],g:x[1]}}),
     steps:(d.s||[]).join("\n"),idx:i};
-  renderNewRcp();
+  sheetPushNext=1;renderNewRcp();
 }
 function newRcpTotalText(){
   const m=dishMacro({i:newRcp.items.map(function(x){return [x.n,x.g]})},1);
@@ -885,6 +889,7 @@ function saveNewFood(){
 
 let aiSug={},aiSugBusy=false;
 function renderNewRcp(){
+  sheetRedraw=1;
   const items=newRcp.items;
   const miss=items.filter(function(x){return !x.n});
   const editing=(newRcp.idx>-1);
@@ -1405,7 +1410,12 @@ function render(){
   if(_v){_v.classList.remove("anim");void _v.offsetWidth;_v.classList.add("anim")}
   a11yPatch();
 }
-function setTab(t){tab=t;q="";foodQ="";render();window.scrollTo({top:0})}
+function setTab(t){
+  try{if(typeof tab!=="undefined"&&tab&&memoTab)memoTab.set(tab,window.scrollY)}catch(e){}
+  tab=t;q="";foodQ="";render();
+  const y=(memoTab?memoTab.get(t):0);
+  requestAnimationFrame(function(){window.scrollTo(0,y)});
+}
 document.querySelectorAll("nav button").forEach(b=>b.addEventListener("click",()=>setTab(b.dataset.tab)));
 function setRcpFilter(c){rcpFilter=c;render()}
 function setP(k,v){
@@ -1435,45 +1445,84 @@ async function saveCity(){
 }
 
 let sheetTimer=null,sheetPrevFocus=null;
+/* ===== 滚动锁：弹层/整页打开时，背后的页面不跟着动 ===== */
+let scrollLock=0;
+function lockScroll(d){
+  scrollLock=Math.max(0,scrollLock+d);
+  document.body.style.overflow=scrollLock?"hidden":"";
+}
+
+/* ===== 弹层：每一层压栈，手势/返回键只退一层 ===== */
+let sheetStack=[],sheetCur="",sheetRedraw=false,sheetHoldLock=false,sheetPushNext=false;
+
+function openSheet(html,opt){
+  opt=opt||{};
+  const sh=$("sheet"),box=$("sheetBox");
+  if(sheetTimer){clearTimeout(sheetTimer);sheetTimer=null}
+  const wasOn=sh.classList.contains("on");
+  sh.classList.remove("closing");
+  /* 已经开着弹层时再开一个＝进一层；renderXxx 这类重绘会先置 sheetRedraw，不压栈 */
+  if(wasOn&&!opt.replace&&(opt.push||sheetPushNext||!sheetRedraw)&&sheetCur)sheetStack.push(sheetCur);
+  sheetRedraw=false;sheetPushNext=false;
+  box.setAttribute("tabindex","-1");
+  if(!wasOn){
+    sheetPrevFocus=document.activeElement;
+    sheetStack=[];
+    box.style.animation="none";
+    if(!sheetHoldLock){sheetHoldLock=true;lockScroll(1)}
+  }
+  box.innerHTML='<button class="x" onclick="closeSheet()" aria-label="关闭">×</button>'+html;
+  sheetCur=html;
+  box.scrollTop=0;
+  if(!wasOn){
+    void box.offsetWidth;box.style.animation="";
+  }else{
+    /* 换层：给一个轻微的横向位移，明确"这是另一层"而不是原地刷新 */
+    box.style.animation="sheetStep .2s ease both";
+  }
+  sh.classList.add("on");
+  a11yPatch(box);
+  if(!wasOn)setTimeout(function(){try{box.focus({preventScroll:true})}catch(e){}},30);
+}
+/* 退一层；已经在第一层就整层关闭 */
+function sheetBack(){
+  const sh=$("sheet");
+  if(!sh||!sh.classList.contains("on"))return false;
+  if(!sheetStack.length){closeSheet();return true}
+  const prev=sheetStack.pop();
+  openSheet(prev,{replace:1});
+  return true;
+}
 function closeSheet(instant){
   const sh=$("sheet");
   if(!sh)return;
   if(sheetTimer){clearTimeout(sheetTimer);sheetTimer=null}
   const box=$("sheetBox");
-  if(box)box.style.animation="";          /* 打开动画结束后会置 none，这里交还给 CSS 关闭动画 */
-  if(instant||!sh.classList.contains("on")){
-    sh.classList.remove("on","closing");
+  sheetStack=[];sheetCur="";
+  if(box){box.style.animation="";box.style.transform="";box.style.transition=""}
+  const unlock=function(){
+    if(sheetHoldLock){sheetHoldLock=false;lockScroll(-1)}
     if(sheetPrevFocus&&sheetPrevFocus.isConnected){try{sheetPrevFocus.focus({preventScroll:true})}catch(e){}}
     sheetPrevFocus=null;
+  };
+  if(instant||!sh.classList.contains("on")){
+    sh.classList.remove("on","closing");
+    unlock();
     return;
   }
   sh.classList.add("closing");
   sheetTimer=setTimeout(function(){
     sh.classList.remove("on","closing");
     sheetTimer=null;
-    if(sheetPrevFocus&&sheetPrevFocus.isConnected){try{sheetPrevFocus.focus({preventScroll:true})}catch(e){}}
-    sheetPrevFocus=null;
+    unlock();
   },310);
 }
-$("sheet").addEventListener("click",e=>{if(e.target.id==="sheet")closeSheet()});
-function openSheet(html){
-  const sh=$("sheet"),box=$("sheetBox");
-  if(sheetTimer){clearTimeout(sheetTimer);sheetTimer=null}
-  const wasOn=sh.classList.contains("on");
-  sh.classList.remove("closing");
-  /* 只在「从无到有」时重播上滑动画；弹层内换内容（如点数量胶囊）不重播，避免整页跳动 */
-  if(!wasOn)box.style.animation="none";
-  box.setAttribute("tabindex","-1");
-  if(!wasOn)sheetPrevFocus=document.activeElement;
-  box.innerHTML='<button class="x" onclick="closeSheet()">×</button>'+html;
-  if(!wasOn){void box.offsetWidth;box.style.animation=""}
-  sh.classList.add("on");
-  a11yPatch(box);
-  if(!wasOn)setTimeout(function(){try{box.focus({preventScroll:true})}catch(e){}},30);
-}
+
 /* 打开动画放完就撤掉 fill:both，否则它会一直压住行内 transform，下拉拖动时面板不跟手 */
 $("sheetBox").addEventListener("animationend",function(e){
-  if(e.target===this&&e.animationName==="sheetUp")this.style.animation="none";
+  if(e.target!==this)return;
+  if(e.animationName==="sheetUp")this.style.animation="none";
+  else if(e.animationName==="sheetStep")this.style.animation="";
 });
 
 let addId=-1,addUnit="u",addGross=false;
@@ -1484,9 +1533,10 @@ function openAdd(id){
     <div id="alist" style="max-height:52vh;overflow-y:auto;margin-top:8px">${addListHtml("")}</div>`);
     return;
   }
-  addId=id;addUnit="u";addGross=false;renderAddSheet();
+  addId=id;addUnit="u";addGross=false;sheetPushNext=1;renderAddSheet();
 }
 function renderAddSheet(){
+  sheetRedraw=1;
   const f=F[addId],er=f.e/100,gross1=f.ug/er;
   let h=`<h3>${f.n}</h3><div class="sm">1${f.un} ≈ 净重 ${f.ug}g${f.e<100?"（毛重约 "+Math.round(gross1)+"g，可食部 "+f.e+"%）":""}<br>
   ${f.kcal} kcal/100g ｜ 蛋白 ${f.p}g ｜ 碳水 ${f.c}g ｜ 脂肪 ${f.f}g<br>
@@ -1515,7 +1565,7 @@ function renderAddSheet(){
   }
   h+=`<div class="preview" id="apv"></div>
   <button class="btn" onclick="doAdd()">加进库存</button>
-  <div style="height:8px"></div><button class="btn ghost" onclick="openAdd()">换个食材</button>`;
+  <div style="height:8px"></div><button class="btn ghost" onclick="sheetBack()">换个食材</button>`;
   openSheet(h);calcAdd();
 }
 function setAU(u){addUnit=u;renderAddSheet()}
@@ -1611,7 +1661,7 @@ function mlBuild(kind,idx,src){
 function openMealLog(kind,idx,src){
   mlCtx=mlBuild(kind,idx,src);
   if(!mlCtx){alert("找不到这道菜");return}
-  mlApplySrc();renderMealLog();
+  mlApplySrc();sheetPushNext=1;renderMealLog();
 }
 function mlApplySrc(){
   const c=mlCtx;
@@ -1643,6 +1693,7 @@ function mlPreview(){
   pv.dataset.k=m.kcal;pv.dataset.p=m.p;pv.dataset.f=m.f;pv.dataset.c=m.c;pv.dataset.na=m.na;pv.dataset.veg=m.veg;
 }
 function renderMealLog(){
+  sheetRedraw=1;
   const c=mlCtx;if(!c)return;
   let h='<h3>'+esc(c.title)+'</h3><div class="sm">'+(c.kind==="rcp"?"食谱":"自建菜谱")
     +' ｜ 这里的改动只算这一餐，不改食谱本身</div>';
@@ -1718,13 +1769,14 @@ function saveMealLog(){
 }
 function backToRcp(){
   const c=mlCtx;if(!c)return;
+  if(sheetStack.length){sheetBack();return}          /* 有上一层就退回去，不重新铺一遍 */
   if(c.kind==="rcp")openRcp(c.idx);else openMyRcp(c.idx);
 }
 function openMealAdd(){
   openSheet('<h3>加一份食材</h3><div class="sm">只加到这一餐，不动食谱</div>'
     +'<input type="search" id="maq" placeholder="搜食材" oninput="mealAddSearch(this.value)">'
     +'<div id="malist" style="max-height:46vh;overflow-y:auto;margin-top:8px">'+mealAddList("")+'</div>'
-    +'<div style="height:8px"></div><button class="btn ghost" onclick="renderMealLog()">返回这一餐</button>');
+    +'<div style="height:8px"></div><button class="btn ghost" onclick="sheetBack()">返回这一餐</button>');
 }
 function mealAddList(kw){
   const list=F.filter(function(f){return nameHit(f,kw)}).slice(0,40);
@@ -1741,23 +1793,53 @@ function mealAddPick(id){
   const f=F[id];if(!f||!mlCtx)return;
   const g=Math.max(1,Math.round(f.ug*mlCtx.mult));
   mlCtx.items.push({n:f.n,base:f.ug,g:g,on:true,opt:false,added:true});
+  if(sheetStack.length)sheetStack.pop();      /* 加完回到这一餐 */
   renderMealLog();
 }
 
 /* ===================== 整页覆盖层 ===================== */
-let pagePrevFocus=null;
-function openPage(html){
+let pagePrevFocus=null,pageHoldLock=false;
+var MEMO_TTL=5*60e3;                      /* 5 分钟内回到原位置，超过就从头开始 */
+var pageMemo={};
+function memoSet(k,y){if(k)pageMemo[k]={y:y,at:Date.now()}}
+function memoGet(k){const m=k&&pageMemo[k];return (m&&Date.now()-m.at<MEMO_TTL)?m.y:0}
+function pageKey(){
+  if(typeof pageMode==="undefined"||!pageMode)return "page";
+  return "page:"+pageMode;
+}
+/* 标签页的滚动记忆 */
+var memoTab={
+  set:function(k,y){pageMemo["tab:"+k]={y:y,at:Date.now()}},
+  get:function(k){return memoGet("tab:"+k)}
+};
+let pageTimer=null;
+function openPage(html,opt){
+  opt=opt||{};
   const p=$("page"),i=$("pageIn");if(!p||!i)return;
-  if(!p.classList.contains("on"))pagePrevFocus=document.activeElement;
-  i.innerHTML=html;p.classList.add("on");p.scrollTop=0;
-  document.body.style.overflow="hidden";
+  const wasOpen=p.classList.contains("on")||p.classList.contains("closing");  /* 正在收起也算"开着"，避免重复加锁 */
+  if(pageTimer){clearTimeout(pageTimer);pageTimer=null}
+  if(!wasOpen)pagePrevFocus=document.activeElement;
+  /* 已经打开时重绘（点柱子、切范围）保持当前位置；首次打开才取记忆 */
+  const keep=opt.top?0:(wasOpen?p.scrollTop:memoGet(opt.key||pageKey()));
+  p.classList.remove("closing");
+  i.innerHTML=html;
+  p.classList.add("on");
+  if(!pageHoldLock){pageHoldLock=true;lockScroll(1)}
+  p.scrollTop=keep;
   a11yPatch(i);
 }
 function closePage(){
-  const p=$("page");if(!p)return;
-  p.classList.remove("on");document.body.style.overflow="";
-  if(pagePrevFocus&&pagePrevFocus.isConnected){try{pagePrevFocus.focus({preventScroll:true})}catch(e){}}
-  pagePrevFocus=null;
+  const p=$("page");if(!p||!p.classList.contains("on"))return;
+  memoSet(pageKey(),p.scrollTop);
+  if(pageTimer){clearTimeout(pageTimer);pageTimer=null}
+  p.classList.add("closing");
+  pageTimer=setTimeout(function(){
+    pageTimer=null;
+    p.classList.remove("on","closing");
+    if(pageHoldLock){pageHoldLock=false;lockScroll(-1)}
+    if(pagePrevFocus&&pagePrevFocus.isConnected){try{pagePrevFocus.focus({preventScroll:true})}catch(e){}}
+    pagePrevFocus=null;
+  },210);
 }
 function dayAdd(ds,n){const d=new Date(ds+"T00:00:00");d.setDate(d.getDate()+n);return dstr(d)}
 function dayLabel(ds){
@@ -1884,6 +1966,7 @@ function calMove(n){
   renderCal();
 }
 function renderCal(){
+  sheetRedraw=1;
   const first=new Date(calY,calM,1),start=first.getDay(),days=new Date(calY,calM+1,0).getDate();
   const has={};S.logs.forEach(function(l){has[l.d]=1});
   let h='<h3>选择日期</h3><div class="sm">有记录的日期会标绿</div>';
@@ -1903,7 +1986,7 @@ function calPick(ds){
   dayCur=ds;closeSheet();renderDayView();
 }
 
-/* 覆盖层手势：左右换天、滑到底部上滑开日历 */
+/* 覆盖层手势：边缘右滑＝退出这一页；内部左右滑＝换天；滑到底再上滑＝日历 */
 (function(){
   const pg=document.getElementById("page");
   if(!pg)return;
@@ -1913,9 +1996,11 @@ function calPick(ds){
     sx=e.touches[0].clientX;sy=e.touches[0].clientY;st=Date.now();
   },{passive:true});
   pg.addEventListener("touchend",function(e){
-    if(pageMode!=="day")return;
     const t=e.changedTouches[0],dx=t.clientX-sx,dy=t.clientY-sy;
-    const fromEdge=(sx<26||sx>window.innerWidth-26);      /* 从边缘起手＝系统返回手势，别抢 */
+    const fromEdge=(sx<26||sx>window.innerWidth-26);
+    /* 从屏幕边缘往右拖：退出这个整页（真机手势导航会先被系统接走，这里兜底三键导航） */
+    if(fromEdge&&dx>60&&Math.abs(dx)>Math.abs(dy)*1.4){closePage();return}
+    if(pageMode!=="day")return;
     if(!fromEdge&&Math.abs(dx)>55&&Math.abs(dx)>Math.abs(dy)*1.5){shiftDay(dx<0?1:-1);return}
     const atBottom=pg.scrollTop+pg.clientHeight>=pg.scrollHeight-30;
     if(dy<-70&&Math.abs(dy)>Math.abs(dx)*1.5&&atBottom)openCal();
@@ -2118,6 +2203,7 @@ function mealChips(){
 }
 function openLogSheet(){logTab="eat";cookQ="";logMeal=guessMeal();renderLogSheet()}
 function renderLogSheet(){
+  sheetRedraw=1;
   let h=`<h3>记一笔</h3><div class="sm" style="margin-bottom:0">记到哪一餐</div>`+mealChips()+`<div class="chips" style="margin-top:2px">
     <span class="chip ${logTab==='eat'?'on':''}" onclick="setLogTab('eat')">食堂 / 加餐</span>
     <span class="chip ${logTab==='cook'?'on':''}" onclick="setLogTab('cook')">用库存做</span>
@@ -2237,10 +2323,11 @@ function pickDish(i,isMine){
   curDishMine=!!isMine;
   curDishIdx=i;
   curDish=isMine?(S.myDish||[])[i]:DISH[i];
-  curMult=1;renderDish();
+  curMult=1;sheetPushNext=1;renderDish();
 }
 function setMult(v){curMult=v;renderDish()}
 function renderDish(){
+  sheetRedraw=1;
   const d=curDish,one=dishMacro(d,1),m=dishMacro(d,curMult);
   openSheet('<h3>'+esc(d.n)+'</h3><div class="sm">'
     +(d.note?esc(d.note)+'<br>':'')+'一份按 '+one.g+'g 计</div>'
@@ -2335,7 +2422,7 @@ function aiDish(name){
 }
 function renderAiDish(t){
   if(!t||String(t).indexOf("err:")===0){
-    openSheet('<h3>拆解失败</h3><div class="tip">'+esc(String(t||"").slice(0,200))+'</div><button class="btn ghost" onclick="renderLogSheet()">返回</button>');
+    openSheet('<h3>拆解失败</h3><div class="tip">'+esc(String(t||"").slice(0,200))+'</div><button class="btn ghost" onclick="sheetBack()">返回</button>');
     return;
   }
   let obj=null;
@@ -2347,7 +2434,7 @@ function renderAiDish(t){
     if(i>-1&&j>i)c=c.slice(i,j+1);
     obj=JSON.parse(c);
   }catch(e){
-    openSheet('<h3>拆解失败</h3><div class="tip">返回内容无法解析，再试一次</div><button class="btn ghost" onclick="renderLogSheet()">返回</button>');
+    openSheet('<h3>拆解失败</h3><div class="tip">返回内容无法解析，再试一次</div><button class="btn ghost" onclick="sheetBack()">返回</button>');
     return;
   }
   aiDishNote=obj.note||"";
@@ -2363,7 +2450,7 @@ function renderAiDish(t){
     return {raw:nm,n:mt?mt.n:null,how:mt?mt.how:null,prep:prep,g:Math.round(+g||0)};
   }).filter(function(x){return x.raw&&x.g>0});
   if(!items.length){
-    openSheet('<h3>没拆出配料</h3><div class="tip">AI 没有给出可用的配料，再试一次</div><button class="btn ghost" onclick="renderLogSheet()">返回</button>');
+    openSheet('<h3>没拆出配料</h3><div class="tip">AI 没有给出可用的配料，再试一次</div><button class="btn ghost" onclick="sheetBack()">返回</button>');
     return;
   }
   aiDishItems=items;
@@ -2402,6 +2489,7 @@ function itemsOfDish(){
   return aiDishItems.filter(function(x){return x.n}).map(function(x){return [x.n,x.g]});
 }
 function renderAiDishSheet(){
+  sheetRedraw=1;
   const un=aiDishItems.filter(function(x){return !x.n});
   const unG=un.reduce(function(a,x){return a+x.g},0);
   let h='<h3>'+esc(aiDishName||"拆解结果")+'</h3><div class="sm">'
@@ -2430,7 +2518,7 @@ function renderAiDishSheet(){
   });
   h+='</div><div class="preview" id="ai_total"></div>'
     +'<button class="btn" onclick="doAiDish()">记下并问是否存为常用</button>'
-    +'<div style="height:8px"></div><button class="btn ghost" onclick="renderLogSheet()">返回</button>';
+    +'<div style="height:8px"></div><button class="btn ghost" onclick="sheetBack()">返回</button>';
   openSheet(h);
   updateAiTotal();
 }
@@ -2499,7 +2587,7 @@ function openAiPick(i){
   openSheet('<h3>对应库里哪个食材</h3><div class="sm">AI 写的是「'+esc(x.raw)+'」</div>'
     +'<input type="search" id="apq" placeholder="搜食材名" value="'+esc(kw)+'" oninput="aiPickSearch(this.value)">'
     +'<div id="aplist" style="max-height:44vh;overflow-y:auto;margin-top:8px">'+aiPickList(kw)+'</div>'
-    +'<div style="height:8px"></div><button class="btn ghost" onclick="renderAiDishSheet()">返回修改</button>');
+    +'<div style="height:8px"></div><button class="btn ghost" onclick="sheetBack()">返回修改</button>');
 }
 function aiPickList(kw){
   const list=F.filter(function(f){return nameHit(f,kw)}).slice(0,30);
@@ -2517,6 +2605,7 @@ function pickAiFood(id){
   if(!f||aiPickIdx<0)return;
   aiDishItems[aiPickIdx].n=f.n;
   aiDishItems[aiPickIdx].how="手动";
+  if(sheetStack.length)sheetStack.pop();      /* 选择页是一次性的：选完直接回到上一层 */
   renderAiDishSheet();
 }
 function doAiDish(){
@@ -2578,7 +2667,7 @@ function openEat(d,id){
   </div>
   <div class="preview" id="epv"></div>
   <button class="btn" onclick="doEat('${d}',${id})">确认吃掉</button>
-  <div style="height:8px"></div><button class="btn ghost" onclick="renderLogSheet()">返回</button>`);
+  <div style="height:8px"></div><button class="btn ghost" onclick="sheetBack()">返回</button>`);
   calcEat(d,id);
 }
 function setEat(v){const e=document.getElementById("eatg");if(e){e.value=v;e.dispatchEvent(new Event("input"))}}
@@ -2920,6 +3009,7 @@ function delShop(i){
   save();openShop();
 }
 function openShop(){
+  sheetRedraw=1;
   const s=S.shop||[];
   let h='<h3>买菜清单</h3><div class="sm">从「还差 1–2 样」的菜里汇总，买到的勾上再一键入库</div>';
   h+='<button class="btn ghost" onclick="fillShop()">＋ 从库存缺口补全</button>';
@@ -2955,6 +3045,7 @@ function buyShop(){
   notice("已入库 "+ok+" 样");
 }
 function openWaste(){
+  sheetRedraw=1;
   const w=(S.waste||[]).slice().sort(function(a,b){return b.d.localeCompare(a.d)});
   let h='<h3>浪费记录</h3><div class="sm">扔掉的食材，不计入摄入</div>';
   if(!w.length){
@@ -3136,6 +3227,7 @@ function updTime(t){
   return (d.getMonth()+1)+"-"+pad(d.getDate())+" "+pad(d.getHours())+":"+pad(d.getMinutes());
 }
 function openSetUpdate(){
+  sheetRedraw=1;
   const u=S.upd||{},err=u.err||"";
   let h='<h3>检查更新</h3><div class="sm">当前 v'+APP_VER+' ｜ 上次检查 '+updTime(u.at)+'</div>';
   h+='<div class="logitem"><span>当前版本</span><span class="r">v'+APP_VER+'</span></div>';
@@ -3158,10 +3250,10 @@ function manualCheckUpdate(){
   const b=$("updBtn");
   if(b){b.disabled=true;b.textContent="检查中…"}
   checkUpdate(true).then(function(r){
-    openSetUpdate();
+    sheetRedraw=1;openSetUpdate();
     if(r&&r.ok&&!r.newer)notice("已是最新版本 v"+APP_VER);
   },function(){
-    openSetUpdate();
+    sheetRedraw=1;openSetUpdate();
   });
 }
 /* 从后台切回来 / 重新可见时复查：APK 的 WebView 不会重新加载，靠这两个钩子 */
@@ -3217,44 +3309,63 @@ document.addEventListener("focusin",function(e){
 /* 返回键：有弹层先关弹层，没有才让系统退出 */
 window.__onBack=function(){
   const sh=document.getElementById("sheet");
-  if(sh&&sh.classList.contains("on")){closeSheet();return true}
+  if(sh&&sh.classList.contains("on")){sheetBack();return true}     /* 只退一层 */
+  const pg=document.getElementById("page");
+  if(pg&&pg.classList.contains("on")){closePage();return true}      /* 整页子视图先关掉，不能直接退 App */
   if(typeof tab!=="undefined"&&tab==="set"){setTab("log");return true}
   if(typeof tab!=="undefined"&&tab!=="today"){setTab("today");return true}
   return false;
 };
 
-/* 弹层手势：向下拖、向右滑都能关 */
+/* 弹层手势：下拉 / 右滑 = 退一层（不是整层关闭）；
+   内容已到顶部才允许下拉，拖过头有阻力，松手不够远则回弹而不是关闭 */
 (function(){
   const sh=document.getElementById("sheet");
   if(!sh)return;
-  let sx=0,sy=0,dir="",box=null;
+  let sx=0,sy=0,t0=0,dir="",box=null,lastX=0,lastY=0;
   sh.addEventListener("touchstart",function(e){
     if(e.touches.length!==1){box=null;return}
     box=sh.querySelector(".box");
-    if(box)box.style.transition="none";
-    sx=e.touches[0].clientX;sy=e.touches[0].clientY;dir="";
+    if(box){box.style.transition="none";box.style.animation=""}
+    sx=e.touches[0].clientX;sy=e.touches[0].clientY;
+    lastX=sx;lastY=sy;t0=Date.now();dir="";
   },{passive:true});
   sh.addEventListener("touchmove",function(e){
     if(!box||e.touches.length!==1)return;
     const dx=e.touches[0].clientX-sx,dy=e.touches[0].clientY-sy;
+    lastX=e.touches[0].clientX;lastY=e.touches[0].clientY;
     if(!dir){
-      if(dy>10&&Math.abs(dy)>Math.abs(dx)&&box.scrollTop<=0)dir="down";
+      if(dy>8&&Math.abs(dy)>Math.abs(dx)*1.1)dir=box.scrollTop<=0?"down":"none";
       else if(dx>14&&Math.abs(dx)>Math.abs(dy))dir="right";
       else if(Math.abs(dx)>10||Math.abs(dy)>10)dir="none";
     }
-    if(dir==="down"&&dy>0)box.style.transform="translateY("+dy+"px)";
-    else if(dir==="right"&&dx>0)box.style.transform="translateX("+dx+"px)";
-  },{passive:true});
-  sh.addEventListener("touchend",function(e){
-    if(!box){return}
-    const t=e.changedTouches[0];
-    const dx=t.clientX-sx,dy=t.clientY-sy;
+    if(dir==="down"&&dy>0){
+      const y=dy<=120?dy:120+(dy-120)*0.42;      /* 超过 120px 加阻力，避免"一滑就关" */
+      box.style.transform="translateY("+y+"px)";
+      if(e.cancelable)e.preventDefault();         /* 手在弹层里时，别让背后的页面跟着滚 */
+    }else if(dir==="right"&&dx>0){
+      box.style.transform="translateX("+dx+"px)";
+      if(e.cancelable)e.preventDefault();
+    }
+  },{passive:false});
+  function rebound(){
+    if(!box)return;
+    box.style.transition="transform .3s cubic-bezier(.22,1,.36,1)";
     box.style.transform="";
-    box.style.transition="";
-    if(dir==="down"&&dy>92)closeSheet(true);
-    else if(dir==="right"&&dx>82)closeSheet(true);
+    const b=box;
+    setTimeout(function(){if(b)b.style.transition=""},320);
+  }
+  sh.addEventListener("touchend",function(e){
+    if(!box)return;
+    const t=e.changedTouches?e.changedTouches[0]:{clientX:lastX,clientY:lastY};
+    const dx=t.clientX-sx,dy=t.clientY-sy,dt=Math.max(1,Date.now()-t0);
+    const vy=dy/dt;
+    if(dir==="down"&&(dy>110||(dy>62&&vy>0.55))){box.style.transform="";sheetBack();}
+    else if(dir==="right"&&dx>90){box.style.transform="";sheetBack();}
+    else rebound();
     dir="";box=null;
   },{passive:true});
+  sh.addEventListener("touchcancel",function(){rebound();dir="";box=null},{passive:true});
 })();
 </script>
 </body>
