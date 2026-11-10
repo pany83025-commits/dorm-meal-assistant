@@ -622,6 +622,8 @@ function notice(msg,opt){
   el.className="notice"+(opt.warn?" warn":"");
   el.innerHTML='<span style="flex:1;min-width:0">'+msg+'</span>'+(opt.action?'<button>'+opt.action+'</button>':"");
   if(opt.action){el.querySelector("button").onclick=opt.onAction||hideNotice}
+  /* 点文字也能收起，避免存储满载时的常驻条永久压住标题 */
+  el.querySelector("span").onclick=hideNotice;
   void el.offsetWidth;
   el.classList.add("on");
   if(notice._t)clearTimeout(notice._t);
@@ -667,7 +669,7 @@ let saveWarned=false;
 function save(){
   try{
     localStorage.setItem(K,JSON.stringify(S));
-    saveWarned=false;
+    if(saveWarned){saveWarned=false;hideNotice()}   /* 存储恢复后自动收起警告条 */
   }catch(e){
     if(saveWarned)return;
     saveWarned=true;
