@@ -6,6 +6,8 @@
 
 **[在线试用 →](https://pany83025-commits.github.io/dorm-meal-assistant/)**　（手机浏览器打开后可「添加到主屏幕」，离线可用）
 
+[![CI](https://github.com/pany83025-commits/dorm-meal-assistant/actions/workflows/ci.yml/badge.svg)](https://github.com/pany83025-commits/dorm-meal-assistant/actions/workflows/ci.yml)
+
 <p align="center">
   <img src="docs/screenshot-today.png" width="300" alt="今天">
   <img src="docs/screenshot-recipes.png" width="300" alt="食谱">
@@ -19,11 +21,11 @@
 |---|---|
 | **今天** | 热量 / 蛋白 / 碳水 / 脂肪 / 钠 五条进度；按库存实时推荐「现在就能做」的菜；临期与浪费提醒；一句话简报（早上问早餐、晚上复盘） |
 | **食谱** | 48 道寝室可做的菜，按早餐 / 主菜 / 汤锅 / 免开火筛选，可按菜名或食材搜索；每道都有分步做法、**判断熟没熟的标准**、**做失败长什么样** |
-| **食材** | 234 条食材营养库（每 100g 可食部，标明生重 / 熟重 / 净重 / 干重），库存按到期排序，临期标红；支持计浪费 |
-| **记录** | 记一笔：食堂菜（81 道常见菜，按配方估算）、加餐、直接吃库存、用库存做菜；支持手动输入或 AI 拆解、截图识别；记完可改（名称/热量/蛋白/碳水/脂肪/钠/蔬菜） |
+| **食材** | 234 条食材营养库（每 100g 可食部，标明生重 / 熟重 / 净重 / 干重），库存按到期排序，临期标红；**买菜清单**把「还差 1 样」的菜缺的食材汇总成一张单，勾选后一键入库；支持计浪费 |
+| **记录** | 记一笔：食堂菜（81 道常见菜，按配方估算）、加餐、直接吃库存、用库存做菜；**按早/午/晚/加餐分组**并各自小计；支持手动输入或 AI 拆解、截图识别；记完可改（名称/热量/蛋白/碳水/脂肪/钠/蔬菜/餐次） |
 | **设置** | 身体与目标（Mifflin-St Jeor）、本地天气修正保存期、AI Key、自定义食谱、数据导出 / 恢复 |
 
-细节：开屏动画、底部弹层下拉手势、按压反馈、`prefers-reduced-motion` 降级；PWA 可添加到主屏离线使用；Android 壳工程额外提供原生 AI 通道（绕开 CORS）、相册选图、状态栏沉浸。
+细节：开屏动画、底部弹层下拉手势、按压反馈、**深色模式**（跟随系统）、键盘可达与 `aria` 语义、`prefers-reduced-motion` 降级；PWA 可添加到主屏离线使用；Android 壳工程额外提供原生 AI 通道（绕开 CORS）、相册选图、状态栏沉浸。
 
 ## 数据来源与边界
 
@@ -38,7 +40,14 @@
 ## 项目结构
 
 ```
-index.html                 主程序（数据 + 逻辑 + 样式全部内联，约 200KB）
+index.html                 主程序（数据 + 逻辑 + 样式全部内联，单文件可直接双击）
+data/foods.json            食材营养库（权威源，234 条）
+data/recipes.json          寝室食谱（48 道）
+data/dishes.json           食堂菜配方（81 道）
+tools/build-data.mjs       把 data/*.json 内联回 index.html
+tools/check-data.mjs       数据自检（结构 / 引用完整性 / 宏量与热量自洽）
+tools/run-tests.mjs        在浏览器里跑纯函数单测
+tests/core-tests.js        单测用例
 manifest.json / sw.js      PWA 配置与离线缓存
 icon-*.png                 图标
 _apk/                      Android 壳工程
@@ -75,7 +84,23 @@ bash build.sh v3.3
 
 **AI 功能**（可选）：设置 → AI 写菜谱，填入兼容 OpenAI 格式的 Key 与模型名。不填也能用全部离线功能。
 
-**发版**：改 `index.html` 顶部的 `const APP_VER="3.3"` 一处即可——关于页显示、Service Worker 的更新检查都读它。HTML 走 network-first，所以**不需要**再手动改 `sw.js` 里的缓存名。
+**发版**：改 `index.html` 顶部的 `const APP_VER="3.4"` 一处即可——关于页显示、Service Worker 的更新检查都读它。HTML 走 network-first，所以**不需要**再手动改 `sw.js` 里的缓存名。
+
+## 改数据 / 开发
+
+数据（食材、食谱、食堂菜）以 `data/*.json` 为权威源，`index.html` 里内联的那段 JSON 是生成物，**别直接改它**：
+
+```bash
+node tools/build-data.mjs     # 改完 data/*.json 后同步进 index.html
+npm run verify                # 数据同步检查 + 数据自检 + 单测，一次跑完
+```
+
+CI 会拦三类问题：
+
+1. **数据和 HTML 不同步**——`build-data.mjs --check`，防止改了 JSON 忘了内联；
+2. **数据自相矛盾**——引用不存在的食材、热量与 4/4/9 宏量偏差过大（酒精与高纤维食物豁免）、食谱缺「怎么算做好了」、食堂菜克数为 0；
+3. **纯函数算错**——`keepDays` 温度分档、`calcTargets` 的 Mifflin-St Jeor、`dishMacro`/`rcpMacro`、`matchFood` 四级匹配、`shopGap` 缺口、`mergeState` 迁移等 39 个用例，在真实浏览器里跑线上那份代码。
+
 
 ## 已知限制
 
