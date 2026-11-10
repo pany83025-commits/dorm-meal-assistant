@@ -57,6 +57,7 @@ self.addEventListener("fetch", e => {
   if (req.method !== "GET") return;
   const url = new URL(req.url);
   if (url.origin !== location.origin) return;      /* 天气 / AI 直接走网络 */
+  if (url.pathname.endsWith("/version.json")) return;  /* 版本号必须每次实取，不能吃缓存 */
   if (isDoc(req, url)) e.respondWith(networkFirst(req));
   else e.respondWith(cacheFirst(req));
 });

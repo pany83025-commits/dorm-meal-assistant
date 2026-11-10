@@ -6,7 +6,6 @@
 
 **[在线试用 →](https://pany83025-commits.github.io/dorm-meal-assistant/)**　（手机浏览器打开后可「添加到主屏幕」，离线可用）
 
-[![CI](https://github.com/pany83025-commits/dorm-meal-assistant/actions/workflows/ci.yml/badge.svg)](https://github.com/pany83025-commits/dorm-meal-assistant/actions/workflows/ci.yml)
 
 <p align="center">
   <img src="docs/screenshot-today.png" width="300" alt="今天">
@@ -47,6 +46,8 @@ data/dishes.json           食堂菜配方（81 道）
 tools/build-data.mjs       把 data/*.json 内联回 index.html
 tools/check-data.mjs       数据自检（结构 / 引用完整性 / 宏量与热量自洽）
 tools/run-tests.mjs        在浏览器里跑纯函数单测
+tools/release.mjs          把 APK 传到 GitHub Release（更新提示靠它）
+version.json               线上版本号，应用启动时读它判断要不要提示更新
 tests/core-tests.js        单测用例
 manifest.json / sw.js      PWA 配置与离线缓存
 icon-*.png                 图标
@@ -95,11 +96,11 @@ node tools/build-data.mjs     # 改完 data/*.json 后同步进 index.html
 npm run verify                # 数据同步检查 + 数据自检 + 单测，一次跑完
 ```
 
-CI 会拦三类问题：
+`npm run verify` 会拦三类问题：
 
 1. **数据和 HTML 不同步**——`build-data.mjs --check`，防止改了 JSON 忘了内联；
 2. **数据自相矛盾**——引用不存在的食材、热量与 4/4/9 宏量偏差过大（酒精与高纤维食物豁免）、食谱缺「怎么算做好了」、食堂菜克数为 0；
-3. **纯函数算错**——`keepDays` 温度分档、`calcTargets` 的 Mifflin-St Jeor、`dishMacro`/`rcpMacro`、`matchFood` 四级匹配、`shopGap` 缺口、`mergeState` 迁移等 39 个用例，在真实浏览器里跑线上那份代码。
+3. **纯函数算错**——`keepDays` 温度分档、`calcTargets` 的 Mifflin-St Jeor、`dishMacro`/`rcpMacro`、`matchFood` 四级匹配、`shopGap` 缺口、`mergeState` 迁移、油脂互认等 49 个用例，在真实浏览器里跑线上那份代码。
 
 
 ## 已知限制
@@ -109,6 +110,8 @@ CI 会拦三类问题：
 - 自建食材目前只能改名重建（同名保存会覆盖原条并沿用原 ID），没有单独的删除入口。
 - 单机应用，没有账号、没有云同步；换机请用「设置 → 数据 → 导出备份」（网页版与 APK 都能导出、也都能导入）。备份**不含 AI Key**，恢复后需要重填。
 - 只做过 Android（WebView）与桌面 Chrome 的验证，iOS Safari 未系统测试。
+- 侧载 APK 无法静默自动安装：应用只负责"发现新版 + 打开下载"，最后一步安装要你点确认。
+- 更新检查 6 小时最多一次，没网时静默跳过，不会打扰。
 
 ## 免责声明
 

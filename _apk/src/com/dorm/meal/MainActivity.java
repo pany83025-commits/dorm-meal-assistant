@@ -24,6 +24,7 @@ import android.webkit.JsResult;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
+import android.webkit.WebResourceRequest;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
@@ -57,7 +58,20 @@ public class MainActivity extends Activity {
         s.setTextZoom(100);
         s.setCacheMode(WebSettings.LOAD_DEFAULT);
 
-        wv.setWebViewClient(new WebViewClient());
+        wv.setWebViewClient(new WebViewClient() {
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest req) {
+                Uri u = req.getUrl();
+                if (u != null && ("http".equals(u.getScheme()) || "https".equals(u.getScheme()))) {
+                    try {
+                        startActivity(new Intent(Intent.ACTION_VIEW, u));
+                    } catch (Exception ignored) {
+                    }
+                    return true;
+                }
+                return false;
+            }
+        });
         wv.setWebChromeClient(new WebChromeClient() {
             @Override
             public boolean onJsAlert(WebView view, String url, String message, final JsResult result) {
@@ -174,6 +188,39 @@ public class MainActivity extends Activity {
     }
 
     public class Bridge {
+
+        /** 同步取一个只读 URL 的文本（给「检查更新」用；@JavascriptInterface 跑在子线程，可以直接联网） */
+        @JavascriptInterface
+        public String httpGet(String url) {
+            java.net.HttpURLConnection c = null;
+            try {
+                c = (java.net.HttpURLConnection) new java.net.URL(url).openConnection();
+                c.setConnectTimeout(8000);
+                c.setReadTimeout(8000);
+                c.setRequestProperty("Cache-Control", "no-cache");
+                InputStream is = c.getResponseCode() >= 400 ? c.getErrorStream() : c.getInputStream();
+                if (is == null) return "err:无响应";
+                java.io.ByteArrayOutputStream bo = new java.io.ByteArrayOutputStream();
+                byte[] buf = new byte[4096];
+                int n;
+                while ((n = is.read(buf)) > 0) bo.write(buf, 0, n);
+                is.close();
+                return bo.toString("UTF-8");
+            } catch (Exception e) {
+                return "err:" + e.getMessage();
+            } finally {
+                if (c != null) c.disconnect();
+            }
+        }
+
+        /** 用系统浏览器打开链接（下载新版本 APK 用） */
+        @JavascriptInterface
+        public void openUrl(String url) {
+            try {
+                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+            } catch (Exception ignored) {
+            }
+        }
 
         @JavascriptInterface
         public String save(String name, String content) {

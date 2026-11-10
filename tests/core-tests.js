@@ -118,6 +118,13 @@
     /* ---------- 转义 ---------- */
     eq("esc 处理尖括号", esc("<b>x</b>"), "&lt;b&gt;x&lt;/b&gt;");
 
+    /* ---------- 版本比较 ---------- */
+    eq("3.8 比 3.7 新", verNewer("3.8", "3.7"), true);
+    eq("3.7 不比 3.7 新", verNewer("3.7", "3.7"), false);
+    eq("3.10 比 3.9 新（按段比较）", verNewer("3.10", "3.9"), true);
+    eq("3.7 不比 3.7.1 新", verNewer("3.7", "3.7.1"), false);
+    eq("APP_VER 与 version.json 同段", APP_VER.split(".").length >= 2, true);
+
     /* ---------- 餐次 ---------- */
     eq("guessMeal 落在四档内", ["早", "午", "晚", "加"].indexOf(guessMeal()) > -1, true);
     eq("MEAL_LABEL 完整", Object.keys(MEAL_LABEL).length, 5);

@@ -303,7 +303,7 @@ function nameHit(f,kw){
 }
 const DISH=JSON.parse(document.getElementById("d-dishes").textContent);
 const CAT={protein:"蛋白",carb:"主食",veg:"蔬菜",fruit:"水果",fat:"油脂",other:"调味"};
-const APP_VER="3.6";              /* 发版只改这一处：关于页、SW 注册参数都读它 */
+const APP_VER="3.7";              /* 发版只改这一处：关于页、SW 注册参数都读它 */
 const K='dorm-eat-v2';
 let S=load();
 S.myFood=S.myFood||[];
@@ -362,7 +362,7 @@ document.addEventListener("keydown",function(e){
 
 /* ---------- 状态：默认值 + 迁移 ---------- */
 function defaultState(){
-  return {v:3,inv:[],logs:[],waste:[],myRcp:[],myDish:[],myFood:[],nextFoodId:1000,shop:[],ai:{},
+  return {v:3,inv:[],logs:[],waste:[],myRcp:[],myDish:[],myFood:[],nextFoodId:1000,shop:[],lastUpd:0,ai:{},
     set:{sex:"女",height:165,age:22,weight:60,act:1.375,kcal:1470,protein:96,fat:48,carb:163,
          na:2000,locked:false,city:"",lat:null,lon:null,offset:3},
     w:{t:null,avg3:null,src:"init",at:0}};
@@ -2602,6 +2602,54 @@ calcTargets();save();render();
   navigator.serviceWorker.register("sw.js?v="+APP_VER).catch(function(){});
 })();
 loadWeather(false);
+/* ===== 版本检查 =====
+   APK 里的页面是打包进 assets 的，没有 Service Worker，靠 HTTP 缓存那套永远拿不到新版，
+   所以主动去线上要一个 version.json；有新版就顶一条提示，点一下跳浏览器下载。
+   网页版/PWA 用相对路径（同时 SW 对 version.json 走 network-only）。 */
+const UPD_BASE = (window.AndroidBridge && window.AndroidBridge.httpGet)
+  ? "https://pany83025-commits.github.io/dorm-meal-assistant/"
+  : location.href.replace(/[?#].*$/, "").replace(/[^/]*$/, "");
+const UPD_APK = "https://github.com/pany83025-commits/dorm-meal-assistant/releases/latest/download/dorm-meal.apk";
+
+function verNum(v){return String(v||"").split(".").map(function(x){return parseInt(x,10)||0})}
+function verNewer(a,b){                      /* a 比 b 新返回 true */
+  const A=verNum(a),B=verNum(b);
+  for(let i=0;i<Math.max(A.length,B.length);i++){
+    const x=A[i]||0,y=B[i]||0;
+    if(x!==y)return x>y;
+  }
+  return false;
+}
+function fetchText(url){
+  if(window.AndroidBridge && window.AndroidBridge.httpGet){
+    const t=window.AndroidBridge.httpGet(url);
+    if(String(t).indexOf("err:")===0)throw new Error(t);
+    return Promise.resolve(String(t));
+  }
+  return fetch(url,{cache:"no-store"}).then(function(r){
+    if(!r.ok)throw new Error("HTTP "+r.status);
+    return r.text();
+  });
+}
+function checkUpdate(force){
+  const last=+(S.lastUpd||0);
+  if(!force && Date.now()-last < 6*3600e3)return;   /* 6 小时内不重复查 */
+  fetchText(UPD_BASE+"version.json?t="+Date.now()).then(function(txt){
+    const d=JSON.parse(txt);
+    S.lastUpd=Date.now();save();
+    if(!verNewer(d.version,APP_VER))return;
+    notice("有新版本 v"+d.version+(d.note?"："+d.note:""),{
+      sticky:true,action:"去更新",
+      onAction:function(){
+        hideNotice();
+        if(window.AndroidBridge && window.AndroidBridge.openUrl)window.AndroidBridge.openUrl(d.apk||UPD_APK);
+        else window.open(d.apk||UPD_APK,"_blank");
+      }
+    });
+  }).catch(function(){});
+}
+setTimeout(function(){checkUpdate(false)},1500);
+
 
 
 (function(){
