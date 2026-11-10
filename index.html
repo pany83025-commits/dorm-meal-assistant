@@ -1615,16 +1615,20 @@ function mlApplySrc(){
   });
 }
 function mlMacros(){
-  const c=mlCtx;let k=0,p=0,f=0,cb=0,na=0,veg=0,n=0;
+  const c=mlCtx;let k=0,p=0,f=0,cb=0,na=0,veg=0,n=0,fib=0,ca=0,fe=0,vc=0;
   c.items.forEach(function(it){
     if(!it.on||!(it.g>0))return;
     const fd=BY[it.n];if(!fd)return;      /* 注意：别用 f，会遮住上面累加脂肪的 f */
-    k+=fd.kcal*it.g/100;p+=fd.p*it.g/100;f+=fd.f*it.g/100;cb+=fd.c*it.g/100;
-    na+=(fd.na||0)*it.g/100;if(fd.cat==="veg")veg+=it.g;n++;
+    const r=it.g/100;
+    k+=fd.kcal*r;p+=fd.p*r;f+=fd.f*r;cb+=fd.c*r;
+    na+=(fd.na||0)*r;fib+=(fd.fib||0)*r;ca+=(fd.ca||0)*r;fe+=(fd.fe||0)*r;vc+=(fd.vc||0)*r;
+    if(fd.cat==="veg")veg+=it.g;n++;
   });
-  return {kcal:k,p:p,f:f,c:cb,na:na,veg:veg,n:n};
+  return {kcal:k,p:p,f:f,c:cb,na:na,veg:veg,n:n,
+    fib:Math.round(fib*10)/10,ca:Math.round(ca),fe:Math.round(fe*10)/10,vc:Math.round(vc*10)/10};
 }
 function mlPreview(){
+  if(!mlCtx)return;
   const m=mlMacros(),pv=$("mlpv");if(!pv)return;
   pv.innerHTML='<div class="l"><b>这一餐</b><b>'+Math.round(m.kcal)+' kcal</b></div>'
     +'<div class="l"><span>蛋白 '+m.p.toFixed(1)+'g ｜ 碳水 '+m.c.toFixed(1)+'g ｜ 脂肪 '+m.f.toFixed(1)+'g</span><span></span></div>'
@@ -1632,7 +1636,7 @@ function mlPreview(){
   pv.dataset.k=m.kcal;pv.dataset.p=m.p;pv.dataset.f=m.f;pv.dataset.c=m.c;pv.dataset.na=m.na;pv.dataset.veg=m.veg;
 }
 function renderMealLog(){
-  const c=mlCtx;
+  const c=mlCtx;if(!c)return;
   let h='<h3>'+esc(c.title)+'</h3><div class="sm">'+(c.kind==="rcp"?"食谱":"自建菜谱")
     +' ｜ 这里的改动只算这一餐，不改食谱本身</div>';
   h+='<div class="chips" style="margin:4px 0 2px">'
@@ -1683,6 +1687,7 @@ function setMealG(i,v){
   it.g=g;mlPreview();
 }
 function saveMealLog(){
+  if(!mlCtx)return;
   const c=mlCtx,m=mlMacros();
   if(!m.n){alert("至少留一样食材");return}
   if(c.src==="stock"){
@@ -1699,7 +1704,8 @@ function saveMealLog(){
   }
   const nm=(c.src==="canteen"?"食堂 · ":"")+c.title+(c.mult!==1?" ×"+c.mult:"");
   S.logs.push({d:today(),m:logMeal,name:nm,kcal:Math.round(m.kcal),
-    p:+m.p.toFixed(1),f:+m.f.toFixed(1),c:+m.c.toFixed(1),na:Math.round(m.na),veg:Math.round(m.veg)});
+    p:+m.p.toFixed(1),f:+m.f.toFixed(1),c:+m.c.toFixed(1),na:Math.round(m.na),veg:Math.round(m.veg),
+    fib:m.fib,ca:m.ca,fe:m.fe,vc:m.vc});
   save();closeSheet();setTab("today");
   notice("已记录 "+nm+" · "+Math.round(m.kcal)+" kcal");
 }
@@ -1992,9 +1998,15 @@ function openLogDetail(i){
       +'<div class="tr"><div class="fl" style="width:'+r[1]+'%;background:var(--g)"></div></div>'
       +'<span class="vl">'+r[1]+'%</span></div>';
   });
-  h+='<div class="sec"><b>其他</b></div>'
-    +'<div class="logitem"><span>钠</span><span class="r">'+Math.round(l.na||0)+' mg</span></div>'
-    +'<div class="logitem"><span>蔬菜</span><span class="r">'+Math.round(l.veg||0)+' g</span></div>';
+  h+='<div class="sec"><b>其他营养成分</b></div>';
+  const others=[["膳食纤维",l.fib,"g"],["钠",l.na,"mg"],["钙",l.ca,"mg"],["铁",l.fe,"mg"],["维C",l.vc,"mg"],["蔬菜",l.veg,"g"]];
+  others.forEach(function(o){
+    const v=o[1];
+    h+='<div class="logitem"><span>'+o[0]+'</span><span class="r">'
+      +(v==null?'<span style="color:var(--ink4)">—</span>':(Math.round(v*10)/10)+' '+o[2])+'</span></div>';
+  });
+  h+='<div style="font-size:11.5px;color:var(--ink3);margin-top:8px;line-height:1.6">'
+    +'旧记录记于 v3.8 之前，当时只存了热量和三大营养素，微量营养素显示为 —</div>';
   h+='<div style="height:12px"></div><button class="btn" onclick="openEditLog('+i+')">改这条记录</button>';
   h+='<div style="height:8px"></div><button class="btn ghost" onclick="delLogFromDetail('+i+')">删除这条</button>';
   openSheet(h);
@@ -2163,12 +2175,15 @@ function cookPickHtml(kw){
 }
 function allDish(){return DISH.concat(S.myDish||[])}
 function dishMacro(d,mult){
-  const m=mult||1;let k=0,p=0,f=0,c=0,g=0,na=0;
+  const m=mult||1;let k=0,p=0,f=0,c=0,g=0,na=0,fib=0,ca=0,fe=0,vc=0;
   (d.i||[]).forEach(function(it){
     const x=BY[it[0]];if(!x)return;
-    k+=x.kcal*it[1]*m/100;p+=x.p*it[1]*m/100;f+=x.f*it[1]*m/100;c+=x.c*it[1]*m/100;g+=it[1]*m;na+=(x.na||0)*it[1]*m/100;
+    const r=it[1]*m/100;
+    k+=x.kcal*r;p+=x.p*r;f+=x.f*r;c+=x.c*r;g+=it[1]*m;na+=(x.na||0)*r;
+    fib+=(x.fib||0)*r;ca+=(x.ca||0)*r;fe+=(x.fe||0)*r;vc+=(x.vc||0)*r;
   });
-  return {kcal:Math.round(k),p:Math.round(p),f:Math.round(f),c:Math.round(c),g:Math.round(g),na:Math.round(na)};
+  return {kcal:Math.round(k),p:Math.round(p),f:Math.round(f),c:Math.round(c),g:Math.round(g),na:Math.round(na),
+    fib:Math.round(fib*10)/10,ca:Math.round(ca),fe:Math.round(fe*10)/10,vc:Math.round(vc*10)/10};
 }
 function logListHtml(kw){
   const mine=(S.myDish||[]).filter(function(d){return !kw||d.n.indexOf(kw)>-1})
@@ -2236,7 +2251,8 @@ function renderDish(){
 function doDish(){
   const m=dishMacro(curDish,curMult);
   const nm=curDish.n+(curMult!==1?" ×"+curMult:"");
-  S.logs.push({d:today(),m:logMeal,name:nm,kcal:m.kcal,p:m.p,f:m.f,c:m.c,na:m.na,veg:0});
+  S.logs.push({d:today(),m:logMeal,name:nm,kcal:m.kcal,p:m.p,f:m.f,c:m.c,na:m.na,veg:0,
+    fib:m.fib,ca:m.ca,fe:m.fe,vc:m.vc});
   if(curDishMine&&S.myDish&&S.myDish[curDishIdx]){
     S.myDish[curDishIdx].use=(S.myDish[curDishIdx].use||0)+1;
   }
@@ -2582,7 +2598,7 @@ function doEat(d,id){
     const use=Math.min(need,b.g);b.g-=use;need-=use;
   });
   S.inv=S.inv.filter(x=>x.g>0.5);
-  S.logs.push({d:today(),m:logMeal,name:f.n+" "+Math.round(g)+"g",kcal:f.kcal*g/100,p:f.p*g/100,f:f.f*g/100,c:f.c*g/100,na:(f.na||0)*g/100,veg:f.cat==="veg"?g:0});
+  S.logs.push({d:today(),m:logMeal,name:f.n+" "+Math.round(g)+"g",kcal:f.kcal*g/100,p:f.p*g/100,f:f.f*g/100,c:f.c*g/100,na:(f.na||0)*g/100,veg:f.cat==="veg"?g:0,fib:Math.round((f.fib||0)*g/100*10)/10,ca:Math.round((f.ca||0)*g/100),fe:Math.round((f.fe||0)*g/100*10)/10,vc:Math.round((f.vc||0)*g/100*10)/10});
   save();closeSheet();setTab("log");
 }
 function pickLog(id){
@@ -2601,7 +2617,7 @@ function doLog(){
   const g=parseFloat($("addg").value);
   if(!g||g<=0)return;
   const f=F[logId];
-  S.logs.push({d:today(),m:logMeal,name:f.n+" "+Math.round(g)+"g",kcal:f.kcal*g/100,p:f.p*g/100,f:f.f*g/100,c:f.c*g/100,na:(f.na||0)*g/100,veg:f.cat==="veg"?g:0});
+  S.logs.push({d:today(),m:logMeal,name:f.n+" "+Math.round(g)+"g",kcal:f.kcal*g/100,p:f.p*g/100,f:f.f*g/100,c:f.c*g/100,na:(f.na||0)*g/100,veg:f.cat==="veg"?g:0,fib:Math.round((f.fib||0)*g/100*10)/10,ca:Math.round((f.ca||0)*g/100),fe:Math.round((f.fe||0)*g/100*10)/10,vc:Math.round((f.vc||0)*g/100*10)/10});
   save();closeSheet();setTab("log");
 }
 function toggleKey(){
