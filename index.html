@@ -90,7 +90,7 @@ nav button.on .ic{opacity:1}
 .sheet.on{display:flex;animation:maskIn .28s ease both}
 .sheet.closing{animation:maskOut .26s ease both}
 .sheet .box{outline:none;background:var(--bg);width:100%;max-width:520px;border-radius:18px 18px 0 0;padding:16px 16px max(20px,env(safe-area-inset-bottom));max-height:calc(90vh - var(--kb,0px));overflow-y:auto;overscroll-behavior:contain;transition:transform .2s ease;transform-origin:50% 100%;will-change:transform}
-.sheet.on .box{animation:sheetUp .46s both}
+/* 弹层盒子的动画一律用内联 style 控制：CSS 里再挂一条会在重绘时重播，看起来像"重新打开" */
 .sheet.closing .box{animation:sheetDown .30s cubic-bezier(.42,0,.86,.5) both}
 @keyframes maskIn{from{background:rgba(0,0,0,0)}to{background:rgba(0,0,0,.32)}}
 @keyframes maskOut{from{background:rgba(0,0,0,.32)}to{background:rgba(0,0,0,0)}}
@@ -100,7 +100,7 @@ nav button.on .ic{opacity:1}
   82%{transform:translateY(2px) scale(1);animation-timing-function:ease-out}
   100%{transform:translateY(0) scale(1);opacity:1}}
 @keyframes sheetDown{from{transform:none;opacity:1}to{transform:translateY(80px) scale(.985);opacity:0}}
-@keyframes sheetStep{from{opacity:.25;transform:translateX(18px)}to{opacity:1;transform:none}}
+@keyframes sheetStep{from{opacity:.45}to{opacity:1}}   /* 只淡入，不做位移：位移会让按钮在指尖下"跑掉" */
 @keyframes up{from{transform:translateY(24px);opacity:.6}to{transform:none;opacity:1}}
 .sheet h3{font-size:16.5px;font-weight:600;margin-bottom:3px;padding-right:30px}
 .sheet .sm{font-size:12.5px;color:var(--ink3);margin-bottom:12px;line-height:1.5}
@@ -202,10 +202,21 @@ label.fl{display:block;font-size:12.5px;color:var(--ink3);margin:12px 0 5px}
 #notice button:active{background:rgba(255,255,255,.3)}
 /* ===== 整页覆盖层（日视图 / 趋势） ===== */
 .page{position:fixed;inset:0;background:var(--bg);z-index:45;display:none;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding-bottom:28px;will-change:transform,opacity}
-.page.on{display:block;animation:pageIn .30s cubic-bezier(.22,1,.36,1) both}
-.page.closing{animation:pageOut .22s ease both}
-@keyframes pageIn{from{opacity:0;transform:translateX(22px)}to{opacity:1;transform:none}}
-@keyframes pageOut{from{opacity:1;transform:none}to{opacity:.3;transform:translateX(28px)}}
+.page.on{display:block;animation:pageIn .28s cubic-bezier(.22,1,.36,1) both}
+.page.closing{animation:pageOut .26s cubic-bezier(.4,0,.2,1) both}
+@keyframes pageIn{from{transform:translateX(100%)}to{transform:none}}
+@keyframes pageOut{from{transform:none}to{transform:translateX(100%)}}
+/* 逐级返回：当前内容先向右滑出，再把上一层接回来 */
+#pageIn.slideout{animation:slideOutR .19s cubic-bezier(.4,0,.7,.3) both}
+@keyframes slideOutR{from{opacity:1;transform:none}to{opacity:.2;transform:translateX(34px)}}
+/* 逐级返回：上一层接回来时的轻度回位 */
+.page.backstep #pageIn{animation:pageBack .18s ease both}
+@keyframes pageBack{from{opacity:.45;transform:translateX(-14px)}to{opacity:1;transform:none}}
+/* 日视图换天数：内容按方向滑入 */
+#pageIn.slideL{animation:slideInL .2s cubic-bezier(.22,1,.36,1) both}
+#pageIn.slideR{animation:slideInR .2s cubic-bezier(.22,1,.36,1) both}
+@keyframes slideInL{from{opacity:.4;transform:translateX(28px)}to{opacity:1;transform:none}}
+@keyframes slideInR{from{opacity:.4;transform:translateX(-28px)}to{opacity:1;transform:none}}
 .phead{position:sticky;top:0;z-index:3;display:flex;align-items:center;gap:8px;
   padding:calc(10px + var(--sat)) 14px 10px;background:var(--bg);border-bottom:1px solid var(--line)}
 .phead .ttl{flex:1;min-width:0;font-size:15px;font-weight:600;text-align:center}
@@ -340,7 +351,7 @@ function nameHit(f,kw){
 }
 const DISH=JSON.parse(document.getElementById("d-dishes").textContent);
 const CAT={protein:"蛋白",carb:"主食",veg:"蔬菜",fruit:"水果",fat:"油脂",other:"调味"};
-const APP_VER="3.10";              /* 发版只改这一处：关于页、SW 注册参数都读它 */
+const APP_VER="3.11";              /* 发版只改这一处：关于页、SW 注册参数都读它 */
 const K='dorm-eat-v2';
 let S=load();
 S.myFood=S.myFood||[];
@@ -1475,10 +1486,13 @@ function openSheet(html,opt){
   sheetCur=html;
   box.scrollTop=0;
   if(!wasOn){
-    void box.offsetWidth;box.style.animation="";
+    void box.offsetWidth;
+    box.style.animation="sheetUp .42s cubic-bezier(.22,1,.36,1) both";
   }else{
-    /* 换层：给一个轻微的横向位移，明确"这是另一层"而不是原地刷新 */
-    box.style.animation="sheetStep .2s ease both";
+    /* 换层：只做很轻的淡入+微位移，别整块重播上滑（那是"闪"的来源） */
+    box.style.animation="none";
+    void box.offsetWidth;
+    box.style.animation="sheetStep .15s ease both";
   }
   sh.classList.add("on");
   a11yPatch(box);
@@ -1521,8 +1535,8 @@ function closeSheet(instant){
 /* 打开动画放完就撤掉 fill:both，否则它会一直压住行内 transform，下拉拖动时面板不跟手 */
 $("sheetBox").addEventListener("animationend",function(e){
   if(e.target!==this)return;
-  if(e.animationName==="sheetUp")this.style.animation="none";
-  else if(e.animationName==="sheetStep")this.style.animation="";
+  /* 一定落到 "none"：若清成空串，CSS 里的 .sheet.on .box 会重新接管并重播上滑 */
+  if(e.animationName==="sheetUp"||e.animationName==="sheetStep")this.style.animation="none";
 });
 
 let addId=-1,addUnit="u",addGross=false;
@@ -1812,34 +1826,72 @@ var memoTab={
   set:function(k,y){pageMemo["tab:"+k]={y:y,at:Date.now()}},
   get:function(k){return memoGet("tab:"+k)}
 };
-let pageTimer=null;
+let pageTimer=null,pageStack=[];
 function openPage(html,opt){
   opt=opt||{};
   const p=$("page"),i=$("pageIn");if(!p||!i)return;
   const wasOpen=p.classList.contains("on")||p.classList.contains("closing");  /* 正在收起也算"开着"，避免重复加锁 */
+  const newMode=opt.mode||pageMode||"";
+  const sameMode=wasOpen&&newMode===(pageMode||"");
   if(pageTimer){clearTimeout(pageTimer);pageTimer=null}
-  if(!wasOpen)pagePrevFocus=document.activeElement;
+  if(!wasOpen){
+    pagePrevFocus=document.activeElement;
+    pageStack=[];                                   /* 全新打开：祖先进程清空 */
+  }else if(!sameMode&&!opt.replace){
+    /* 同一个覆盖层里换了一种页面（趋势→当天）：把当前这层压栈，返回时原路退回 */
+    pageStack.push({html:i.innerHTML,mode:pageMode||"",scroll:p.scrollTop});
+  }
+  pageMode=newMode;
   /* 已经打开时重绘（点柱子、切范围）保持当前位置；首次打开才取记忆 */
   const keep=opt.top?0:(wasOpen?p.scrollTop:memoGet(opt.key||pageKey()));
-  p.classList.remove("closing");
+  p.classList.remove("closing","backstep");
   i.innerHTML=html;
   p.classList.add("on");
   if(!pageHoldLock){pageHoldLock=true;lockScroll(1)}
   p.scrollTop=keep;
   a11yPatch(i);
+  /* 换天数的方向感动效 */
+  i.classList.remove("slideL","slideR");
+  if(opt.slide){void i.offsetWidth;i.classList.add(opt.slide>0?"slideL":"slideR")}
 }
 function closePage(){
-  const p=$("page");if(!p||!p.classList.contains("on"))return;
+  const p=$("page"),i=$("pageIn");if(!p||!i||!p.classList.contains("on"))return;
   memoSet(pageKey(),p.scrollTop);
   if(pageTimer){clearTimeout(pageTimer);pageTimer=null}
-  p.classList.add("closing");
-  pageTimer=setTimeout(function(){
-    pageTimer=null;
-    p.classList.remove("on","closing");
+
+  /* 还有上一层：当前内容向右滑出，再把上一层接回来（原路逐级退出） */
+  if(pageStack.length){
+    const prev=pageStack.pop();
+    i.classList.remove("slideL","slideR","slideout");
+    void i.offsetWidth;
+    i.classList.add("slideout");
+    pageTimer=setTimeout(function(){
+      pageTimer=null;
+      i.classList.remove("slideout");
+      pageMode=prev.mode||"";
+      i.innerHTML=prev.html;
+      p.scrollTop=prev.scroll;
+      p.classList.add("backstep");
+      setTimeout(function(){p.classList.remove("backstep")},200);
+      a11yPatch(i);
+    },190);
+    return;
+  }
+
+  /* 最后一层：整页滑出后真正关闭 */
+  const finish=function(){
+    if(pageTimer){clearTimeout(pageTimer);pageTimer=null}
+    p.removeEventListener("animationend",onEnd);
+    p.classList.remove("on","closing","backstep");    /* 一次移除，避免 pageIn 重播 */
     if(pageHoldLock){pageHoldLock=false;lockScroll(-1)}
     if(pagePrevFocus&&pagePrevFocus.isConnected){try{pagePrevFocus.focus({preventScroll:true})}catch(e){}}
     pagePrevFocus=null;
-  },210);
+    pageMode="";
+  };
+  const onEnd=function(e){if(e.target===p&&e.animationName==="pageOut")finish()};
+  p.addEventListener("animationend",onEnd);
+  p.classList.add("closing");
+  pageTimer=setTimeout(finish,300);                   /* 动画事件缺失时兜底 */
 }
 function dayAdd(ds,n){const d=new Date(ds+"T00:00:00");d.setDate(d.getDate()+n);return dstr(d)}
 function dayLabel(ds){
@@ -1944,7 +1996,7 @@ function renderTrend(){
     +'<span><i style="background:#D9B36A"></i>脂肪</span></div></div>';
   h+='<div class="empty" style="padding:10px 0 0">'+(trData.length>35?"数据点多，按周汇总":"")+'</div>';
   h+='</div>';
-  openPage(h);
+  openPage(h,{mode:"trend"});
 }
 function tipK(i){
   const b=trData[i];if(!b)return "";
@@ -2008,14 +2060,16 @@ function calPick(ds){
 })();
 
 /* ===================== 日视图（记录某一天） ===================== */
-let dayCur="";
+let dayCur="",daySlide=0;
 function openDay(ds){
   dayCur=ds||dayCur||today();
   renderDayView();
 }
 function shiftDay(n){
   dayCur=dayAdd(dayCur,n);
+  daySlide=n;
   renderDayView();
+  daySlide=0;
 }
 function daySum(ds){
   const ls=S.logs.filter(function(l){return l.d===ds});
@@ -2025,7 +2079,6 @@ function daySum(ds){
   t.n=ls.length;return {ls:ls,t:t};
 }
 function renderDayView(){
-  pageMode="day";
   const {ls,t}=daySum(dayCur),sg=S.set;
   let h='<div class="phead"><button onclick="closePage()">关闭</button>'
     +'<div class="ttl">记录 · '+dayCur.slice(5)+'</div>'
@@ -2067,7 +2120,7 @@ function renderDayView(){
   }
   h+='<div class="empty" style="padding:14px 0 6px">左右滑动换一天 · 滑到底部再上滑打开日历</div>';
   h+='</div>';
-  openPage(h);
+  openPage(h,{mode:"day",slide:daySlide});
 }
 
 /* ===== 单条记录详情 ===== */

@@ -1,6 +1,6 @@
 {
-  "version": "3.10",
+  "version": "3.11",
   "released": "2026-11-11",
-  "note": "交互重做：弹层逐级返回、整页滚动记忆、边缘滑动退出",
+  "note": "修交互：弹层不再重播动画、整页滑入滑出不重叠、逐级退回",
   "apk": "https://github.com/pany83025-commits/dorm-meal-assistant/releases/latest/download/dorm-meal.apk"
 }
