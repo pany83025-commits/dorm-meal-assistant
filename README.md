@@ -78,14 +78,27 @@ export ANDROID_JAR=/path/to/platforms/android-34/android.jar
 export DORM_KS=/path/to/your.jks        # 自己的签名密钥，仓库不含
 export DORM_KS_ALIAS=dorm
 export DORM_KS_PASS='******'            # 只用环境变量传，不要写进仓库
-bash build.sh v3.3
+bash build.sh v3.9
 ```
 
 > **签名密钥不入库。** 同一个包名如果用别人的密钥签名，会直接装不上或覆盖失败，所以 keystore 请自己保管。想二次开发的话，自己生成一个即可：`keytool -genkeypair -keystore release.jks -alias dorm -keyalg RSA -validity 10950`。
 
 **AI 功能**（可选）：设置 → AI 写菜谱，填入兼容 OpenAI 格式的 Key 与模型名。不填也能用全部离线功能。
 
-**发版**：改 `index.html` 顶部的 `const APP_VER="3.4"` 一处即可——关于页显示、Service Worker 的更新检查都读它。HTML 走 network-first，所以**不需要**再手动改 `sw.js` 里的缓存名。
+**发版**（三步，缺一不可）：
+
+1. 改 `index.html` 顶部的 `const APP_VER="3.9"`——关于页显示、Service Worker 注册、更新检查都读它；
+2. 改 `version.json` 的 `version` 与 `note`（应用就是靠这个文件判断有没有新版）；
+3. 打包并上传到 GitHub Release，资源名固定为 `dorm-meal.apk`：
+
+```bash
+bash _apk/build.sh v3.9
+GH_TOKEN=xxx node tools/release.mjs ./寝室餐食助手-v3.9.apk
+```
+
+装过的旧版下次打开（或从后台切回前台）就会看到「有新版本 v3.9」的提示条，点「去更新」跳到浏览器下载。网页版不需要第 3 步：`index.html` 走 network-first，刷新即新版。
+
+> 侧载 APK 的最后一步安装必须由你点确认，这是 Android 的限制，应用只负责「发现新版 + 打开下载」。
 
 ## 改数据 / 开发
 
@@ -100,7 +113,7 @@ npm run verify                # 数据同步检查 + 数据自检 + 单测，一
 
 1. **数据和 HTML 不同步**——`build-data.mjs --check`，防止改了 JSON 忘了内联；
 2. **数据自相矛盾**——引用不存在的食材、热量与 4/4/9 宏量偏差过大（酒精与高纤维食物豁免）、食谱缺「怎么算做好了」、食堂菜克数为 0；
-3. **纯函数算错**——`keepDays` 温度分档、`calcTargets` 的 Mifflin-St Jeor、`dishMacro`/`rcpMacro`、`matchFood` 四级匹配、`shopGap` 缺口、`mergeState` 迁移、油脂互认等 49 个用例，在真实浏览器里跑线上那份代码。
+3. **纯函数算错**——`keepDays` 温度分档、`calcTargets` 的 Mifflin-St Jeor、`dishMacro`/`rcpMacro`、`matchFood` 四级匹配、`shopGap` 缺口、`mergeState` 迁移、油脂互认、版本比较与更新状态等 63 个用例，在真实浏览器里跑线上那份代码。
 
 
 ## 已知限制
@@ -111,7 +124,9 @@ npm run verify                # 数据同步检查 + 数据自检 + 单测，一
 - 单机应用，没有账号、没有云同步；换机请用「设置 → 数据 → 导出备份」（网页版与 APK 都能导出、也都能导入）。备份**不含 AI Key**，恢复后需要重填。
 - 只做过 Android（WebView）与桌面 Chrome 的验证，iOS Safari 未系统测试。
 - 侧载 APK 无法静默自动安装：应用只负责"发现新版 + 打开下载"，最后一步安装要你点确认。
-- 更新检查 6 小时最多一次，没网时静默跳过，不会打扰。
+- 更新检查每小时最多一次；从后台切回前台会补查一次（原生 `onResume` → `window.__onResume`）。
+- 检查会依次尝试两个来源：Pages 上的 `version.json`、GitHub API 的 latest release；都失败也不会崩。
+- **「设置 → 检查更新」可以直接看结果**：当前版本、线上版本、数据来源、失败原因，以及「立即检查」和「去下载页」两个按钮。查不到时先看这里，再判断是网络问题还是真的没发版。
 
 ## 免责声明
 

@@ -125,6 +125,21 @@
     eq("3.7 不比 3.7.1 新", verNewer("3.7", "3.7.1"), false);
     eq("APP_VER 与 version.json 同段", APP_VER.split(".").length >= 2, true);
 
+    /* ---------- 更新检查：版本比较与状态记录 ---------- */
+    eq("3.9 比 3.8 新", verNewer("3.9", "3.8"), true);
+    eq("9.0 比 3.9 新（主版本）", verNewer("9.0", "3.9"), true);
+    const _upd = S.upd;
+    updSave({ latest: "9.9", newer: true, src: "Pages", err: "" });
+    eq("updSave 记下最新版", S.upd.latest, "9.9");
+    eq("updSave 默认带 err 字段", typeof S.upd.err, "string");
+    updSave({ err: "connect timeout" });
+    eq("updSave 追加失败原因", S.upd.err, "connect timeout");
+    eq("updSave 不清掉已有值", S.upd.latest, "9.9");
+    eq("失败时 newer 仍是上次的值", S.upd.newer, true);
+    S.upd = _upd;
+    eq("updTime 没查过", updTime(0), "还没查过");
+    eq("updTime 格式化 6 月 3 日 08:05", updTime(new Date(2026, 5, 3, 8, 5).getTime()), "6-03 08:05");
+
     /* ---------- 餐次 ---------- */
     eq("guessMeal 落在四档内", ["早", "午", "晚", "加"].indexOf(guessMeal()) > -1, true);
     eq("MEAL_LABEL 完整", Object.keys(MEAL_LABEL).length, 5);

@@ -195,19 +195,30 @@ public class MainActivity extends Activity {
             java.net.HttpURLConnection c = null;
             try {
                 c = (java.net.HttpURLConnection) new java.net.URL(url).openConnection();
-                c.setConnectTimeout(8000);
-                c.setReadTimeout(8000);
+                c.setInstanceFollowRedirects(true);
+                c.setConnectTimeout(9000);
+                c.setReadTimeout(9000);
                 c.setRequestProperty("Cache-Control", "no-cache");
-                InputStream is = c.getResponseCode() >= 400 ? c.getErrorStream() : c.getInputStream();
-                if (is == null) return "err:无响应";
+                c.setRequestProperty("Accept", "application/json, text/plain, */*");
+                /* api.github.com 不带 UA 会直接 403 */
+                c.setRequestProperty("User-Agent", "dorm-meal-assistant (Android)");
+                int code = c.getResponseCode();
+                InputStream is = code >= 400 ? c.getErrorStream() : c.getInputStream();
+                if (is == null) return "err:HTTP " + code + " 无响应体";
                 java.io.ByteArrayOutputStream bo = new java.io.ByteArrayOutputStream();
                 byte[] buf = new byte[4096];
                 int n;
                 while ((n = is.read(buf)) > 0) bo.write(buf, 0, n);
                 is.close();
-                return bo.toString("UTF-8");
+                String body = bo.toString("UTF-8");
+                if (code >= 400) {
+                    String t = body.replace('\n', ' ');
+                    return "err:HTTP " + code + " " + t.substring(0, Math.min(90, t.length()));
+                }
+                return body;
             } catch (Exception e) {
-                return "err:" + e.getMessage();
+                String m = e.getMessage();
+                return "err:" + (m == null ? e.getClass().getSimpleName() : m);
             } finally {
                 if (c != null) c.disconnect();
             }
@@ -534,6 +545,23 @@ public class MainActivity extends Activity {
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
         if (hasFocus) setupEdgeToEdge();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        /* 从后台切回来时通知页面复查一次更新（WebView 不会重新加载，靠这个钩子） */
+        final WebView w = wv;
+        if (w != null) {
+            w.post(new Runnable() {
+                @Override
+                public void run() {
+                    if (wv != null) {
+                        wv.evaluateJavascript("window.__onResume&&window.__onResume()", null);
+                    }
+                }
+            });
+        }
     }
 
     @Override

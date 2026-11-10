@@ -336,7 +336,7 @@ function nameHit(f,kw){
 }
 const DISH=JSON.parse(document.getElementById("d-dishes").textContent);
 const CAT={protein:"蛋白",carb:"主食",veg:"蔬菜",fruit:"水果",fat:"油脂",other:"调味"};
-const APP_VER="3.8";              /* 发版只改这一处：关于页、SW 注册参数都读它 */
+const APP_VER="3.9";              /* 发版只改这一处：关于页、SW 注册参数都读它 */
 const K='dorm-eat-v2';
 let S=load();
 S.myFood=S.myFood||[];
@@ -1282,6 +1282,13 @@ function renderSettings(){
   h+=setRow("AI 写菜谱",((S.ai&&S.ai.key)?"已配置 · "+(S.ai.model||"deepseek-flash"):"未配置 · 点这里填 key"),"openSetAI()");
   h+=setRow("我的自定义食谱",nR+" 道 AI 食谱 · "+nD+" 道自建/拆解","openSetRcp()");
   h+=setRow("数据","备份 · 恢复 · 清空（只存本机）","openSetData()");
+  const _u=S.upd||{};
+  let updSub;
+  if(_u.err)updSub="上次检查失败 · 点这里重查";
+  else if(_u.newer)updSub="发现新版 v"+_u.latest+" · 点这里去下载";
+  else if(_u.latest)updSub="已是最新 v"+_u.latest+" · "+updTime(_u.at);
+  else updSub="当前 v"+APP_VER+" · 点这里手动查";
+  h+=setRow("检查更新",updSub,"openSetUpdate()");
   h+='</div>';
   h+='<div class="card"><h2>关于<span>v'+APP_VER+'</span></h2><div style="font-size:12px;color:var(--ink3);line-height:1.75">'
     +'营养数据：《中国食物成分表 标准版（第6版）》'+F.filter(function(f){return !f.my}).length+' 条 + 包装标签 '
@@ -3035,14 +3042,16 @@ calcTargets();save();render();
   navigator.serviceWorker.register("sw.js?v="+APP_VER).catch(function(){});
 })();
 loadWeather(false);
-/* ===== 版本检查 =====
-   APK 里的页面是打包进 assets 的，没有 Service Worker，靠 HTTP 缓存那套永远拿不到新版，
-   所以主动去线上要一个 version.json；有新版就顶一条提示，点一下跳浏览器下载。
-   网页版/PWA 用相对路径（同时 SW 对 version.json 走 network-only）。 */
-const UPD_BASE = (window.AndroidBridge && window.AndroidBridge.httpGet)
-  ? "https://pany83025-commits.github.io/dorm-meal-assistant/"
-  : location.href.replace(/[?#].*$/, "").replace(/[^/]*$/, "");
-const UPD_APK = "https://github.com/pany83025-commits/dorm-meal-assistant/releases/latest/download/dorm-meal.apk";
+/* ===== 版本检查（v3.9 重做：多来源 + 失败可见） =====
+   APK 的页面打包在 assets 里、没有 Service Worker，只能主动去线上要版本号。
+   但 Pages 未必在每台手机的网络上都能到，所以依次试 Pages 的 version.json → GitHub API；
+   失败也把原因写进 S.upd，设置页「检查更新」能看到具体错误，不再静默失败。 */
+const UPD_REPO="pany83025-commits/dorm-meal-assistant";
+const UPD_APK="https://github.com/"+UPD_REPO+"/releases/latest/download/dorm-meal.apk";
+const UPD_SITE="https://pany83025-commits.github.io/dorm-meal-assistant/";
+const UPD_IS_APP=!!(window.AndroidBridge&&window.AndroidBridge.httpGet);
+const UPD_BASE=UPD_IS_APP?UPD_SITE:location.href.replace(/[?#].*$/,"").replace(/[^/]*$/,"");
+const UPD_EVERY=3600e3;                    /* 自动检查间隔：1 小时 */
 
 function verNum(v){return String(v||"").split(".").map(function(x){return parseInt(x,10)||0})}
 function verNewer(a,b){                      /* a 比 b 新返回 true */
@@ -3054,34 +3063,113 @@ function verNewer(a,b){                      /* a 比 b 新返回 true */
   return false;
 }
 function fetchText(url){
-  if(window.AndroidBridge && window.AndroidBridge.httpGet){
-    const t=window.AndroidBridge.httpGet(url);
-    if(String(t).indexOf("err:")===0)throw new Error(t);
-    return Promise.resolve(String(t));
+  if(UPD_IS_APP){
+    let t;
+    try{t=window.AndroidBridge.httpGet(url)}catch(e){throw new Error("桥接调用失败："+((e&&e.message)||e))}
+    const str=String(t==null?"":t);
+    if(str.indexOf("err:")===0)throw new Error(str.slice(4)||"没取到内容");
+    if(!str)throw new Error("返回为空");
+    return Promise.resolve(str);
   }
   return fetch(url,{cache:"no-store"}).then(function(r){
     if(!r.ok)throw new Error("HTTP "+r.status);
     return r.text();
   });
 }
+/* 依次尝试的来源：Pages 的版本文件，APK 再多一个 GitHub API 兜底 */
+function updSources(){
+  const list=[{name:"Pages",url:UPD_BASE+"version.json",pick:function(t){return JSON.parse(t)}}];
+  if(UPD_IS_APP)list.push({
+    name:"GitHub API",
+    url:"https://api.github.com/repos/"+UPD_REPO+"/releases/latest",
+    pick:function(t){
+      const d=JSON.parse(t);
+      return {version:String(d.tag_name||"").replace(/^v/,""),note:d.name||""};
+    }
+  });
+  return list;
+}
+function updSave(patch){
+  S.upd=Object.assign({at:0,latest:"",note:"",src:"",newer:false,err:""},S.upd||{},patch);
+  save();
+}
 function checkUpdate(force){
   const last=+(S.lastUpd||0);
-  if(!force && Date.now()-last < 6*3600e3)return;   /* 6 小时内不重复查 */
-  fetchText(UPD_BASE+"version.json?t="+Date.now()).then(function(txt){
-    const d=JSON.parse(txt);
-    S.lastUpd=Date.now();save();
-    if(!verNewer(d.version,APP_VER))return;
-    notice("有新版本 v"+d.version+(d.note?"："+d.note:""),{
-      sticky:true,action:"去更新",
-      onAction:function(){
-        hideNotice();
-        if(window.AndroidBridge && window.AndroidBridge.openUrl)window.AndroidBridge.openUrl(d.apk||UPD_APK);
-        else window.open(d.apk||UPD_APK,"_blank");
-      }
+  if(!force&&Date.now()-last<UPD_EVERY)return Promise.resolve({skipped:true});
+  const srcs=updSources(),errs=[];
+  function next(i){
+    if(i>=srcs.length){
+      updSave({at:Date.now(),err:errs.join("；")||"取不到版本信息"});
+      return {ok:false,err:S.upd.err};
+    }
+    const src=srcs[i];
+    return Promise.resolve().then(function(){return fetchText(src.url)}).then(function(txt){
+      const d=src.pick(txt)||{};
+      const v=String(d.version||"").trim();
+      if(!v)throw new Error("返回里没有版本号");
+      const newer=verNewer(v,APP_VER);
+      S.lastUpd=Date.now();
+      updSave({at:Date.now(),latest:v,note:d.note||"",src:src.name,newer:newer,err:""});
+      if(newer)showUpdateNotice(v,d.note||"",d.apk||UPD_APK);
+      return {ok:true,version:v,newer:newer,src:src.name};
+    }).catch(function(e){
+      errs.push(src.name+"："+((e&&e.message)||"失败"));
+      return next(i+1);
     });
-  }).catch(function(){});
+  }
+  return Promise.resolve().then(function(){return next(0)});
 }
-setTimeout(function(){checkUpdate(false)},1500);
+function updOpen(url){
+  const u=url||UPD_APK;
+  if(window.AndroidBridge&&window.AndroidBridge.openUrl){window.AndroidBridge.openUrl(u);return}
+  window.open(u,"_blank");
+}
+function showUpdateNotice(v,note,apk){
+  notice("有新版本 v"+v+(note?"："+note:""),{
+    sticky:true,action:"去更新",
+    onAction:function(){hideNotice();updOpen(apk)}
+  });
+}
+function updTime(t){
+  if(!t)return "还没查过";
+  const d=new Date(t),pad=function(x){return (x<10?"0":"")+x};
+  return (d.getMonth()+1)+"-"+pad(d.getDate())+" "+pad(d.getHours())+":"+pad(d.getMinutes());
+}
+function openSetUpdate(){
+  const u=S.upd||{},err=u.err||"";
+  let h='<h3>检查更新</h3><div class="sm">当前 v'+APP_VER+' ｜ 上次检查 '+updTime(u.at)+'</div>';
+  h+='<div class="logitem"><span>当前版本</span><span class="r">v'+APP_VER+'</span></div>';
+  h+='<div class="logitem"><span>线上版本</span><span class="r">'
+    +(u.latest?("v"+u.latest+(u.newer?"（有新版）":"（已是最新）")):"—")+'</span></div>';
+  if(u.src)h+='<div class="logitem"><span>数据来源</span><span class="r">'+esc(u.src)+'</span></div>';
+  if(err){
+    h+='<div class="tip warn" style="margin-top:12px">检查失败：'+esc(err)
+      +'<br><span style="font-size:11.5px">可能是当前网络到不了 GitHub。可换 Wi-Fi / 开代理再试，'
+      +'或直接点下面「去下载页」。</span></div>';
+  }else if(u.latest&&!u.newer){
+    h+='<div class="tip ok" style="margin-top:12px">已经是最新版本</div>';
+  }
+  h+='<div style="height:12px"></div><button class="btn" id="updBtn" onclick="manualCheckUpdate()">立即检查</button>';
+  h+='<div style="height:8px"></div><button class="btn ghost" onclick="updOpen()">去下载页（GitHub）</button>';
+  h+='<div style="height:8px"></div><button class="btn ghost" onclick="closeSheet()">关闭</button>';
+  openSheet(h);
+}
+function manualCheckUpdate(){
+  const b=$("updBtn");
+  if(b){b.disabled=true;b.textContent="检查中…"}
+  checkUpdate(true).then(function(r){
+    openSetUpdate();
+    if(r&&r.ok&&!r.newer)notice("已是最新版本 v"+APP_VER);
+  },function(){
+    openSetUpdate();
+  });
+}
+/* 从后台切回来 / 重新可见时复查：APK 的 WebView 不会重新加载，靠这两个钩子 */
+window.__onResume=function(){setTimeout(function(){checkUpdate(false)},500)};
+document.addEventListener("visibilitychange",function(){
+  if(!document.hidden)setTimeout(function(){checkUpdate(false)},500);
+});
+setTimeout(function(){checkUpdate(false)},2200);   /* 等开屏动画退场再查，免得提示被盖住 */
 
 
 
