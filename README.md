@@ -47,6 +47,10 @@ tools/build-data.mjs       把 data/*.json 内联回 index.html
 tools/check-data.mjs       数据自检（结构 / 引用完整性 / 宏量与热量自洽）
 tools/run-tests.mjs        在浏览器里跑纯函数单测
 tools/release.mjs          把 APK 传到 GitHub Release（更新提示靠它）
+tools/bump.mjs             一次改齐四处版本号
+tools/check-version.mjs    四处版本一致性检查（verify 的一环）
+tools/build-apk.sh         一条命令打包（工具链与签名参数在仓库外）
+tools/push.mjs             走 Git Data API 推送（本机 git 端口不通时用）
 version.json               线上版本号，应用启动时读它判断要不要提示更新
 tests/core-tests.js        单测用例
 manifest.json / sw.js      PWA 配置与离线缓存
@@ -85,18 +89,19 @@ bash build.sh v3.9
 
 **AI 功能**（可选）：设置 → AI 写菜谱，填入兼容 OpenAI 格式的 Key 与模型名。不填也能用全部离线功能。
 
-**发版**（三步，缺一不可）：
-
-1. 改 `index.html` 顶部的 `const APP_VER="3.9"`——关于页显示、Service Worker 注册、更新检查都读它；
-2. 改 `version.json` 的 `version` 与 `note`（应用就是靠这个文件判断有没有新版）；
-3. 打包并上传到 GitHub Release，资源名固定为 `dorm-meal.apk`：
+**发版**：版本号散落在四处（`index.html` 的 `APP_VER`、`version.json`、`AndroidManifest` 的 versionName/versionCode、`package.json`），手动改必漏，所以有脚本：
 
 ```bash
-bash _apk/build.sh v3.9
-GH_TOKEN=xxx node tools/release.mjs ./寝室餐食助手-v3.9.apk
+node tools/bump.mjs 3.10 --note "一句话说明这次更新"   # 四处一起改，versionCode = 主×10+次
+npm run verify                                        # 数据同步 / 数据自检 / 版本一致性 / 63 项单测
+bash tools/build-apk.sh                               # 出包，版本号自动取 APP_VER
+node tools/push.mjs -m "v3.10：…"                      # 推仓库，Pages 自动重建
+GH_TOKEN=xxx node tools/release.mjs ./寝室餐食助手-v3.10.apk   # 传 Release，资源名固定 dorm-meal.apk
 ```
 
-装过的旧版下次打开（或从后台切回前台）就会看到「有新版本 v3.9」的提示条，点「去更新」跳到浏览器下载。网页版不需要第 3 步：`index.html` 走 network-first，刷新即新版。
+`tools/build-apk.sh` 会从环境变量或 `~/.dormmeal/secret.env` 读 `DORM_KS_PASS`（密钥与密码都不入库）。`tools/push.mjs` 走 Git Data API 而不是 `git push`——有些网络到不了 `github.com:443` 的 git 端口，这条通路能过就说明 API 能过。token 放在 `~/.dormmeal/gh_token`，同样在仓库之外。
+
+装过的旧版下次打开（或从后台切回前台）就会看到「有新版本 v3.10」的提示条，点「去更新」跳到浏览器下载。网页版不需要最后一步：`index.html` 走 network-first，刷新即新版。
 
 > 侧载 APK 的最后一步安装必须由你点确认，这是 Android 的限制，应用只负责「发现新版 + 打开下载」。
 
@@ -109,11 +114,12 @@ node tools/build-data.mjs     # 改完 data/*.json 后同步进 index.html
 npm run verify                # 数据同步检查 + 数据自检 + 单测，一次跑完
 ```
 
-`npm run verify` 会拦三类问题：
+`npm run verify` 会拦四类问题：
 
 1. **数据和 HTML 不同步**——`build-data.mjs --check`，防止改了 JSON 忘了内联；
 2. **数据自相矛盾**——引用不存在的食材、热量与 4/4/9 宏量偏差过大（酒精与高纤维食物豁免）、食谱缺「怎么算做好了」、食堂菜克数为 0；
-3. **纯函数算错**——`keepDays` 温度分档、`calcTargets` 的 Mifflin-St Jeor、`dishMacro`/`rcpMacro`、`matchFood` 四级匹配、`shopGap` 缺口、`mergeState` 迁移、油脂互认、版本比较与更新状态等 63 个用例，在真实浏览器里跑线上那份代码。
+3. **版本号不一致**——`check-version.mjs` 比对四处版本；漏改 `version.json` 会让应用永远收不到更新，漏改 versionCode 会让覆盖安装被拒；
+4. **纯函数算错**——`keepDays` 温度分档、`calcTargets` 的 Mifflin-St Jeor、`dishMacro`/`rcpMacro`、`matchFood` 四级匹配、`shopGap` 缺口、`mergeState` 迁移、油脂互认、版本比较与更新状态等 63 个用例，在真实浏览器里跑线上那份代码。
 
 
 ## 已知限制
