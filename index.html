@@ -217,6 +217,10 @@ label.fl{display:block;font-size:12.5px;color:var(--ink3);margin:12px 0 5px}
 .page.backstep #pageIn{animation:pageBack .18s ease both}
 @keyframes pageBack{from{opacity:.45;transform:translateX(-14px)}to{opacity:1;transform:none}}
 /* 日视图换天数：内容按方向滑入 */
+/* 日视图横向分页：一次渲染「前一天 / 当天 / 后一天」三页，拖动时邻居跟着进来 */
+.pager{overflow:hidden;position:relative}
+.pager .track{display:flex;width:300%;align-items:flex-start;will-change:transform;transform:translateX(-33.3333%)}
+.pager .pane{flex:0 0 33.3333%;width:33.3333%;min-width:0}
 #pageIn.pushIn{animation:pushIn .26s cubic-bezier(.22,1,.36,1) both}
 @keyframes pushIn{from{transform:translateX(46px)}to{transform:none}}
 #pageIn.slideL{animation:slideInL .2s cubic-bezier(.22,1,.36,1) both}
@@ -357,7 +361,7 @@ function nameHit(f,kw){
 }
 const DISH=JSON.parse(document.getElementById("d-dishes").textContent);
 const CAT={protein:"蛋白",carb:"主食",veg:"蔬菜",fruit:"水果",fat:"油脂",other:"调味"};
-const APP_VER="3.12";              /* 发版只改这一处：关于页、SW 注册参数都读它 */
+const APP_VER="3.13";              /* 发版只改这一处：关于页、SW 注册参数都读它 */
 const K='dorm-eat-v2';
 let S=load();
 S.myFood=S.myFood||[];
@@ -2058,12 +2062,11 @@ function calPick(ds){
 }
 
 /* 覆盖层手势：
-   日视图里左右拖＝内容跟手平移，松手够远就翻到下一天（或前一天）；
+   日视图左右拖＝三页轨道跟手滑动（邻居从两侧进来），松手够远就翻页；
    屏幕边缘起手＝交给系统返回 / 退出这一页；滑到底再上滑＝日历 */
 (function(){
   const pg=document.getElementById("page");
-  const inner=document.getElementById("pageIn");
-  if(!pg||!inner)return;
+  if(!pg)return;
   let sx=0,sy=0,t0=0,axis="",active=false,edge=false;
 
   pg.addEventListener("touchstart",function(e){
@@ -2080,22 +2083,30 @@ function calPick(ds){
       else if(Math.abs(dy)>10)axis="y";
     }
     if(axis!=="x"||edge)return;
-    if(!active){
-      active=true;
-      inner.classList.remove("slideL","slideR","pushIn","slideout");
-      inner.style.transition="none";
-    }
+    const track=$("dayTrack");
+    if(!track)return;
+    if(!active){active=true;track.style.transition="none"}
     const lim=window.innerWidth*0.45;
     let tx=dx;
     if(Math.abs(tx)>lim)tx=(tx<0?-1:1)*(lim+(Math.abs(tx)-lim)*0.35);   /* 越界橡皮筋 */
-    inner.style.transform="translateX("+tx+"px)";
+    track.style.transform="translateX(calc(-33.3333% + "+tx+"px))";     /* 三页一起跟手 */
     if(e.cancelable)e.preventDefault();
   },{passive:false});
 
-  function settle(tx){
-    inner.style.transition="transform .24s cubic-bezier(.22,1,.36,1)";
-    inner.style.transform="";
-    setTimeout(function(){inner.style.transition=""},260);
+  function settle(){
+    const track=$("dayTrack");if(!track)return;
+    track.style.transition="transform .26s cubic-bezier(.22,1,.36,1)";
+    track.style.transform="translateX(-33.3333%)";
+  }
+  function pageTo(dir){
+    const track=$("dayTrack");
+    if(!track){dayCur=dayAdd(dayCur,dir);renderDayView();return}
+    track.style.transition="transform .24s cubic-bezier(.22,1,.36,1)";
+    track.style.transform="translateX("+(dir>0?-66.6667:0)+"%)";
+    setTimeout(function(){
+      dayCur=dayAdd(dayCur,dir);
+      renderDayView();                       /* 重建三页，落回中间 */
+    },250);
   }
 
   pg.addEventListener("touchend",function(e){
@@ -2104,20 +2115,11 @@ function calPick(ds){
     if(active){
       active=false;axis="";
       const w=window.innerWidth;
-      /* 距离够远，或者"又快又有一点距离"的甩动才翻页；轻点式的小位移一律回弹 */
+      /* 翻页判定：拖过屏宽 22%，或"够快且超过 40px"的甩动；否则回弹 */
       const far=Math.abs(dx)>w*0.22;
       const flick=Math.abs(vx)>0.55&&Math.abs(dx)>40&&dt<=400;
-      if(far||flick){
-        const dir=dx<0?1:-1;                       /* 往左滑＝后一天 */
-        inner.style.transition="transform .2s cubic-bezier(.4,0,.6,1)";
-        inner.style.transform="translateX("+(dir>0?-100:100)+"%)";
-        setTimeout(function(){
-          inner.style.transition="";inner.style.transform="";
-          shiftDay(dir);                           /* 新一天从另一侧滑入 */
-        },200);
-      }else{
-        settle(dx);
-      }
+      if(far||flick)pageTo(dx<0?1:-1);
+      else settle();
       return;
     }
     /* 没进入拖拽：边缘退出、快速轻扫换天、底部上滑开日历 */
@@ -2129,7 +2131,7 @@ function calPick(ds){
   },{passive:true});
 
   pg.addEventListener("touchcancel",function(){
-    if(active){active=false;axis="";settle(0)}
+    if(active){active=false;axis="";settle()}
   },{passive:true});
 })();
 
@@ -2139,11 +2141,18 @@ function openDay(ds){
   dayCur=ds||dayCur||today();
   renderDayView();
 }
+let dayBusy=false;
 function shiftDay(n){
-  dayCur=dayAdd(dayCur,n);
-  daySlide=n;
-  renderDayView();
-  daySlide=0;
+  const track=$("dayTrack");
+  if(!track||dayBusy){dayCur=dayAdd(dayCur,n);renderDayView();return}
+  dayBusy=true;
+  track.style.transition="transform .24s cubic-bezier(.22,1,.36,1)";
+  track.style.transform="translateX("+(n>0?-66.6667:0)+"%)";
+  setTimeout(function(){
+    dayBusy=false;
+    dayCur=dayAdd(dayCur,n);
+    renderDayView();
+  },250);
 }
 function daySum(ds){
   const ls=S.logs.filter(function(l){return l.d===ds});
@@ -2152,15 +2161,10 @@ function daySum(ds){
   },{kcal:0,p:0,f:0,c:0,na:0,veg:0});
   t.n=ls.length;return {ls:ls,t:t};
 }
-function renderDayView(){
-  const {ls,t}=daySum(dayCur),sg=S.set;
-  let h='<div class="phead"><button onclick="closePage()">关闭</button>'
-    +'<div class="ttl">记录 · '+dayCur.slice(5)+'</div>'
-    +'<button onclick="openCal()">日历</button></div>';
-  h+='<div class="pnav"><button onclick="shiftDay(-1)">‹</button>'
-    +'<span>'+dayLabel(dayCur)+'</span><button onclick="shiftDay(1)">›</button></div>';
-  h+='<div class="pbody">';
-  h+='<div class="card"><h2>当日合计<span>'+(dayCur===today()?"今天":"")+'</span></h2>'
+function dayBodyHtml(ds){
+  const {ls,t}=daySum(ds),sg=S.set;
+  let h='<div class="pbody">';
+  h+='<div class="card"><h2>当日合计<span>'+(ds===today()?"今天":"")+'</span></h2>'
     +'<div class="stat" style="margin-bottom:0">'
     +'<div class="s"><div class="k">热量</div><div class="v">'+Math.round(t.kcal)+'</div></div>'
     +'<div class="s"><div class="k">蛋白</div><div class="v">'+Math.round(t.p)+'</div></div>'
@@ -2194,7 +2198,32 @@ function renderDayView(){
   }
   h+='<div class="empty" style="padding:14px 0 6px">左右滑动换一天 · 滑到底部再上滑打开日历</div>';
   h+='</div>';
-  openPage(h,{mode:"day",slide:daySlide});
+  return h;
+}
+function renderDayView(){
+  const ds=dayCur;
+  let h='<div class="phead"><button onclick="closePage()">关闭</button>'
+    +'<div class="ttl">记录 · '+ds.slice(5)+'</div>'
+    +'<button onclick="openCal()">日历</button></div>';
+  h+='<div class="pnav"><button onclick="shiftDay(-1)">‹</button>'
+    +'<span>'+dayLabel(ds)+'</span><button onclick="shiftDay(1)">›</button></div>';
+  h+='<div class="pager"><div class="track" id="dayTrack">';
+  [dayAdd(ds,-1),ds,dayAdd(ds,1)].forEach(function(d){
+    h+='<div class="pane">'+dayBodyHtml(d)+'</div>';
+  });
+  h+='</div></div>';
+  openPage(h,{mode:"day"});
+  fitPager();
+}
+/* 轨道高度对齐「当天」那一页，并把位置落回中间 */
+function fitPager(){
+  const track=$("dayTrack");
+  if(!track)return;
+  const pager=track.parentNode,mid=track.children[1];
+  if(mid)pager.style.height=mid.offsetHeight+"px";
+  track.style.transition="none";
+  track.style.transform="translateX(-33.3333%)";
+  void track.offsetWidth;
 }
 
 /* ===== 单条记录详情 ===== */
