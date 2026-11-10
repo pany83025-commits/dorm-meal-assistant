@@ -68,18 +68,20 @@ export ANDROID_JAR=/path/to/platforms/android-34/android.jar
 export DORM_KS=/path/to/your.jks        # 自己的签名密钥，仓库不含
 export DORM_KS_ALIAS=dorm
 export DORM_KS_PASS='******'            # 只用环境变量传，不要写进仓库
-bash build.sh v3.1
+bash build.sh v3.2
 ```
 
 > **签名密钥不入库。** 同一个包名如果用别人的密钥签名，会直接装不上或覆盖失败，所以 keystore 请自己保管。想二次开发的话，自己生成一个即可：`keytool -genkeypair -keystore release.jks -alias dorm -keyalg RSA -validity 10950`。
 
 **AI 功能**（可选）：设置 → AI 写菜谱，填入兼容 OpenAI 格式的 Key 与模型名。不填也能用全部离线功能。
 
+**发版**：改 `index.html` 顶部的 `const APP_VER="3.2"` 一处即可——关于页显示、Service Worker 的更新检查都读它。HTML 走 network-first，所以**不需要**再手动改 `sw.js` 里的缓存名。
+
 ## 已知限制
 
 - 保存期、食堂菜的用油量都是估算，误差在所难免；食堂菜按「配方 + 常见份量」推导，同一道菜不同窗口差别可能很大。
 - 营养库以中式常见食材为主，进口 / 预制食品覆盖有限，遇到没有的自己新建更准。
-- 单机应用，没有账号、没有云同步；换机请用「设置 → 数据 → 导出备份」。
+- 单机应用，没有账号、没有云同步；换机请用「设置 → 数据 → 导出备份」（网页版与 APK 都能导出、也都能导入）。备份**不含 AI Key**，恢复后需要重填。
 - 只做过 Android（WebView）与桌面 Chrome 的验证，iOS Safari 未系统测试。
 
 ## 免责声明

@@ -170,6 +170,16 @@ label.fl{display:block;font-size:12.5px;color:var(--ink3);margin:12px 0 5px}
 @keyframes bowlIn{0%{opacity:0;transform:translateY(11px) scale(.86)}70%{opacity:1;transform:translateY(0) scale(1.015)}100%{opacity:1;transform:none}}
 @keyframes steamDraw{0%{stroke-dashoffset:26;opacity:0}35%{opacity:1}100%{stroke-dashoffset:0;opacity:1}}
 @keyframes soupIn{to{opacity:1}}
+/* 顶部提示条：保存失败 / 有新版本 / 数据修复 */
+#notice{position:fixed;left:0;right:0;top:0;z-index:60;display:flex;align-items:center;gap:10px;
+  padding:calc(var(--sat) + 9px) 14px 9px;background:#2C2C2A;color:#fff;font-size:13px;line-height:1.5;
+  transform:translateY(-102%);transition:transform .3s cubic-bezier(.22,.9,.3,1);box-shadow:0 10px 24px -16px rgba(0,0,0,.6)}
+#notice.on{transform:none}
+#notice.warn{background:#8F2727}
+#notice b{font-weight:600}
+#notice button{flex:none;margin-left:auto;background:rgba(255,255,255,.16);border:none;color:#fff;font-family:inherit;
+  font-size:12.5px;padding:6px 12px;border-radius:9px;cursor:pointer;transition:background .12s ease}
+#notice button:active{background:rgba(255,255,255,.3)}
 </style>
 </head>
 <body>
@@ -598,15 +608,75 @@ const DISH=[
 {"n": "燕麦粥", "i": [["燕麦", 40], ["牛奶", 200]], "note": ""}
 ];
 const CAT={protein:"蛋白",carb:"主食",veg:"蔬菜",fruit:"水果",fat:"油脂",other:"调味"};
+const APP_VER="3.2";              /* 发版只改这一处：关于页、SW 注册参数都读它 */
 const K='dorm-eat-v2';
 let S=load();
 S.myFood=S.myFood||[];
 rebuildFoods();
-function load(){
-  try{const r=JSON.parse(localStorage.getItem(K));if(r&&r.inv)return r}catch(e){}
-  return {inv:[],logs:[],waste:[],myRcp:[],myDish:[],ai:{},set:{sex:"女",height:165,age:22,weight:60,act:1.375,kcal:1470,protein:96,fat:48,carb:163,na:2000,locked:false,city:"",lat:null,lon:null,offset:3},w:{t:null,avg3:null,src:"init",at:0}};
+
+/* ---------- 顶部提示条（保存失败 / 新版本 / 数据修复共用） ---------- */
+function notice(msg,opt){
+  opt=opt||{};
+  let el=document.getElementById("notice");
+  if(!el){el=document.createElement("div");el.id="notice";document.body.appendChild(el)}
+  el.className="notice"+(opt.warn?" warn":"");
+  el.innerHTML='<span style="flex:1;min-width:0">'+msg+'</span>'+(opt.action?'<button>'+opt.action+'</button>':"");
+  if(opt.action){el.querySelector("button").onclick=opt.onAction||hideNotice}
+  void el.offsetWidth;
+  el.classList.add("on");
+  if(notice._t)clearTimeout(notice._t);
+  if(!opt.sticky)notice._t=setTimeout(hideNotice,opt.ms||6500);
 }
-function save(){try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}}
+function hideNotice(){const el=document.getElementById("notice");if(el)el.classList.remove("on")}
+
+/* ---------- 状态：默认值 + 迁移 ---------- */
+function defaultState(){
+  return {v:3,inv:[],logs:[],waste:[],myRcp:[],myDish:[],myFood:[],ai:{},
+    set:{sex:"女",height:165,age:22,weight:60,act:1.375,kcal:1470,protein:96,fat:48,carb:163,
+         na:2000,locked:false,city:"",lat:null,lon:null,offset:3},
+    w:{t:null,avg3:null,src:"init",at:0}};
+}
+/* 老备份 / 残缺数据一律补全默认值：缺 set、缺 waste 都不会再白屏 */
+function mergeState(r){
+  const d=defaultState();
+  if(!r||typeof r!=="object")return d;
+  const out=Object.assign(d,r);
+  out.set=Object.assign(defaultState().set,r.set||{});
+  out.ai=Object.assign({},r.ai||{});
+  out.w=Object.assign(defaultState().w,r.w||{});
+  ["inv","logs","waste","myRcp","myDish","myFood"].forEach(function(k){if(!Array.isArray(out[k]))out[k]=[]});
+  out.v=3;
+  return out;
+}
+function load(){
+  let raw=null;
+  try{raw=localStorage.getItem(K)}catch(e){}
+  if(!raw)return defaultState();
+  try{
+    const r=JSON.parse(raw);
+    if(r&&r.inv)return mergeState(r);
+  }catch(e){}
+  /* 解析失败：绝不就地覆盖，先留一份原始串，再进空状态 */
+  try{localStorage.setItem(K+".broken",raw)}catch(e){}
+  setTimeout(function(){
+    notice("本机数据读不出来，原始内容已存为 "+K+".broken。可到「设置 → 数据」恢复备份，或清空重来。",{warn:true,sticky:true});
+  },0);
+  return defaultState();
+}
+let saveWarned=false;
+function save(){
+  try{
+    localStorage.setItem(K,JSON.stringify(S));
+    saveWarned=false;
+  }catch(e){
+    if(saveWarned)return;
+    saveWarned=true;
+    setTimeout(function(){
+      notice("保存失败：本机存储已满或被系统禁用。<b>现在就去导出备份</b>，否则重启后这次记录会丢。",
+        {warn:true,sticky:true,action:"去导出",onAction:function(){hideNotice();setTab("set");openSetData()}});
+    },0);
+  }
+}
 function dstr(d){const x=new Date(d);return x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")+"-"+String(x.getDate()).padStart(2,"0")}
 function today(){return dstr(new Date())}
 function daysAgo(s){const a=new Date(s+"T00:00:00"),b=new Date(today()+"T00:00:00");return Math.round((b-a)/864e5)}
@@ -1410,7 +1480,7 @@ function renderSettings(){
   h+=setRow("我的自定义食谱",nR+" 道 AI 食谱 · "+nD+" 道自建/拆解","openSetRcp()");
   h+=setRow("数据","备份 · 恢复 · 清空（只存本机）","openSetData()");
   h+='</div>';
-  h+='<div class="card"><h2>关于<span>v3.1</span></h2><div style="font-size:12px;color:var(--ink3);line-height:1.75">'
+  h+='<div class="card"><h2>关于<span>v'+APP_VER+'</span></h2><div style="font-size:12px;color:var(--ink3);line-height:1.75">'
     +'营养数据：《中国食物成分表 标准版（第6版）》'+F.filter(function(f){return !f.my}).length+' 条 + 包装标签 '
     +F.filter(function(f){return String(f.src).indexOf("包装")>-1}).length+' 条 + 常见值若干，全部按每 100g 可食部，标注生重/熟重/净重。'
     +'<br>保存期为食品常识估算，不是实验数据。</div></div>';
@@ -2564,31 +2634,55 @@ function openWaste(){
   openSheet(h);
 }
 function exportData(){
-  const json=JSON.stringify(S,null,2);
+  /* 备份里不带 API Key：这个文件很容易被发到微信 / 网盘 */
+  const copy=JSON.parse(JSON.stringify(S));
+  if(copy.ai)delete copy.ai.key;
+  const json=JSON.stringify(copy,null,2);
   const name="寝室餐食备份-"+today()+".json";
+  const tip="（不含 AI Key，换机后到「设置 → AI」重填即可）";
   if(window.AndroidBridge&&window.AndroidBridge.save){
     const r=window.AndroidBridge.save(name,json);
-    if(String(r).indexOf("ok:")===0)alert("已存到手机：\n"+String(r).slice(3)+"\n\n可以用文件管理器找到，也能直接发到微信或网盘。");
+    if(String(r).indexOf("ok:")===0)alert("已存到手机：\n"+String(r).slice(3)+"\n\n可以用文件管理器找到，也能直接发到微信或网盘。\n"+tip);
     else alert("保存失败："+r);
     return;
   }
   const blob=new Blob([json],{type:"application/json"});
   const a=document.createElement("a");
   a.href=URL.createObjectURL(blob);a.download=name;a.click();
+  setTimeout(function(){alert("已导出 "+name+"\n"+tip)},120);
 }
 function importData(){
-  if(!window.AndroidBridge||!window.AndroidBridge.load){
-    alert("这个版本不支持从文件恢复，请在浏览器版里用；或把备份内容发给我。");
+  /* 安卓壳走原生取文件，网页版走 file input —— 之前网页版根本无法恢复 */
+  if(window.AndroidBridge&&window.AndroidBridge.load){
+    const t=window.AndroidBridge.load();
+    if(!t||String(t).indexOf("err:")===0){alert("没有找到备份文件，先点「导出备份」生成一个。");return}
+    applyImport(t);
     return;
   }
-  const t=window.AndroidBridge.load();
-  if(!t||String(t).indexOf("err:")===0){alert("没有找到备份文件，先点「导出备份」生成一个。");return}
-  try{
-    const d=JSON.parse(t);
-    if(!d.inv||!d.logs)throw 0;
-    if(!confirm("用这份备份覆盖当前数据？现有记录会被替换。"))return;
-    S=d;S.myFood=S.myFood||[];rebuildFoods();calcTargets();save();render();alert("已恢复");
-  }catch(e){alert("备份文件格式不对")}
+  const inp=document.createElement("input");
+  inp.type="file";inp.accept=".json,application/json";inp.style.display="none";
+  document.body.appendChild(inp);
+  inp.onchange=function(){
+    const f=inp.files&&inp.files[0];
+    if(!f){inp.remove();return}
+    const fr=new FileReader();
+    fr.onload=function(){inp.remove();applyImport(String(fr.result||""))};
+    fr.onerror=function(){inp.remove();alert("这个文件读不了")};
+    fr.readAsText(f);
+  };
+  inp.click();
+}
+function applyImport(t){
+  let d;
+  try{d=JSON.parse(t)}catch(e){alert("备份文件格式不对");return}
+  if(!d||!Array.isArray(d.inv)||!Array.isArray(d.logs)){alert("备份文件格式不对（缺少 inv / logs）");return}
+  if(!confirm("用这份备份覆盖当前数据？\n\n当前 "+S.inv.length+" 条库存、"+S.logs.length+" 条记录，会先在本机留一份（"+K+".prev）。"))return;
+  try{localStorage.setItem(K+".prev",JSON.stringify(S))}catch(e){}
+  S=mergeState(d);
+  rebuildFoods();calcTargets();save();render();
+  const noKey=!(S.ai&&S.ai.key);
+  alert("已恢复："+S.inv.length+" 条库存、"+S.logs.length+" 条记录。\n覆盖前那份数据已留在本机。"
+    +(noKey?"\n\n备份里不含 AI Key，去「设置 → AI 写菜谱」重填一下。":""));
 }
 function clearAll(){
   if(!confirm("清空所有库存与记录？不可恢复。"))return;
@@ -2596,7 +2690,17 @@ function clearAll(){
 }
 
 calcTargets();save();render();
-if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
+
+/* Service Worker：注册时带上版本号，改了 APP_VER 就会触发更新检查 */
+(function(){
+  if(!("serviceWorker" in navigator))return;
+  let hadController=!!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener("controllerchange",function(){
+    if(!hadController){hadController=true;return}   /* 首次安装不打扰 */
+    notice("新版本已就绪",{sticky:true,action:"刷新",onAction:function(){location.reload()}});
+  });
+  navigator.serviceWorker.register("sw.js?v="+APP_VER).catch(function(){});
+})();
 loadWeather(false);
 
 
