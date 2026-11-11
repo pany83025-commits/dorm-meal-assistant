@@ -189,6 +189,30 @@ public class MainActivity extends Activity {
 
     public class Bridge {
 
+    /** 页面切深浅色时，把导航栏／WebView 底色一起换，深色下把图标改成浅色 */
+    @JavascriptInterface
+    public void syncBars(final String hex, final boolean dark) {
+        runOnUiThread(new Runnable() {
+            public void run() {
+                try {
+                    int c = Color.parseColor(hex);
+                    getWindow().setNavigationBarColor(c);
+                    if (wv != null) wv.setBackgroundColor(c);
+                    View decor = getWindow().getDecorView();
+                    int f = View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                            | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
+                    if (!dark) {
+                        f |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+                        if (Build.VERSION.SDK_INT >= 26) f |= View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+                    }
+                    decor.setSystemUiVisibility(f);
+                } catch (Exception ignored) {
+                }
+            }
+        });
+    }
+
+
         /** 同步取一个只读 URL 的文本（给「检查更新」用；@JavascriptInterface 跑在子线程，可以直接联网） */
         @JavascriptInterface
         public String httpGet(String url) {

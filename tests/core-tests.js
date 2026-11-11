@@ -188,6 +188,83 @@
 
     eq("guessMeal 落在四档内", ["早", "午", "晚", "加"].indexOf(guessMeal()) > -1, true);
     eq("MEAL_LABEL 完整", Object.keys(MEAL_LABEL).length, 5);
+    /* ---------- 食谱合并：三套进同一个池子，按记录频率排 ---------- */
+    eq("logNameKey 去食堂前缀与份数", logNameKey("食堂 · 番茄炒蛋盖饭 ×1.5"), "番茄炒蛋盖饭");
+    eq("logNameKey 去外食前缀", logNameKey("外食 · 肉蟹煲"), "肉蟹煲");
+    eq("logNameKey 无前缀原样", logNameKey("地锅鸡"), "地锅鸡");
+    const _fm = { "地锅鸡": 3, "地锅鸡 等 2 道": 2, "肉蟹煲": 1 };
+    eq("freqHit 同名整次＋套餐半次", freqHit(_fm, "地锅鸡"), 4);
+    eq("freqHit 没吃过是 0", freqHit(_fm, "酸菜鱼"), 0);
+    const _q = q, _src = rcpSrc, _f = rcpFilter, _logs = S.logs.slice();
+    q = ""; rcpSrc = "all"; rcpFilter = "all";
+    eq("合并后条目数 = 系统 + 自建 + AI",
+      rcpSortedList().length, RCP.length + (S.myDish || []).length + (S.myRcp || []).length);
+    rcpSrc = "sys";
+    eq("系统范围只有系统", rcpSortedList().every((x) => x.k === "sys"), true);
+    rcpSrc = "mine";
+    eq("自定义范围没有系统", rcpSortedList().every((x) => x.k !== "sys"), true);
+    rcpSrc = "all";
+    const _hot = RCP[5].n;
+    for (let i = 0; i < 5; i++) S.logs.push({ d: dayAdd(today(), -i), m: "午", name: _hot, kcal: 400, p: 20, f: 10, c: 50, na: 600, veg: 0 });
+    eq("常吃的排到最前", rcpSortedList()[0].n, _hot);
+    eq("常吃的带上次数", rcpSortedList()[0].f, 5);
+    S.logs = _logs;
+    q = _q; rcpSrc = _src; rcpFilter = _f;
+
+    /* ---------- 外观三态 ---------- */
+    const _th = S.set.theme;
+    setTheme("dark");
+    eq("深色写进 data-theme", document.documentElement.getAttribute("data-theme"), "dark");
+    eq("深色记进设置", themeMode(), "dark");
+    setTheme("light");
+    eq("浅色写进 data-theme", document.documentElement.getAttribute("data-theme"), "light");
+    setTheme("auto");
+    eq("auto 记进设置", themeMode(), "auto");
+    const _sysDark = !!(window.matchMedia && window.matchMedia("(prefers-color-scheme:dark)").matches);
+    eq("auto 跟着系统深浅", document.documentElement.getAttribute("data-theme"), _sysDark ? "dark" : "light");
+    S.set.theme = _th; applyTheme();
+    eq("THEME_LABEL 三档齐全", Object.keys(THEME_LABEL).length, 3);
+
+    /* ---------- 外食：菜单 → 拆解 → 记账（AI 打桩，不走网络） ---------- */
+    eq("menuName 单道", menuName("地锅鸡"), "地锅鸡");
+    eq("menuName 多道", menuName("地锅鸡、手撕包菜、米饭"), "地锅鸡 等 3 道");
+    const _ap = window.aiPost, _aiSave = S.ai, _ln = S.logs.length, _nd = (S.myDish || []).length;
+    const _alert = window.alert, _confirm = window.confirm;
+    window.alert = function () {};
+    window.confirm = function () { return true; };
+    S.ai = { key: "test", model: "test" };
+    let _calls = 0;
+    window.aiPost = function (payload, cb) {
+      _calls++;
+      const body = JSON.stringify(payload);
+      const content = body.indexOf("独立估算") > -1
+        ? { kcal: 700, lo: 620, hi: 780, p: 42, c: 60, f: 34, note: "按两人份" }
+        : { name: "地锅鸡", items: [{ name: "鸡腿肉", g: 180 }, { name: "土豆", g: 100 }, { name: "橄榄油", g: 12 }], note: "两人的量" };
+      cb(JSON.stringify({ choices: [{ message: { content: JSON.stringify(content) } }] }));
+    };
+    eoOut = { n: 2, share: 0.5, oil: "一般" };
+    eoText = "地锅鸡";
+    runEatOut("text");
+    eq("外食拆出三项", aiDishItems.length, 3);
+    eq("外食上下文记下人数份量", aiOut && aiOut.n === 2 && aiOut.share === "一半", true);
+    eq("外食菜名", aiDishName, "地锅鸡");
+    eq("发出了两次请求（拆解＋核对）", _calls, 2);
+    eq("核对拿到热量", aiEst && aiEst.kcal, 700);
+    eq("核对拿到蛋白", aiEst && aiEst.p, 42);
+    const _tot = (document.getElementById("ai_total") || {}).textContent || "";
+    eq("合计区有 AI 核对", _tot.indexOf("AI 核对") > -1, true);
+    eq("合计区逐项列了蛋白", _tot.indexOf("蛋白 本地") > -1, true);
+    eq("外食页有外食横幅", (document.getElementById("sheetBox") || {}).textContent.indexOf("外食 · 2 人") > -1, true);
+    doAiDish();
+    eq("记账落在今天", S.logs[S.logs.length - 1].d, today());
+    eq("存成我的菜品", S.myDish.length, _nd + 1);
+    eq("备注标了外食", String(S.myDish[S.myDish.length - 1].note).indexOf("外食估算") === 0, true);
+    S.logs.length = _ln; S.myDish.length = _nd;
+    aiOut = null; S.ai = _aiSave; window.aiPost = _ap; eoText = "";
+    window.alert = _alert; window.confirm = _confirm;
+    closeSheet(true);
+    if (document.getElementById("page").classList.contains("on")) closePage();
+    save();
   } catch (e) {
     fails.push("异常：" + e.message);
   }

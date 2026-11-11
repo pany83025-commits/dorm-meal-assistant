@@ -7,7 +7,18 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="寝室餐食">
 <meta name="theme-color" content="#FBFAF7">
-<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#141517">
+<script>
+/* 先把主题定下来再解析样式，避免深色用户看到一闪而过的白底 */
+(function(){
+  try{
+    var raw=localStorage.getItem("dorm-eat-v2");
+    var t=raw?((JSON.parse(raw).set||{}).theme||"auto"):"auto";
+    var d=t==="dark"||(t!=="light"&&window.matchMedia("(prefers-color-scheme:dark)").matches);
+    document.documentElement.setAttribute("data-theme",d?"dark":"light");
+    if(d)document.documentElement.style.colorScheme="dark";
+  }catch(e){document.documentElement.setAttribute("data-theme","light")}
+})();
+</script>
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
 <title>寝室餐食助手</title>
@@ -19,8 +30,9 @@
 --ok-ink:#2C5310;--warn-ink:#5A3806;--noticebg:#2C2C2A;--a-line:#F0DFC4;--g-line:#D6E8BD;--gl-d:#DFEBCE;
 --a:#854F0B;--al:#FAEEDA;--r:#A32D2D;--rl:#FCEBEB;--r-line:#F2D2D2;--r-ink:#7A2222;--b:#185FA5;--bl:#E6F1FB;
 --noticewarn:#8F2727}
-@media (prefers-color-scheme:dark){
-  :root{
+/* 深色：由 html[data-theme] 决定（跟随系统 / 强制浅色 / 强制深色），
+   head 里的内联脚本会在样式前写好这个属性，所以这里不再用 prefers-color-scheme */
+:root[data-theme="dark"]{
     color-scheme:dark;
     --bg:#141517;--card:#1D1E21;--line:#303136;--line2:#26272B;--line3:#3D3E44;
     --ink:#E9E7E2;--ink2:#BDB9B0;--ink3:#9C988F;--ink4:#6E6B63;--on-ink:#fff;--navbg:rgba(20,21,23,.96);
@@ -30,13 +42,15 @@
     --a:#E2AA5F;--al:#33270F;--a-line:#4A3A1B;
     --r:#EC9494;--rl:#332121;--r-line:#4A2E2E;--r-ink:#F2AAAA;
     --b:#8ABBEF;--bl:#17293D;
-  }
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{background:var(--bg);color:var(--ink);font:15px/1.6 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;padding-bottom:86px}
 .wrap{max-width:520px;margin:0 auto;padding:0 16px}
 header{padding:calc(14px + var(--sat)) 0 8px;position:sticky;top:0;background:var(--bg);z-index:9}
 h1{font-size:19px;font-weight:600;letter-spacing:-.3px}
+h1 .h1b{font:inherit;letter-spacing:inherit;color:inherit;background:none;border:none;padding:2px 4px 2px 0;display:inline-flex;align-items:center;gap:5px;cursor:pointer;font-family:inherit}
+h1 .h1b:active{background:var(--hover);border-radius:8px}
+h1 .hc{font-size:11px;color:var(--ink3);font-weight:400;transform:translateY(1px)}
 .sub{font-size:12px;color:var(--ink3);margin-top:2px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .sub .w{background:var(--bl);color:var(--b);padding:1px 7px;border-radius:5px;font-size:11px}
 .sub .w.off{background:var(--soft);color:var(--ink3)}
@@ -366,7 +380,7 @@ function nameHit(f,kw){
 }
 const DISH=JSON.parse(document.getElementById("d-dishes").textContent);
 const CAT={protein:"蛋白",carb:"主食",veg:"蔬菜",fruit:"水果",fat:"油脂",dessert:"甜点",drink:"饮品",other:"调味"};
-const APP_VER="3.15";              /* 发版只改这一处：关于页、SW 注册参数都读它 */
+const APP_VER="3.16";              /* 发版只改这一处：关于页、SW 注册参数都读它 */
 const K='dorm-eat-v2';
 let S=load();
 S.myFood=S.myFood||[];
@@ -427,7 +441,7 @@ document.addEventListener("keydown",function(e){
 function defaultState(){
   return {v:3,inv:[],logs:[],waste:[],myRcp:[],myDish:[],myFood:[],nextFoodId:1000,shop:[],lastUpd:0,ai:{},
     set:{sex:"女",height:165,age:22,weight:60,act:1.375,kcal:1470,protein:96,fat:48,carb:163,
-         na:2000,locked:false,city:"",lat:null,lon:null,offset:3},
+         na:2000,locked:false,city:"",lat:null,lon:null,offset:3,theme:"auto"},
     w:{t:null,avg3:null,src:"init",at:0}};
 }
 /* 老备份 / 残缺数据一律补全默认值：缺 set、缺 waste 都不会再白屏 */
@@ -543,7 +557,7 @@ function recommend(kw){
 }
 </script>
 <script>
-let tab="today",q="",rcpFilter="all",foodQ="";
+let tab="today",q="",rcpFilter="all",rcpSrc="all",foodQ="";
 const view=document.getElementById("view");
 const $=id=>document.getElementById(id);
 
@@ -737,10 +751,18 @@ function pickRecipeImage(){
   AndroidBridge.pickImage();
 }
 window.__imgCb=function(st){
-  if(st!=="ok"){alert("没有选到图片");renderNewRcp();return}
+  const forEat=!!window.__eoImg;window.__eoImg=0;
+  if(st!=="ok"){
+    if(forEat){alert("没有选到图片");openLogSheet(1);logTab="out";renderLogSheet();return}
+    alert("没有选到图片");renderNewRcp();return;
+  }
   let b64="";
   try{b64=AndroidBridge.takePickedImage()}catch(e){}
-  if(!b64){alert("读取图片失败");renderNewRcp();return}
+  if(!b64){
+    if(forEat){alert("读取图片失败");openLogSheet(1);logTab="out";renderLogSheet();return}
+    alert("读取图片失败");renderNewRcp();return;
+  }
+  if(forEat){logTab="out";runEatOut("img",b64);return}
   runRecognize("img","",b64);
 };
 function openPasteText(){
@@ -975,7 +997,7 @@ function renderNewRcp(){
   items.forEach(function(x,i){
     const ok=!!x.n;
     const f=ok?BY[x.n]:null;
-    h+='<div style="border:1px solid '+(ok?'var(--line)':'var(--r-line)')+';border-radius:10px;padding:9px 11px;margin-bottom:7px;background:'+(ok?'#fff':'#FDF6F6')+'">'
+    h+='<div style="border:1px solid '+(ok?'var(--line)':'var(--r-line)')+';border-radius:10px;padding:9px 11px;margin-bottom:7px;background:'+(ok?'var(--card)':'var(--rl)')+'">'
       +'<div style="display:flex;align-items:center;gap:8px">'
       +'<span style="flex:1;font-size:14px;font-weight:500">'+esc(ok?x.n:x.raw)
       +(x.guess?' <span class="badge warn">克数是估的</span>':'')+'</span>'
@@ -1131,8 +1153,10 @@ function openMyRcp(idx){
   openSheet(h);
 }
 function renderRcp(){
-  let h=`<input type="search" id="rq" placeholder="搜菜名或食材，比如 虾 / 豆腐 / 番茄" value="${q}"><div class="chips">`;
-  [["all","全部"],["早","早餐"],["主","主菜"],["汤","汤锅"],["免","免开火"]].forEach(c=>{
+  let h=`<input type="search" id="rq" placeholder="搜菜名或食材，比如 虾 / 豆腐 / 番茄" value="${q}">`;
+  /* 自定义菜谱没有早/主/汤/免的分类，只在「全部」和不限分类时出现 */
+  h+=`<div class="chips">`;
+  [["all","不限"],["早","早餐"],["主","主菜"],["汤","汤锅"],["免","免开火"]].forEach(c=>{
     h+=`<span class="chip ${rcpFilter===c[0]?"on":""}" onclick="setRcpFilter('${c[0]}')">${c[1]}</span>`;
   });
   h+=`</div><div class="card" style="padding:12px 14px">
@@ -1142,6 +1166,83 @@ function renderRcp(){
   </div>
   <div id="rlist">${rcpListHtml()}</div>`;
   return h;
+}
+/* ===== 记录频率：近 30 天这道菜吃过几次 =====
+   日志名形如「食堂 · 番茄炒蛋盖饭 ×1.5」，先剥掉前缀和份数再比；
+   名字只是开头相同（如「地锅鸡 + 米饭」）算半次，避免把一个套餐拆成两次。 */
+function logNameKey(s){
+  return String(s||"").replace(/^(食堂|自建|外食)\s*·\s*/,"").replace(/\s*×\s*[0-9.]+$/,"").trim();
+}
+function eatFreq(days){
+  const map={};
+  (S.logs||[]).forEach(function(l){
+    if(daysAgo(l.d)>days)return;
+    const k=logNameKey(l.name);
+    if(k)map[k]=(map[k]||0)+1;
+  });
+  return map;
+}
+function freqHit(map,name){
+  let n=0;
+  for(const k in map){
+    if(k===name)n+=map[k];
+    else if(k.indexOf(name)===0)n+=map[k]*0.5;
+  }
+  return Math.round(n*10)/10;
+}
+/* 三套食谱合成一个候选池：自建/拆解菜品、AI 写的食谱、系统食谱 */
+function rcpEntries(){
+  const out=[];
+  (S.myDish||[]).forEach(function(d,i){
+    out.push({k:"dish",i:i,n:d.n,mac:dishMacro(d,1),steps:(d.s||[]).length,c:"",
+      tag:(String(d.note||"").indexOf("外食")>-1?"外食估算"
+        :String(d.note||"").indexOf("AI")>-1?"AI 拆解":"自建"),use:d.use||0,t:20,
+      ing:(d.i||[]).map(function(x){return x[0]})});
+  });
+  (S.myRcp||[]).forEach(function(r,i){
+    out.push({k:"rcp",i:i,n:r.n,mac:rcpMacro(r),steps:(r.s||[]).length,c:r.c||"",
+      tag:"AI 食谱",use:r.use||0,t:r.t||20,r:r,ing:(r.m||[])});
+  });
+  RCP.forEach(function(r,i){
+    out.push({k:"sys",i:i,n:r.n,mac:rcpMacro(r),steps:(r.s||[]).length,c:r.c,
+      tag:"",use:0,t:r.t,r:r,ing:(r.m||[])});
+  });
+  return out;
+}
+const RCP_SRC_LABEL={all:"全部食谱",mine:"自定义食谱",sys:"系统食谱"};
+function openRcpSrc(){
+  sheetRedraw=1;
+  const all=rcpEntries();
+  const n={all:all.length,mine:all.filter(function(x){return x.k!=="sys"}).length,
+    sys:all.filter(function(x){return x.k==="sys"}).length};
+  let h='<h3>看哪一套</h3><div class="sm">三套合成一个列表，默认按近 30 天吃过的次数排</div>';
+  ["all","mine","sys"].forEach(function(s){
+    h+='<div class="logitem" style="cursor:pointer" onclick="setRcpSrc(\''+s+'\')" role="button" tabindex="0">'
+      +'<span>'+(s==="mine"?"自定义（自建 / AI 写的）":RCP_SRC_LABEL[s])+'</span>'
+      +'<span class="r">'+(rcpSrc===s?"✓ ":"")+n[s]+' 道</span></div>';
+  });
+  h+='<div style="height:10px"></div><button class="btn ghost" onclick="closeSheet()">取消</button>';
+  openSheet(h);
+}
+function setRcpSrc(s){rcpSrc=s;render();closeSheet()}
+/* 合并后的候选池：按范围/分类/关键词过滤，再按近 30 天吃过的次数排 */
+function rcpSortedList(){
+  const kw=q.trim(), fmap=eatFreq(30);
+  const list=rcpEntries().filter(function(x){
+    if(rcpSrc==="mine"&&x.k==="sys")return false;
+    if(rcpSrc==="sys"&&x.k!=="sys")return false;
+    /* 自定义菜谱没有早/主/汤/免分类，选了分类就不掺进来 */
+    if(rcpFilter!=="all"&&x.c!==rcpFilter)return false;
+    if(!kw)return true;
+    if(x.n.indexOf(kw)>-1)return true;
+    if(x.ing&&x.ing.some(function(n){return n.indexOf(kw)>-1}))return true;
+    return x.k==="sys"&&rcpMatch(x.r,kw);
+  });
+  list.forEach(function(x){x.f=freqHit(fmap,x.n)});
+  list.sort(function(a,b){
+    return (b.f-a.f)||(b.use-a.use)||a.n.localeCompare(b.n,"zh");
+  });
+  return list;
 }
 function rcpListHtml(){
   const kw=q.trim();
@@ -1158,36 +1259,21 @@ function rcpListHtml(){
       h+=`</div>`;
     }
   }
-  // 自定义食谱：AI 生成的食谱 + 自建/拆解的菜品，合成一处
-  const mine=[];
-  (S.myRcp||[]).forEach(function(r,i){
-    if(kw&&r.n.indexOf(kw)<0)return;
-    mine.push({k:"rcp",i:i,n:r.n,mac:rcpMacro(r),steps:(r.s||[]).length,tag:"AI 生成"});
-  });
-  (S.myDish||[]).forEach(function(d,i){
-    if(kw&&d.n.indexOf(kw)<0)return;
-    mine.push({k:"dish",i:i,n:d.n,mac:dishMacro(d,1),steps:(d.s||[]).length,tag:d.note&&d.note.indexOf("AI")>-1?"AI 拆解":"自建"});
-  });
-  if(mine.length){
-    h+=`<div class="card"><h2>自定义食谱<span>${mine.length} 道 · 点开可改</span></h2>`;
-    mine.forEach(function(x){
-      const m=x.mac;
-      h+=`<div class="rec" onclick="${x.k==="rcp"?"openRcp("+((typeof RCP!=="undefined"?RCP.length:0)+x.i)+")":"openMyRcp("+x.i+")"}">
-        <div class="t"><b>${esc(x.n)}</b><em><span class="badge ${x.k==="rcp"?"info":"mut"}">${x.tag}</span> ${x.steps?x.steps+" 步":"无步骤"}</em></div>
-        <div class="mac">${m.kcal} kcal · 蛋白 ${m.p}g · 碳水 ${m.c}g · 脂肪 ${m.f}g</div>
-      </div>`;
-    });
-    h+=`</div>`;
-  }
-  const list=RCP.map((r,i)=>({r,i})).filter(x=>(rcpFilter==="all"||x.r.c===rcpFilter)&&rcpMatch(x.r,kw));
-  h+=`<div class="card"><h2>${kw?"相关食谱":"全部食谱"}<span>${list.length} 道</span></h2>`;
+  const list=rcpSortedList();
+  h+=`<div class="card"><h2>${kw?"相关食谱":RCP_SRC_LABEL[rcpSrc]}<span>${list.length} 道 · 常吃的在前</span></h2>`;
   if(!list.length)h+=`<div class="empty">没有找到。换个词，或去掉筛选。</div>`;
-  list.forEach(x=>{
-    const m=rcpMacro(x.r);
-    h+=`<div class="rec" onclick="openRcp(${x.i})">
-      <div class="t"><b>${x.r.n}</b><em>${x.r.t} 分钟</em></div>
-      <div class="mac">${macLine(m)}</div>
-      <div class="badges">${x.r.m.slice(0,4).map(n=>`<span class="badge info">${n}</span>`).join("")}</div>
+  list.forEach(function(x){
+    const m=x.mac;
+    const go=x.k==="sys"?("openRcp("+x.i+")")
+      :x.k==="rcp"?("openRcp("+RCP.length+x.i+")"):("openMyRcp("+x.i+")");
+    const meta=[];
+    if(x.f>0)meta.push("吃过 "+x.f+" 次");
+    if(x.steps)meta.push(x.steps+" 步");
+    if(x.t)meta.push(x.t+" 分钟");
+    h+=`<div class="rec" onclick="${go}">
+      <div class="t"><b>${esc(x.n)}</b><em>${x.tag?`<span class="badge ${x.k==="sys"?"mut":"info"}">${x.tag}</span> `:""}${meta.join(" · ")}</em></div>
+      <div class="mac">${m.kcal} kcal · 蛋白 ${m.p}g · 碳水 ${m.c}g · 脂肪 ${m.f}g</div>
+      ${x.k==="sys"?`<div class="badges">${(x.ing||[]).slice(0,4).map(n=>`<span class="badge info">${n}</span>`).join("")}</div>`:""}
     </div>`;
   });
   h+=`</div>`;
@@ -1358,6 +1444,7 @@ function renderSettings(){
   h+='<div class="card" style="padding:0;overflow:hidden">';
   h+=setRow("身体与目标",s.sex+" · "+s.weight+"kg · 目标 "+s.kcal+" kcal / 蛋白 "+s.protein+"g","openSetBody()");
   h+=setRow("本地天气",(s.city?s.city+" · ":"")+"室温偏移 +"+s.offset+"℃","openSetWeather()");
+  h+=setRow("外观",THEME_LABEL[themeMode()]+" · 点这里换","openSetTheme()");
   h+=setRow("AI 写菜谱",((S.ai&&S.ai.key)?"已配置 · "+(S.ai.model||"deepseek-flash"):"未配置 · 点这里填 key"),"openSetAI()");
   h+=setRow("我的自定义食谱",nR+" 道 AI 食谱 · "+nD+" 道自建/拆解","openSetRcp()");
   h+=setRow("数据","备份 · 恢复 · 清空（只存本机）","openSetData()");
@@ -1469,7 +1556,13 @@ function renderSettingsTab(){ setTab("set"); }
 function render(){
   $("sub").innerHTML=subHtml();
   const isSet=(tab==="set");
-  $("h1t").textContent=isSet?"设置":"寝室餐食助手";
+  if(tab==="rcp"){
+    /* 左上角「食谱」＝范围选择器：全部 / 自定义 / 系统 */
+    $("h1t").innerHTML='<button class="h1b" onclick="openRcpSrc()" aria-haspopup="dialog" aria-label="切换食谱范围">'
+      +'食谱<span class="hc">▾</span></button>';
+  }else{
+    $("h1t").textContent=isSet?"设置":"寝室餐食助手";
+  }
   $("backbtn").style.display=isSet?"block":"none";
   $("sub").style.display=isSet?"none":"flex";
   if(tab==="today")view.innerHTML=renderToday();
@@ -1494,8 +1587,51 @@ document.querySelectorAll("nav button").forEach(b=>b.addEventListener("click",()
 function setRcpFilter(c){rcpFilter=c;render()}
 function setP(k,v){
   const n=parseFloat(v);
-  if(k==="sex"||k==="city"){S.set[k]=v}else{if(!isNaN(n))S.set[k]=n}
+  if(k==="sex"||k==="city"||k==="theme"){S.set[k]=v}else{if(!isNaN(n))S.set[k]=n}
   calcTargets();save();render();
+}
+/* ===== 外观：跟随系统 / 浅色 / 深色 ===== */
+const THEME_LABEL={auto:"跟随系统",light:"浅色",dark:"深色"};
+function themeMode(){return (S.set&&S.set.theme)||"auto"}
+function applyTheme(){
+  const m=themeMode();
+  const sysDark=!!(window.matchMedia&&window.matchMedia("(prefers-color-scheme:dark)").matches);
+  const dark=m==="dark"||(m==="auto"&&sysDark);
+  const el=document.documentElement;
+  el.setAttribute("data-theme",dark?"dark":"light");
+  try{el.style.colorScheme=dark?"dark":"light"}catch(e){}
+  const meta=document.querySelector('meta[name="theme-color"]');
+  if(meta)meta.setAttribute("content",dark?"#141517":"#FBFAF7");
+  /* App 里顺手把系统导航栏和 WebView 底色一起换掉，不然深色下底部会留一条白 */
+  if(window.AndroidBridge&&window.AndroidBridge.syncBars){
+    try{window.AndroidBridge.syncBars(dark?"#141517":"#FBFAF7",dark)}catch(e){}
+  }
+}
+function setTheme(m){
+  S.set.theme=(m==="light"||m==="dark")?m:"auto";
+  save();applyTheme();render();
+}
+function pickTheme(m){setTheme(m);openSetTheme()}
+function openSetTheme(){
+  sheetRedraw=1;
+  const cur=themeMode();
+  let h='<h3>外观</h3><div class="sm">整页、弹层、图表都跟着换，不只是背景</div>';
+  [["auto","跟随系统","手机切深色就跟着变，最省心"],
+   ["light","浅色","一直用米白底，白天看着柔和"],
+   ["dark","深色","一直用暗底，夜里不刺眼"]].forEach(function(x){
+    h+='<div class="logitem" style="cursor:pointer" onclick="pickTheme(\''+x[0]+'\')" role="button" tabindex="0">'
+      +'<span><b style="font-weight:600">'+x[1]+'</b><br><span style="font-size:11.5px;color:var(--ink3)">'+x[2]+'</span></span>'
+      +'<span class="r">'+(cur===x[0]?"✓ 当前":"")+'</span></div>';
+  });
+  h+='<div style="height:10px"></div><button class="btn ghost" onclick="renderSettingsTab()">返回设置</button>';
+  openSheet(h);
+}
+if(window.matchMedia){
+  try{
+    window.matchMedia("(prefers-color-scheme:dark)").addEventListener("change",function(){
+      if(themeMode()==="auto")applyTheme();
+    });
+  }catch(e){}
 }
 function toggleLock(){S.set.locked=!S.set.locked;if(!S.set.locked)calcTargets();save();render()}
 function openGoal(){
@@ -2466,8 +2602,11 @@ function renderLogSheet(){
     <span class="chip ${logTab==='eat'?'on':''}" onclick="setLogTab('eat')">食堂 / 加餐</span>
     <span class="chip ${logTab==='cook'?'on':''}" onclick="setLogTab('cook')">用库存做</span>
     <span class="chip ${logTab==='pick'?'on':''}" onclick="setLogTab('pick')">直接吃库存</span>
+    <span class="chip ${logTab==='out'?'on':''}" onclick="setLogTab('out')">外食</span>
   </div>`;
-  if(logTab==='eat'){
+  if(logTab==='out'){
+    h+=outHtml();
+  }else if(logTab==='eat'){
     h+=`<input type="search" id="lq" placeholder="搜食物，比如 米饭 / 鸡腿 / 苹果" oninput="logSearch(this.value)">
     <div id="llist" style="max-height:44vh;overflow-y:auto;margin-top:8px">${logListHtml("")}</div>`;
   }else if(logTab==='cook'){
@@ -2480,7 +2619,90 @@ function renderLogSheet(){
   }
   openSheet(h);
 }
-function setLogTab(t){logTab=t;renderLogSheet()}
+function setLogTab(t){
+  const el=document.getElementById("eo_txt");if(el)eoText=el.value;   /* 切标签不丢已输入的菜单 */
+  logTab=t;renderLogSheet();
+}
+
+/* ===== 外食：贴菜单/拍照 ＋ 人数 ＋ 吃了几成，交给 AI 按实际吃到的量拆 ===== */
+let eoText="",eoOut={n:2,share:1,oil:"一般"};
+const EO_SHARE=[[1,"全吃"],[0.75,"大半"],[0.5,"一半"],[0.3,"少量"]];
+const EO_OIL={"少油":"6–8g","一般":"12–18g","重油":"25–35g"};
+function outHtml(){
+  const s=eoOut;
+  return '<div class="sm">贴菜单或菜名，也可以拍菜单/餐桌照；AI 按「几个人一起吃」和「你吃了多少」折算</div>'
+    +'<textarea id="eo_txt" style="min-height:78px" placeholder="一行一道，例如：\n地锅鸡\n手撕包菜\n米饭 2 碗">'+esc(eoText)+'</textarea>'
+    +'<div style="margin-top:8px"><button class="btn ghost" onclick="eoPhoto()">拍菜单 / 餐桌照（App 内可用）</button></div>'
+    +'<div class="sm" style="margin:10px 0 4px">几个人一起吃</div><div class="chips">'
+    +[1,2,3,4,5,6].map(function(n){return '<span class="chip'+(s.n===n?" on":"")+'" onclick="eoSet(\'n\','+n+')">'+n+' 人</span>'}).join("")
+    +'</div>'
+    +'<div class="sm" style="margin:8px 0 4px">你吃了多少</div><div class="chips">'
+    +EO_SHARE.map(function(x){return '<span class="chip'+(s.share===x[0]?" on":"")+'" onclick="eoSet(\'share\','+x[0]+')">'+x[1]+'</span>'}).join("")
+    +'</div>'
+    +'<div class="sm" style="margin:8px 0 4px">这家做得油不油</div><div class="chips">'
+    +Object.keys(EO_OIL).map(function(k){return '<span class="chip'+(s.oil===k?" on":"")+'" onclick="eoSet(\'oil\',\''+k+'\')">'+k+'</span>'}).join("")
+    +'</div>'
+    +'<div style="height:10px"></div><button class="btn" onclick="runEatOut(\'text\')">AI 拆解并估算</button>'
+    +'<div style="height:8px"></div><button class="btn ghost" onclick="closeSheet()">取消</button>';
+}
+function eoSet(k,v){
+  const t=document.getElementById("eo_txt");if(t)eoText=t.value;
+  eoOut[k]=v;renderLogSheet();
+}
+function eoPhoto(){
+  const t=document.getElementById("eo_txt");if(t)eoText=t.value;
+  if(!window.AndroidBridge||!AndroidBridge.pickImage){
+    alert("拍照识别要在 App 里用。浏览器 / 电脑上请把菜单文字贴进来。");return;
+  }
+  window.__eoImg=1;
+  AndroidBridge.pickImage();
+}
+function menuName(t){
+  const parts=String(t||"").split(/[\n、，,；;]+/).map(function(x){return x.trim()}).filter(Boolean);
+  if(!parts.length)return "外食";
+  return parts.length>1?parts[0]+" 等 "+parts.length+" 道":parts[0];
+}
+function runEatOut(kind,b64){
+  const t=((document.getElementById("eo_txt")||{}).value||eoText||"").trim();
+  eoText=t;
+  if(kind!=="img"&&t.length<2){alert("先写菜名，或把菜单贴进来");return}
+  if(!S.ai||!S.ai.key){alert("AI 拆解需要先在「设置 → AI 写菜谱」填接口和 Key");return}
+  const n=eoOut.n;
+  const share=(EO_SHARE.filter(function(x){return x[0]===eoOut.share})[0]||[1,"全吃"])[1];
+  const oil=eoOut.oil;
+  aiDishName=kind==="img"?"外食（看图）":menuName(t);
+  aiDishItems=[];aiEst=null;aiEstLoading=false;
+  aiOut={n:n,share:share,oil:oil};
+  openSheet('<h3>AI 拆解外食</h3><div class="sm">'+n+' 人 · 你吃了'+share+' · 油量'+oil
+    +'<br>AI 只拆配料和克数，热量仍由本地成分表算</div>'
+    +'<div class="empty loading"><span class="spinner"></span>正在拆…（5–20 秒）</div>');
+  const names=F.map(function(f){return f.n}).join("、");
+  const sys="你是营养师助手。用户在外面吃饭，你只负责按他实际吃到的量拆解配料和克数，不做热量计算。只输出 JSON。";
+  let user;
+  if(kind==="img"){
+    user="图里是这顿饭的菜单或餐桌。一共 "+n+" 个人一起吃，我大约吃了其中的「"+share+"」。这家做得「"+oil+"」。\n"
+      +"请按【我实际吃到的量】拆解配料与克数。\n";
+  }else{
+    user="我这顿在外面吃的是：\n"+t+"\n\n一共 "+n+" 个人一起吃，我大约吃了其中的「"+share+"」。这家做得「"+oil+"」。\n"
+      +"请按【我实际吃到的量】拆解配料与克数。\n";
+  }
+  user+="要求：\n"
+    +"1. 每项 name 必须从下面列表里【一字不改】地复制，不要加括号、不要加「去皮/切块」等说明：\n"+names+"\n"
+    +"2. 处理方式写在 prep 字段\n"
+    +"3. 油统一写「橄榄油」，按这家店的油量给这一档：少油 6–8g、一般 12–18g、重油 25–35g（都是你这一份的）\n"
+    +"4. 米饭 / 面 / 饼等主食也算进去，按你吃到的量\n"
+    +"5. 汤只算喝掉的部分；带骨带壳的给可食净重\n"
+    +"6. 你这一份总重一般 200–700g\n"
+    +"7. 只输出 JSON，不要任何解释\n\n"
+    +'格式：{"name":"菜名","items":[{"name":"食材","g":150,"prep":""}],"note":"一句说明"}';
+  const content=kind==="img"
+    ?[{type:"text",text:user},{type:"image_url",image_url:{url:"data:image/jpeg;base64,"+b64}}]
+    :[{type:"text",text:user}];
+  const payload={model:(S.ai.model||"deepseek-flash"),temperature:0.3,max_tokens:1100,
+    messages:[{role:"system",content:sys},{role:"user",content:content}],
+    response_format:{type:"json_object"}};
+  aiPost(payload,function(res){renderAiDish(res)});
+}
 let cookQ="";
 function cookSearch(v){
   cookQ=v;
@@ -2610,7 +2832,7 @@ function doDish(){
   }
   logDone("log");
 }
-let aiDishName="",aiDishItems=[],aiDishNote="",aiPickIdx=-1;
+let aiDishName="",aiDishItems=[],aiDishNote="",aiPickIdx=-1,aiOut=null;
 const OIL_ALIAS={"食用油":"橄榄油","植物油":"橄榄油","色拉油":"橄榄油","调和油":"橄榄油","玉米油":"橄榄油","花生油":"橄榄油","菜籽油":"橄榄油","大豆油":"橄榄油","葵花油":"橄榄油","油":"橄榄油","植物油（豆油）":"橄榄油"};
 const NAME_EXTRA={"鸡腿（去皮）":"鸡腿肉（去皮）","鸡腿肉（去皮）":"鸡腿肉（去皮）","去皮鸡腿":"鸡腿肉（去皮）","鸡腿肉去皮":"鸡腿肉（去皮）","鸭腿（去皮）":"鸭腿肉（去皮）","去皮鸭腿":"鸭腿肉（去皮）","鸭腿":"鸭腿肉（带皮）","鸭腿肉":"鸭腿肉（带皮）","排骨":"猪小排","猪排骨":"猪小排","小排":"猪小排","大排":"猪大排","肋排":"猪小排","肉末":"猪肉（瘦）","猪肉末":"猪肉（瘦）","肉丝":"猪里脊","肉片":"猪里脊","里脊":"猪里脊","鸡胸":"鸡胸肉","鸡腿":"鸡腿肉","鸡腿肉丁":"鸡腿肉","牛柳":"牛里脊","牛肉":"牛里脊","虾":"虾仁","虾仁（鲜）":"虾仁","蛋液":"鸡蛋","鸡蛋液":"鸡蛋","雞蛋":"鸡蛋","米饭一碗":"米饭","白饭":"米饭","面条":"挂面","青菜":"小白菜","油菜":"小白菜","淀粉（玉米）":"淀粉","生粉":"淀粉","蒜末":"大蒜","蒜":"大蒜","姜末":"姜","姜片":"姜","葱花":"大葱","葱":"大葱"};
 function normName(s){
@@ -2660,7 +2882,8 @@ function aiDish(name){
     }
   }
   if(!S.ai||!S.ai.key){alert("「"+q+"」库里没有，AI 拆解需要先在「记录」页填接口和 Key");return}
-  aiDishName=name;aiDishItems=[];aiEstKcal=null;aiEstLoading=false;
+  aiOut=null;
+  aiDishName=name;aiDishItems=[];aiEst=null;aiEstLoading=false;
   openSheet('<h3>AI 拆解：'+esc(name)+'</h3><div class="sm">AI 只拆配料和克数，热量由本地成分表算</div>'
     +'<div class="empty loading"><span class="spinner"></span>正在拆解…（5–20 秒）</div>');
   const names=F.map(f=>f.n).join("、");
@@ -2715,17 +2938,19 @@ function renderAiDish(t){
   renderAiDishSheet();
   askEstimate();
 }
-let aiEstKcal=null,aiEstLo=0,aiEstHi=0,aiEstNote="",aiEstLoading=false;
+let aiEst=null,aiEstLoading=false;
+/* 独立核对：不让 AI 看配料表，只凭菜名给一份的数值，再和本地成分表算的对一遍。
+   两条独立证据差太多，说明至少一边错了（同 4-4-9 校验的思路）。 */
 function askEstimate(){
   const nm=aiDishName||"";
   if(!nm)return;
-  aiEstKcal=null;aiEstLoading=true;aiEstNote="";
-  const payload={model:(S.ai.model||"deepseek-flash"),temperature:0.2,max_tokens:300,
+  aiEst=null;aiEstLoading=true;
+  const payload={model:(S.ai.model||"deepseek-flash"),temperature:0.2,max_tokens:360,
     messages:[
       {role:"system",content:"你是中餐营养估算专家。只输出 JSON，不要拆解配方。"},
-      {role:"user",content:"请独立估算：中国大学食堂常见的一份「"+nm+"」大约多少千卡（整份，不含米饭）。\n"
-        +"只凭经验估，不要列配料、不要拆解。\n"
-        +'输出：{"kcal":整数,"lo":下限,"hi":上限,"note":"一句话依据，20字内"}'}
+      {role:"user",content:"请独立估算「"+nm+"」这一份（就是上面说的那些量，整份）的热量与三大营养素。\n"
+        +"只凭经验直接给数，不要列配料、不要拆解。不确定就给区间。\n"
+        +'输出：{"kcal":整数,"lo":下限,"hi":上限,"p":蛋白克,"c":碳水克,"f":脂肪克,"note":"一句话依据，20字内"}'}
     ],
     response_format:{type:"json_object"}};
   aiPost(payload,function(t){
@@ -2738,8 +2963,12 @@ function askEstimate(){
       if(i>-1&&j>i)c=c.slice(i,j+1);
       const o=JSON.parse(c);
       const k=Math.round(+o.kcal||0);
-      if(k>0){aiEstKcal=k;aiEstLo=Math.round(+o.lo||0);aiEstHi=Math.round(+o.hi||0);aiEstNote=o.note||""}
-    }catch(e){aiEstKcal=null}
+      if(k>0){
+        aiEst={kcal:k,lo:Math.round(+o.lo||0)||0,hi:Math.round(+o.hi||0)||0,
+          p:Math.round((+o.p||0)*10)/10,c:Math.round((+o.c||0)*10)/10,f:Math.round((+o.f||0)*10)/10,
+          note:String(o.note||"")};
+      }
+    }catch(e){aiEst=null}
     updateAiTotal();
   });
 }
@@ -2753,6 +2982,9 @@ function renderAiDishSheet(){
   let h='<h3>'+esc(aiDishName||"拆解结果")+'</h3><div class="sm">'
     +(aiDishNote?esc(aiDishNote)+'<br>':'')
     +'每项都能单独改克数、单独换食材，合计实时重算</div>';
+  if(aiOut)h+='<div class="tip" style="background:var(--bl);border-color:var(--b);border-left:3px solid var(--b);color:var(--b)">'
+    +'外食 · '+aiOut.n+' 人 · 你吃了'+aiOut.share+' · 油量'+aiOut.oil
+    +'<br>已经按你吃到的那一份折算过，可以直接改上面的克数</div>';
   if(un.length)h+='<div class="tip" style="background:var(--rl);border-color:var(--r-line);color:var(--r-ink)">有 '
     +un.length+' 项没对上本地库（共 '+Math.round(unG)+'g），点「选食材」指定，否则不计入合计</div>';
   h+='<div style="max-height:42vh;overflow-y:auto">';
@@ -2760,7 +2992,7 @@ function renderAiDishSheet(){
     const ok=!!x.n;
     const f=ok?BY[x.n]:null;
     const g=x.g;
-    h+='<div style="border:1px solid '+(ok?'var(--line)':'var(--r-line)')+';border-radius:10px;padding:9px 11px;margin-bottom:7px;background:'+(ok?'#fff':'#FDF6F6')+'">'
+    h+='<div style="border:1px solid '+(ok?'var(--line)':'var(--r-line)')+';border-radius:10px;padding:9px 11px;margin-bottom:7px;background:'+(ok?'var(--card)':'var(--rl)')+'">'
       +'<div style="display:flex;align-items:center;gap:8px">'
       +'<span style="flex:1;font-size:14px;font-weight:500">'+esc(ok?x.n:x.raw)+'</span>'
       +(ok?'<span style="font-size:11px;color:var(--ink4);white-space:nowrap">'+x.how+'</span>'
@@ -2799,18 +3031,31 @@ function updateAiTotal(){
   const hasMeat=aiDishItems.some(function(x){return x.n&&BY[x.n].cat==="protein"&&x.g>=50});
   if(hasMeat&&m.p<8)warn.push("有蛋白类食材（≥50g）但蛋白只有 "+m.p+"g，检查是否漏项");
   let estOk="",estMid="";
+  /* AI 核对：另一条独立估算，四项逐项对一遍 */
   if(aiEstLoading){
-    h+='<div class="l"><span style="color:var(--ink3)"><span class="spinner" style="width:12px;height:12px;margin-right:5px"></span>正在让 AI 独立核对热量…</span></div>';
-  }else if(aiEstKcal){
-    const dd=Math.round((m.kcal-aiEstKcal)/aiEstKcal*100), ad=Math.abs(dd);
-    const rng=aiEstHi?"（"+aiEstLo+"–"+aiEstHi+" kcal）":"";
+    h+='<div class="l"><span style="color:var(--ink3)"><span class="spinner" style="width:12px;height:12px;margin-right:5px"></span>正在让 AI 独立核对热量与营养素…</span></div>';
+  }else if(aiEst&&aiEst.kcal>0){
+    const k=aiEst.kcal;
+    const dd=Math.round((m.kcal-k)/k*100), ad=Math.abs(dd);
+    const rng=aiEst.hi?"（"+aiEst.lo+"–"+aiEst.hi+"）":"";
+    h+='<div class="l" style="margin-top:4px"><b>AI 核对 <span onclick="askEstimate()" style="font-weight:400;font-size:11.5px;color:var(--g);margin-left:4px;cursor:pointer">重核</span></b>'
+      +'<b>'+k+' kcal'+rng+'</b></div>'
+      +'<div class="l"><span>本地 '+m.kcal+' kcal · 相差 '+ad+'%</span></div>';
+    [["蛋白","p"],["碳水","c"],["脂肪","f"]].forEach(function(x){
+      const a=aiEst[x[1]],b=Math.round(m[x[1]]);
+      if(!(a>0))return;
+      const d=Math.round((m[x[1]]-a)/a*100);
+      const off=Math.abs(d)>35;
+      h+='<div class="l"><span style="'+(off?'color:var(--a)':'')+'">'+x[0]+' 本地 '+b+'g / AI '+a+'g（'+(d>0?"+":"")+d+'%）'+(off?" ⚠":"")+'</span></div>';
+    });
+    if(aiEst.note)h+='<div class="l"><span style="color:var(--ink4);font-size:11px">AI 依据：'+esc(aiEst.note)+'</span></div>';
     if(ad>40){
-      warn.push("AI 凭经验估 "+aiEstKcal+" kcal"+rng+"，本地算 "+m.kcal+" kcal，相差 "+ad+"%"
+      warn.push("AI 凭经验估 "+k+" kcal"+rng+"，本地算 "+m.kcal+" kcal，相差 "+ad+"%"
         +(dd<0?"。本地偏低，多半还有漏项":"。本地偏高，检查油和糖是否给多了"));
     }else if(ad>25){
-      estMid="AI 独立估算 "+aiEstKcal+" kcal"+rng+"，与本地相差 "+ad+"%，在估算误差范围内";
+      estMid="热量相差 "+ad+"%，在估算误差范围内，看上面逐项的差异";
     }else{
-      estOk="AI 独立估算 "+aiEstKcal+" kcal"+rng+"，与本地相差 "+ad+"%，互相印证";
+      estOk="热量相差 "+ad+"%，和 AI 的独立估算互相印证";
     }
   }
   if(warn.length)h+='<div class="l"><span style="color:var(--r);line-height:1.5">⚠ '+warn.join("<br>⚠ ")+'</span></div>';
@@ -2876,6 +3121,7 @@ function doAiDish(){
   }
   const d={n:aiDishName||"自定义菜",i:itemsOfDish()};
   const m=dishMacro(d,1);
+  const noteTxt=aiOut?("外食估算 · "+aiOut.n+" 人 · 吃了"+aiOut.share+" · 油量"+aiOut.oil):(aiDishNote||"AI 拆解，可自行调整");
   S.logs.push({d:logDate(),m:logMeal,name:d.n,kcal:m.kcal,p:m.p,f:m.f,c:m.c,na:m.na,veg:0});
   S.myDish=S.myDish||[];
   let msg="已记账："+d.n+" · "+m.kcal+" kcal · 蛋白 "+m.p+"g";
@@ -2887,13 +3133,14 @@ function doAiDish(){
     if(idx>-1){
       const oldUse=(S.myDish[idx]&&S.myDish[idx].use)||0;
       S.myDish.splice(idx,1);
-      S.myDish.push({n:d.n,i:d.i,note:aiDishNote||"AI 拆解，可自行调整",use:oldUse});
+      S.myDish.push({n:d.n,i:d.i,note:noteTxt,use:oldUse});
       msg+="\n\n已更新「我的菜品」里同名的配方。";
     }else{
-      S.myDish.push({n:d.n,i:d.i,note:aiDishNote||"AI 拆解，可自行调整",use:0});
+      S.myDish.push({n:d.n,i:d.i,note:noteTxt,use:0});
       msg+="\n\n已存进「我的菜品」，下次搜「"+d.n+"」直接可用，不用再调 AI。";
     }
   }
+  aiOut=null;
   logDone("log");
   alert(msg);
 }
@@ -3378,6 +3625,7 @@ function clearAll(){
   S={inv:[],logs:[],waste:[],myRcp:[],myDish:[],myFood:[],ai:S.ai,set:S.set,w:S.w};rebuildFoods();save();render();
 }
 
+applyTheme();
 calcTargets();save();render();
 
 /* Service Worker：注册时带上版本号，改了 APP_VER 就会触发更新检查 */
