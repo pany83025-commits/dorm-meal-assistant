@@ -123,7 +123,9 @@
     eq("3.7 不比 3.7 新", verNewer("3.7", "3.7"), false);
     eq("3.10 比 3.9 新（按段比较）", verNewer("3.10", "3.9"), true);
     eq("3.7 不比 3.7.1 新", verNewer("3.7", "3.7.1"), false);
-    eq("APP_VER 与 version.json 同段", APP_VER.split(".").length >= 2, true);
+    eq("APP_VER 是 主.次.修订 三段式", /^\d+\.\d+\.\d+$/.test(APP_VER), true);
+    eq("补丁号变大算新版", verNewer("3.18.1", "3.18.0"), true);
+    eq("三段比两段（老版本）", verNewer("3.18.0", "3.17"), true);
 
     /* ---------- 甜品 / 饮品 / 烘焙原料 ---------- */
     const tart = BY["葡式蛋挞"], butter = BY["黄油"], cream = BY["淡奶油"], cola = BY["可乐"];

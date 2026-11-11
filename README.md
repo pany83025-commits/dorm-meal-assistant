@@ -90,19 +90,29 @@ bash build.sh v3.9
 
 **AI 功能**（可选）：设置 → AI 写菜谱，填入兼容 OpenAI 格式的 Key 与模型名。不填也能用全部离线功能。
 
-**发版**：版本号散落在四处（`index.html` 的 `APP_VER`、`version.json`、`AndroidManifest` 的 versionName/versionCode、`package.json`），手动改必漏，所以有脚本：
+**版本号规则**：语义化版本 `主.次.修订`（SemVer 2.0.0），四处（`index.html` 的 `APP_VER`、`version.json`、`AndroidManifest` 的 versionName、`package.json`）完全一致。
+
+- **主版本**：不兼容的改动（存档格式变了、要迁移旧数据）
+- **次版本**：加功能、改交互，向后兼容
+- **修订**：只修 bug、改文案、调数值
+- 安卓的 versionCode 由它编码而来：`主×10000 + 次×100 + 修订`（次、修订各占两位，须 ≤99）。例如 `3.18.1 → 31801`、`4.0.0 → 40000`。纯数字且单调递增，覆盖安装不会被拒。
+- 例：加功能 `3.19.0`；只修一个 bug `3.18.2`；数据格式不兼容 `4.0.0`。
+
+**发版**：版本号散落四处，手动改必漏，所以有脚本：
 
 ```bash
-node tools/bump.mjs 3.10 --note "一句话说明这次更新"   # 四处一起改，versionCode = 主×10+次
+node tools/bump.mjs 3.19.0 --note "一句话说明这次更新"   # 四处一起改，versionCode 自动算
 npm run verify                                        # 数据同步 / 数据自检 / 版本一致性 / 115 项单测
 bash tools/build-apk.sh                               # 出包，版本号自动取 APP_VER
-node tools/push.mjs -m "v3.10：…"                      # 推仓库，Pages 自动重建
-GH_TOKEN=xxx node tools/release.mjs ./寝室餐食助手-v3.10.apk   # 传 Release，资源名固定 dorm-meal.apk
+node tools/push.mjs -m "v3.19.0：…"                    # 推仓库，Pages 自动重建
+GH_TOKEN=xxx node tools/release.mjs ./寝室餐食助手-v3.19.0.apk   # 传 Release，资源名固定 dorm-meal.apk
 ```
+
+`bump.mjs` 会拒绝两种操作：版本号不比当前新（平级或降级会让更新提示失效）、versionCode 没有变大（覆盖安装会被系统拒绝）。
 
 `tools/build-apk.sh` 会从环境变量或 `~/.dormmeal/secret.env` 读 `DORM_KS_PASS`（密钥与密码都不入库）。`tools/push.mjs` 走 Git Data API 而不是 `git push`——有些网络到不了 `github.com:443` 的 git 端口，这条通路能过就说明 API 能过。token 放在 `~/.dormmeal/gh_token`，同样在仓库之外。
 
-装过的旧版下次打开（或从后台切回前台）就会看到「有新版本 v3.10」的提示条，点「去更新」跳到浏览器下载。网页版不需要最后一步：`index.html` 走 network-first，刷新即新版。
+装过的旧版下次打开（或从后台切回前台）就会看到「有新版本 v3.19.0」的提示条，点「去更新」跳到浏览器下载。网页版不需要最后一步：`index.html` 走 network-first，刷新即新版。
 
 > 侧载 APK 的最后一步安装必须由你点确认，这是 Android 的限制，应用只负责「发现新版 + 打开下载」。
 

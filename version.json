@@ -1,6 +1,6 @@
 {
-  "version": "3.17",
+  "version": "3.18.1",
   "released": "2026-11-12",
-  "note": "修：设置子页点「返回设置」不会收起弹层；自定义食谱为空时给对应提示",
+  "note": "版本号改用语义化版本 主.次.修订；安装包 versionCode 同步改为 主×10000+次×100+修订",
   "apk": "https://github.com/pany83025-commits/dorm-meal-assistant/releases/latest/download/dorm-meal.apk"
 }
