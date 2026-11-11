@@ -156,7 +156,36 @@
     eq("updTime 没查过", updTime(0), "还没查过");
     eq("updTime 格式化 6 月 3 日 08:05", updTime(new Date(2026, 5, 3, 8, 5).getTime()), "6-03 08:05");
 
-    /* ---------- 餐次 ---------- */
+    /* ---------- 补记：把一条记录写到昨天 ---------- */
+    const _t0 = today(), _y1 = dayAdd(_t0, -1);
+    logDay = "";
+    eq("logDate 默认今天", logDate(), _t0);
+    eq("backfillDay 默认空", backfillDay(), "");
+    logDay = _y1;
+    eq("logDate 跟随 logDay", logDate(), _y1);
+    eq("backfillDay 是昨天", backfillDay(), _y1);
+    logDay = dayAdd(_t0, 3);
+    eq("未来日期落回今天", logDate(), _t0);
+    eq("未来日期不算补记", backfillDay(), "");
+    /* 走真实入口：pickLog 开数量页 → doLog 落账 */
+    const _n0 = S.logs.length, _k0 = daySum(_y1).t.kcal, _c0 = daySum(_t0).t.kcal;
+    logDay = _y1;
+    pickLog(BY["米饭"].id);
+    const _gi = document.getElementById("addg");
+    if (_gi) _gi.value = "200";
+    doLog();
+    eq("补记多一条记录", S.logs.length, _n0 + 1);
+    eq("记录的日期写成昨天", S.logs[S.logs.length - 1].d, _y1);
+    near("昨天合计多了 200g 米饭", daySum(_y1).t.kcal - _k0, 232, 6);
+    eq("今天合计没被改动", daySum(_t0).t.kcal, _c0);
+    const _bk = trendBuckets(dayAdd(_t0, -2), _t0);
+    eq("趋势里昨天那天有记录", _bk[1] && _bk[1].to === _y1 && _bk[1].n >= 1, true);
+    /* 复原 */
+    S.logs.pop(); save(); closeSheet(true);
+    if (document.getElementById("page").classList.contains("on")) closePage();
+    logDay = "";
+
+
     eq("guessMeal 落在四档内", ["早", "午", "晚", "加"].indexOf(guessMeal()) > -1, true);
     eq("MEAL_LABEL 完整", Object.keys(MEAL_LABEL).length, 5);
   } catch (e) {

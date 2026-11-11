@@ -234,6 +234,7 @@ label.fl{display:block;font-size:12.5px;color:var(--ink3);margin:12px 0 5px}
 .phead .ttl{flex:1;min-width:0;font-size:15px;font-weight:600;text-align:center}
 .phead button{background:none;border:none;font-family:inherit;font-size:14px;color:var(--g);padding:6px 8px;border-radius:8px;cursor:pointer}
 .phead button:active{background:var(--hover)}
+.phead .padd{font-size:19px;font-weight:600;line-height:1;padding:4px 9px;color:var(--g)}
 .pnav{display:flex;align-items:center;justify-content:center;gap:14px;padding:12px 0 4px;font-size:14px;color:var(--ink2)}
 .pnav button{border:none;background:var(--soft);border-radius:9px;width:30px;height:30px;font-size:15px;color:var(--ink2);cursor:pointer;font-family:inherit}
 .pnav button:active{background:var(--soft2)}
@@ -257,6 +258,8 @@ label.fl{display:block;font-size:12.5px;color:var(--ink3);margin:12px 0 5px}
 .cal .d.mut{opacity:.35}
 .cal .d.has{background:var(--gl);border-color:var(--gm);color:var(--ok-ink);font-weight:600}
 .cal .d.today{outline:2px solid var(--g)}
+.cal .d.sel{background:var(--g);border-color:var(--g);color:var(--bg);font-weight:600;outline:none}
+.cal .d.off{opacity:.25;cursor:default}
 .cal .hd{font-size:11px;color:var(--ink3);text-align:center;padding-bottom:2px}
 </style>
 </head>
@@ -363,7 +366,7 @@ function nameHit(f,kw){
 }
 const DISH=JSON.parse(document.getElementById("d-dishes").textContent);
 const CAT={protein:"蛋白",carb:"主食",veg:"蔬菜",fruit:"水果",fat:"油脂",dessert:"甜点",drink:"饮品",other:"调味"};
-const APP_VER="3.14";              /* 发版只改这一处：关于页、SW 注册参数都读它 */
+const APP_VER="3.15";              /* 发版只改这一处：关于页、SW 注册参数都读它 */
 const K='dorm-eat-v2';
 let S=load();
 S.myFood=S.myFood||[];
@@ -1840,11 +1843,10 @@ function saveMealLog(){
     S.inv=S.inv.filter(function(x){return x.g>0.5});
   }
   const nm=(c.src==="canteen"?"食堂 · ":"")+c.title+(c.mult!==1?" ×"+c.mult:"");
-  S.logs.push({d:today(),m:logMeal,name:nm,kcal:Math.round(m.kcal),
+  S.logs.push({d:logDate(),m:logMeal,name:nm,kcal:Math.round(m.kcal),
     p:+m.p.toFixed(1),f:+m.f.toFixed(1),c:+m.c.toFixed(1),na:Math.round(m.na),veg:Math.round(m.veg),
     fib:m.fib,ca:m.ca,fe:m.fe,vc:m.vc});
-  save();closeSheet();setTab("today");
-  notice("已记录 "+nm+" · "+Math.round(m.kcal)+" kcal");
+  logDone("today",nm+" · "+Math.round(m.kcal)+" kcal");
 }
 function backToRcp(){
   const c=mlCtx;if(!c)return;
@@ -1960,6 +1962,7 @@ function closePage(){
     if(pagePrevFocus&&pagePrevFocus.isConnected){try{pagePrevFocus.focus({preventScroll:true})}catch(e){}}
     pagePrevFocus=null;
     pageMode="";
+    logDay="";                                        /* 离开记录页就别再留着补记目标 */
   };
   const onEnd=function(e){if(e.target===p&&e.animationName==="pageOut")finish()};
   p.addEventListener("animationend",onEnd);
@@ -2081,8 +2084,9 @@ function tipN(i){
 }
 
 /* ===================== 日历 ===================== */
-let calY=0,calM=0;
+let calY=0,calM=0,calMode="view";
 function openCal(){
+  calMode="view";
   const d=new Date(dayCur+"T00:00:00");
   calY=d.getFullYear();calM=d.getMonth();renderCal();
 }
@@ -2092,23 +2096,31 @@ function calMove(n){
 }
 function renderCal(){
   sheetRedraw=1;
+  const isLog=calMode==="log",sel=isLog?logDate():dayCur,td=today();
   const first=new Date(calY,calM,1),start=first.getDay(),days=new Date(calY,calM+1,0).getDate();
   const has={};S.logs.forEach(function(l){has[l.d]=1});
-  let h='<h3>选择日期</h3><div class="sm">有记录的日期会标绿</div>';
+  let h='<h3>'+(isLog?"补记到哪一天":"选择日期")+'</h3>'
+    +'<div class="sm">'+(isLog?"今天和以前的日期都能选":"有记录的日期会标绿")+'</div>';
   h+='<div class="pnav" style="padding-top:4px"><button onclick="calMove(-1)">‹</button>'
     +'<span>'+calY+' 年 '+(calM+1)+' 月</span><button onclick="calMove(1)">›</button></div>';
   h+='<div class="cal">'+["日","一","二","三","四","五","六"].map(function(x){return '<div class="hd">'+x+'</div>'}).join("");
   for(let i=0;i<start;i++)h+='<div></div>';
   for(let d=1;d<=days;d++){
     const ds=dstr(new Date(calY,calM,d));
-    h+='<div class="d'+(has[ds]?" has":"")+(ds===today()?" today":"")+'" onclick="calPick(\''+ds+'\')">'+d+'</div>';
+    const off=isLog&&ds>td;
+    const cls="d"+(has[ds]?" has":"")+(ds===td?" today":"")+(ds===sel?" sel":"")+(off?" off":"");
+    h+='<div class="'+cls+'"'+(off?'':' onclick="'+(isLog?"calPickLog":"calPick")+'(\''+ds+'\')"')+'>'+d+'</div>';
   }
   h+='</div>';
-  h+='<div style="height:12px"></div><button class="btn ghost" onclick="closeSheet()">取消</button>';
+  h+='<div style="height:12px"></div><button class="btn ghost" onclick="'+(isLog?"renderLogSheet()":"closeSheet()")+'">取消</button>';
   openSheet(h);
 }
 function calPick(ds){
   dayCur=ds;closeSheet();renderDayView();
+}
+function calPickLog(ds){
+  logDay=(ds===today())?"":ds;
+  renderLogSheet();
 }
 
 /* 覆盖层手势：
@@ -2226,7 +2238,9 @@ function dayBodyHtml(ds){
     +bar("碳水",t.c,sg.carb,"#378ADD")+bar("脂肪",t.f,sg.fat,"#BA7517")
     +'</div></div>';
   if(!ls.length){
-    h+='<div class="empty">这天没有记录<br>左右滑动切换日期</div>';
+    h+='<div class="empty" style="padding-bottom:2px">这天没有记录<br>左右滑动切换日期</div>';
+    h+='<div style="margin:0 0 10px"><button class="btn ghost" onclick="openLogFor(\''+ds+'\')">'
+      +(ds===today()?"＋ 记一笔":"＋ 补记这一天")+'</button></div>';
   }else{
     ["早","午","晚","加",""].forEach(function(mk){
       const items=ls.filter(function(l){return (MEALS.indexOf(l.m)>=0?l.m:"")===mk});
@@ -2255,6 +2269,7 @@ function renderDayView(){
   const ds=dayCur;
   let h='<div class="phead"><button onclick="closePage()">关闭</button>'
     +'<div class="ttl">记录 · '+ds.slice(5)+'</div>'
+    +'<button class="padd" onclick="openLogFor(\''+ds+'\')" aria-label="给这天记一笔">＋</button>'
     +'<button onclick="openCal()">日历</button></div>';
   h+='<div class="pnav"><button onclick="shiftDay(-1)">‹</button>'
     +'<span>'+dayLabel(ds)+'</span><button onclick="shiftDay(1)">›</button></div>';
@@ -2405,6 +2420,18 @@ let logTab="eat";
 const MEALS=["早","午","晚","加"];
 const MEAL_LABEL={"早":"早餐","午":"午餐","晚":"晚餐","加":"加餐","":"未分餐"};
 let logMeal=guessMeal();
+/* 补记：默认记到今天；从记录页某一天点「＋」进来就记到那一天 */
+var logDay="";
+function logDate(){const t=today();return (logDay&&logDay<=t)?logDay:t}
+function backfillDay(){const d=logDate();return d!==today()?d:""}
+/* 记完一条：补记就回那一天，否则照旧回原来的标签页 */
+function logDone(tab,msg){
+  const bk=backfillDay();
+  save();closeSheet();
+  if(bk){notice("已补记到 "+bk.slice(5)+(msg?" · "+msg:""));openDay(bk);return}
+  if(tab)setTab(tab);
+  if(msg)notice("已记录 "+msg);
+}
 function guessMeal(){const h=new Date().getHours();return h<10?"早":h<15?"午":h<21?"晚":"加"}
 function setMeal(x){
   logMeal=x;
@@ -2417,10 +2444,25 @@ function mealChips(){
     +MEALS.map(function(m){return '<span class="chip'+(logMeal===m?' on':'')+'" data-meal="'+m+'" onclick="setMeal(\''+m+'\')">'+MEAL_LABEL[m]+'</span>'}).join("")
     +'</div>';
 }
-function openLogSheet(){logTab="eat";cookQ="";logMeal=guessMeal();renderLogSheet()}
+function openLogSheet(keep){logTab="eat";cookQ="";if(!keep)logDay="";logMeal=logDay?"晚":guessMeal();renderLogSheet()}
+/* 从记录页某一天点「＋」：记到那一天。昨天及以前＝补记 */
+function openLogFor(ds){
+  logDay=(ds&&ds!==today())?ds:"";
+  openLogSheet(1);
+}
+function openLogCal(){
+  calMode="log";
+  const d=new Date(logDate()+"T00:00:00");
+  calY=d.getFullYear();calM=d.getMonth();renderCal();
+}
 function renderLogSheet(){
   sheetRedraw=1;
-  let h=`<h3>记一笔</h3><div class="sm" style="margin-bottom:0">记到哪一餐</div>`+mealChips()+`<div class="chips" style="margin-top:2px">
+  const bk=backfillDay();
+  let h=`<h3>记一笔</h3>`
+    +(bk?`<div class="sm" style="margin:0 0 6px">补记到 <b>${dayLabel(bk)}</b>
+      <span style="color:var(--g);margin-left:8px" onclick="openLogCal()">改日期</span></div>`
+      :`<div class="sm" style="margin-bottom:0">记到哪一餐</div>`)
+    +mealChips()+`<div class="chips" style="margin-top:2px">
     <span class="chip ${logTab==='eat'?'on':''}" onclick="setLogTab('eat')">食堂 / 加餐</span>
     <span class="chip ${logTab==='cook'?'on':''}" onclick="setLogTab('cook')">用库存做</span>
     <span class="chip ${logTab==='pick'?'on':''}" onclick="setLogTab('pick')">直接吃库存</span>
@@ -2556,17 +2598,17 @@ function renderDish(){
     +'<div class="l"><span>钠 '+m.na+'mg'+(m.na>800?'　⚠ 偏高':'')+'</span></div></div>'
     +'<div class="sm" style="margin-bottom:0">记到哪一餐</div>'+mealChips()
     +'<button class="btn" onclick="doDish()">记下</button>'
-    +'<div style="height:8px"></div><button class="btn ghost" onclick="openLogSheet()">返回</button>');
+    +'<div style="height:8px"></div><button class="btn ghost" onclick="openLogSheet(1)">返回</button>');
 }
 function doDish(){
   const m=dishMacro(curDish,curMult);
   const nm=curDish.n+(curMult!==1?" ×"+curMult:"");
-  S.logs.push({d:today(),m:logMeal,name:nm,kcal:m.kcal,p:m.p,f:m.f,c:m.c,na:m.na,veg:0,
+  S.logs.push({d:logDate(),m:logMeal,name:nm,kcal:m.kcal,p:m.p,f:m.f,c:m.c,na:m.na,veg:0,
     fib:m.fib,ca:m.ca,fe:m.fe,vc:m.vc});
   if(curDishMine&&S.myDish&&S.myDish[curDishIdx]){
     S.myDish[curDishIdx].use=(S.myDish[curDishIdx].use||0)+1;
   }
-  save();closeSheet();setTab("log");
+  logDone("log");
 }
 let aiDishName="",aiDishItems=[],aiDishNote="",aiPickIdx=-1;
 const OIL_ALIAS={"食用油":"橄榄油","植物油":"橄榄油","色拉油":"橄榄油","调和油":"橄榄油","玉米油":"橄榄油","花生油":"橄榄油","菜籽油":"橄榄油","大豆油":"橄榄油","葵花油":"橄榄油","油":"橄榄油","植物油（豆油）":"橄榄油"};
@@ -2834,7 +2876,7 @@ function doAiDish(){
   }
   const d={n:aiDishName||"自定义菜",i:itemsOfDish()};
   const m=dishMacro(d,1);
-  S.logs.push({d:today(),m:logMeal,name:d.n,kcal:m.kcal,p:m.p,f:m.f,c:m.c,na:m.na,veg:0});
+  S.logs.push({d:logDate(),m:logMeal,name:d.n,kcal:m.kcal,p:m.p,f:m.f,c:m.c,na:m.na,veg:0});
   S.myDish=S.myDish||[];
   let msg="已记账："+d.n+" · "+m.kcal+" kcal · 蛋白 "+m.p+"g";
   const builtIn=DISH.filter(function(x){return x.n===d.n})[0];
@@ -2852,7 +2894,7 @@ function doAiDish(){
       msg+="\n\n已存进「我的菜品」，下次搜「"+d.n+"」直接可用，不用再调 AI。";
     }
   }
-  save();closeSheet();setTab("log");
+  logDone("log");
   alert(msg);
 }
 function logSearch(v){$("llist").innerHTML=logListHtml(v)}
@@ -2910,8 +2952,8 @@ function doEat(d,id){
     const use=Math.min(need,b.g);b.g-=use;need-=use;
   });
   S.inv=S.inv.filter(x=>x.g>0.5);
-  S.logs.push({d:today(),m:logMeal,name:f.n+" "+Math.round(g)+"g",kcal:f.kcal*g/100,p:f.p*g/100,f:f.f*g/100,c:f.c*g/100,na:(f.na||0)*g/100,veg:f.cat==="veg"?g:0,fib:Math.round((f.fib||0)*g/100*10)/10,ca:Math.round((f.ca||0)*g/100),fe:Math.round((f.fe||0)*g/100*10)/10,vc:Math.round((f.vc||0)*g/100*10)/10});
-  save();closeSheet();setTab("log");
+  S.logs.push({d:logDate(),m:logMeal,name:f.n+" "+Math.round(g)+"g",kcal:f.kcal*g/100,p:f.p*g/100,f:f.f*g/100,c:f.c*g/100,na:(f.na||0)*g/100,veg:f.cat==="veg"?g:0,fib:Math.round((f.fib||0)*g/100*10)/10,ca:Math.round((f.ca||0)*g/100),fe:Math.round((f.fe||0)*g/100*10)/10,vc:Math.round((f.vc||0)*g/100*10)/10});
+  logDone("log");
 }
 function pickLog(id){
   logId=id;const f=F[id];
@@ -2929,8 +2971,8 @@ function doLog(){
   const g=parseFloat($("addg").value);
   if(!g||g<=0)return;
   const f=F[logId];
-  S.logs.push({d:today(),m:logMeal,name:f.n+" "+Math.round(g)+"g",kcal:f.kcal*g/100,p:f.p*g/100,f:f.f*g/100,c:f.c*g/100,na:(f.na||0)*g/100,veg:f.cat==="veg"?g:0,fib:Math.round((f.fib||0)*g/100*10)/10,ca:Math.round((f.ca||0)*g/100),fe:Math.round((f.fe||0)*g/100*10)/10,vc:Math.round((f.vc||0)*g/100*10)/10});
-  save();closeSheet();setTab("log");
+  S.logs.push({d:logDate(),m:logMeal,name:f.n+" "+Math.round(g)+"g",kcal:f.kcal*g/100,p:f.p*g/100,f:f.f*g/100,c:f.c*g/100,na:(f.na||0)*g/100,veg:f.cat==="veg"?g:0,fib:Math.round((f.fib||0)*g/100*10)/10,ca:Math.round((f.ca||0)*g/100),fe:Math.round((f.fe||0)*g/100*10)/10,vc:Math.round((f.vc||0)*g/100*10)/10});
+  logDone("log");
 }
 function toggleKey(){
   const el=document.getElementById("ai_key");
