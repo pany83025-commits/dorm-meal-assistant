@@ -125,6 +125,22 @@
     eq("3.7 不比 3.7.1 新", verNewer("3.7", "3.7.1"), false);
     eq("APP_VER 与 version.json 同段", APP_VER.split(".").length >= 2, true);
 
+    /* ---------- 甜品 / 饮品 / 烘焙原料 ---------- */
+    const tart = BY["葡式蛋挞"], butter = BY["黄油"], cream = BY["淡奶油"], cola = BY["可乐"];
+    eq("葡式蛋挞 已入库", !!tart, true);
+    near("蛋挞 305 kcal/100g", tart.kcal, 305, 1);
+    eq("蛋挞 分类＝甜点", tart.cat, "dessert");
+    eq("蛋挞 一只 60g", tart.ug, 60);
+    eq("黄油 脂肪 81g", butter.f, 81);
+    eq("淡奶油 脂肪 35g", cream.f, 35);
+    eq("可乐 分类＝饮品", cola.cat, "drink");
+    eq("甜点条目 ≥20", RAW.filter((r) => r[1] === "dessert").length >= 20, true);
+    eq("饮品条目 ≥15", RAW.filter((r) => r[1] === "drink").length >= 15, true);
+    eq("分类标签含甜点/饮品", CAT.dessert === "甜点" && CAT.drink === "饮品", true);
+    /* 一只蛋挞按默认单位记，热量应与 305×60% 吻合 */
+    const oneTart = Math.round(tart.kcal * tart.ug / 100);
+    near("一只蛋挞 183 kcal", oneTart, 183, 1);
+
     /* ---------- 更新检查：版本比较与状态记录 ---------- */
     eq("3.9 比 3.8 新", verNewer("3.9", "3.8"), true);
     eq("9.0 比 3.9 新（主版本）", verNewer("9.0", "3.9"), true);

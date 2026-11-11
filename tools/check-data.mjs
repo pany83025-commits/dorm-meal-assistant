@@ -16,8 +16,8 @@ const foods = read("data/foods.json");
 const recipes = read("data/recipes.json");
 const dishes = read("data/dishes.json");
 
-const CATS = new Set(["protein", "carb", "veg", "fruit", "fat", "other"]);
-const LABELS = new Set(["生重", "熟重", "净重", "干重", "可食部", "泡发后"]);
+const CATS = new Set(["protein", "carb", "veg", "fruit", "fat", "dessert", "drink", "other"]);
+const LABELS = new Set(["生重", "熟重", "净重", "干重", "可食部", "泡发后", "毛重15g·可食60%"]);
 const FIELDS = ["名称", "分类", "kcal", "蛋白", "脂肪", "碳水", "纤维", "单位", "单位克数",
   "可食部", "冬存天数", "夏存天数", "口径", "来源", "备注", "钠", "钙", "铁", "维C", "胆固醇"];
 
@@ -39,7 +39,8 @@ foods.forEach((r, i) => {
     if (typeof r[k] !== "number" || Number.isNaN(r[k])) err(`${tag}: ${FIELDS[k]} 不是数字`);
     else if (r[k] < 0) err(`${tag}: ${FIELDS[k]} 为负`);
   }
-  if (!(r[2] > 0)) err(`${tag}: 热量必须 > 0`);
+  if (!(r[2] >= 0)) err(`${tag}: 热量不能为负`);
+  else if (r[2] === 0) warn(`${tag}: 热量为 0，确认是无热量饮品`);
   if (typeof r[7] !== "string" || !r[7].trim()) err(`${tag}: 单位为空`);
   if (!(r[8] > 0)) err(`${tag}: 单位克数必须 > 0`);
   if (!(r[9] > 0 && r[9] <= 100)) err(`${tag}: 可食部应在 (0,100]，实际 ${r[9]}`);

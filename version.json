@@ -1,6 +1,6 @@
 {
-  "version": "3.13",
+  "version": "3.14",
   "released": "2026-11-11",
-  "note": "记录页支持跟手翻页：相邻两天同时显示",
+  "note": "新增 24 道甜品、21 种饮品与烘焙原料；支持新建食材并可由 AI 估算；去掉弹层下拉退出",
   "apk": "https://github.com/pany83025-commits/dorm-meal-assistant/releases/latest/download/dorm-meal.apk"
 }
