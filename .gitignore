@@ -33,3 +33,4 @@ Thumbs.db
 
 # ===== 临时探针/脚本 =====
 _tmpjs/
+_syn*.js
