@@ -1,6 +1,6 @@
 {
-  "version": "3.16",
+  "version": "3.17",
   "released": "2026-11-12",
-  "note": "食谱合并并按常吃排序、左上角可切换范围；新增外食估算与 AI 核对；设置里可选浅色/深色/跟随系统",
+  "note": "修：设置子页点「返回设置」不会收起弹层；自定义食谱为空时给对应提示",
   "apk": "https://github.com/pany83025-commits/dorm-meal-assistant/releases/latest/download/dorm-meal.apk"
 }
